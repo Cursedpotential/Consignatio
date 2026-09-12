@@ -1,0 +1,217 @@
+<!DOCTYPE html><html><head><meta charset="utf-8">
+<title>Schema + Detection Rules — Comparison for Owner Review</title>
+<style>
+body{font:15px/1.55 -apple-system,'Segoe UI',sans-serif;margin:0;padding:24px;background:#fafaf8;color:#1c2127;max-width:1400px}
+h1{font-size:1.5rem} h2{margin-top:2.2rem;border-top:2px solid #ddd;padding-top:1rem;color:#24496d}
+table{border-collapse:collapse;width:100%;margin:.8rem 0;font-size:.85rem}
+th,td{border:1px solid #ddd;padding:5px 8px;text-align:left;vertical-align:top}
+th{background:#eee}
+pre{background:#f0efe9;border:1px solid #ddd;padding:10px;font-size:.78rem;overflow-x:auto;line-height:1.45}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.kill td{background:#fde8e8} .keep td{background:#e8f2e8} .metric td{background:#f5efdf}
+.verdict{background:#e8eef7;border-left:4px solid #2e5e8c;padding:10px 14px;margin:1rem 0}
+.big{font-size:1.6rem;font-weight:700}
+.warn{background:#fdf3e4;border-left:4px solid #b45309;padding:10px 14px;margin:1rem 0}
+</style></head><body>
+<h1>Schema + Detection Rules — What Each Choice Produces</h1>
+<p><i>Built {from the live migration chain (0006+0007+0008), RECONCILED_SCHEMA.sql, and the real 339-finding v2 sample}. LOCAL ONLY — contains real message text; never commit this file.</i></p>
+
+<h2>1 · THE TABLES — where a message lives</h2>
+<div class="cols">
+<div><h3>Current: analysis.normalized_record</h3><pre>CREATE TABLE analysis.normalized_record (   -- CURRENT ingest target (populated)
+  id UUID PK, artifact_id -&gt; evidence.evidence_hash,
+  record_type  message|call|event|media,
+  source TEXT,                      -- parser key (&#x27;imessage-html&#x27;)
+  conversation_id TEXT,             -- filename/session-derived, NOT identity
+  role TEXT,                        -- &#x27;owner&#x27; / raw label — NO real identity
+  participants JSONB,               -- display labels, no entity linkage
+  content TEXT, occurred_at, knowledge_time, disclosure_tier,
+  attrs JSONB                       -- everything else, schemaless
+)</pre>
+<p><b>What it gives you:</b> provenance to the source file via artifact_id ✓ · bitemporal ✓.<br>
+<b>What it can't do:</b> no real-name identity (role is a raw label), no per-message recipient,
+no multi-party model, conversation_id derived from filenames. Detection currently reads THIS.</p></div>
+<div><h3>Designed master: analysis.message (+ participants)</h3><pre>CREATE TABLE analysis.message (            -- DESIGNED master (0005, applied, EMPTY)
+  id UUID PK -&gt; normalized_record(id),
+  conversation_id -&gt; analysis.conversation,
+  ts_utc, platform, external_id, serial_number,
+  prev_message_id / next_message_id,        -- thread ordering
+  sender_raw, sender_e164, sender_entity_id -&gt; entity/person,   -- REAL identity
+  recipient_raw, recipient_e164, direction in|out,
+  content_sha256, word_count, char_count, language,
+  raw_ts, tz, temporal_confidence,          -- full temporal provenance
+  platform_attrs JSONB, raw_data JSONB
+  -- rollup flags: has_behaviors/behavior_count (derived counters, not verdicts)
+);
+CREATE TABLE analysis.message_participant (  -- MULTI-PARTY (from/to/cc/group/third_party)
+  message_id -&gt; message, entity_id, participant_raw, participant_e164,
+  role from|to|cc|bcc|group|third_party, conduct_party
+)</pre>
+<p><b>Your requirement, already designed:</b> provenance ✓ (chains to normalized_record → evidence_hash → evidence.source),
+real identity ✓ (sender_e164 + entity/person link), recipient ✓, direction ✓,
+<b>multi-party ✓</b> (message_participant incl. third_party), thread ordering ✓, per-message content hash ✓.</p></div>
+</div>
+<div class="verdict"><b>Verdict:</b> the "master table with no analysis, full provenance, real names, more than two people"
+<b>already exists in the applied 0005 schema — it is just EMPTY.</b> Ingestion stops at normalized_record.
+The work is a population step (normalized_record → message + message_participant + entity resolution), not a new design.
+<br><b>One purity note to decide:</b> message carries derived rollups (has_behaviors, behavior_count, max_behavior_severity,
+*_hint columns). They're counters/hints, not verdicts — but if you want the master table 100% analysis-free, we strip
+them into a side table. Annotate here with your call.</div>
+
+<h2>2 · THE RULES — what the live chain contains</h2>
+<p>Pattern chain totals: <b>377 patterns</b>
+(377 from 0006 · 0 from 0007 sweep · 0 from 0008 pattern-analyzer)
+— 249 literals / 128 regex.
+<span class="big" style="color:#b23b3b">53</span> literals are <b>SINGLE WORDS</b> — the false-positive engines.</p>
+<h3>Single-word literals by category (the ones matching everyday speech)</h3>
+<table><tr><th>category</th><th># single-word</th><th>examples</th></tr><tr><td>substance_alcohol</td><td>14</td><td>beer, bottle, buzzed, drank, drink, drunk, fireball, hungover</td></tr>
+<tr><td>certainty_absolutes</td><td>10</td><td>always, clearly, everyone, everything, fact, literally, never, nobody</td></tr>
+<tr><td>love_bombing</td><td>7</td><td>always, amazing, desperate, everything, forever, perfect, soulmate</td></tr>
+<tr><td>adderall_control</td><td>6</td><td>adderall, addy, pills, script, share, split</td></tr>
+<tr><td>infidelity</td><td>6</td><td>affair, cheated, cheating, faithful, loyal, secret</td></tr>
+<tr><td>hedge_words</td><td>6</td><td>could, maybe, might, perhaps, possibly, probably</td></tr>
+<tr><td>circular</td><td>2</td><td>anyway, whatever</td></tr>
+<tr><td>minimizing</td><td>1</td><td>relax</td></tr>
+<tr><td>victim_deference</td><td>1</td><td>sorry</td></tr></table>
+
+<h2>3 · THE RECEIPTS — what the 339 real findings actually matched on</h2>
+<table><tr><th>matched phrase</th><th>category</th><th>hits</th><th>curated-policy fate</th></tr><tr><td><b>could</b></td><td>hedge_words</td><td>36</td><td>💀 kill (single word)</td></tr>
+<tr><td><b>sorry</b></td><td>victim_deference</td><td>34</td><td>💀 kill (single word)</td></tr>
+<tr><td><b>i didn&#x27;t</b></td><td>darvo_deny</td><td>24</td><td>LLM Pass-2 candidate</td></tr>
+<tr><td><b>never</b></td><td>certainty_absolutes</td><td>18</td><td>💀 kill (single word)</td></tr>
+<tr><td><b>maybe</b></td><td>hedge_words</td><td>15</td><td>💀 kill (single word)</td></tr>
+<tr><td><b>everything</b></td><td>certainty_absolutes</td><td>14</td><td>💀 kill (single word)</td></tr>
+<tr><td><b>everything</b></td><td>love_bombing</td><td>14</td><td>💀 kill (single word)</td></tr>
+<tr><td><b>probably</b></td><td>hedge_words</td><td>13</td><td>💀 kill (single word)</td></tr>
+<tr><td><b>anyway</b></td><td>circular</td><td>11</td><td>💀 kill (single word)</td></tr>
+<tr><td><b>always</b></td><td>certainty_absolutes</td><td>11</td><td>💀 kill (single word)</td></tr>
+<tr><td><b>always</b></td><td>love_bombing</td><td>11</td><td>💀 kill (single word)</td></tr>
+<tr><td><b>i think</b></td><td>hedge_words</td><td>11</td><td>LLM Pass-2 candidate</td></tr>
+<tr><td><b>nothing</b></td><td>certainty_absolutes</td><td>11</td><td>💀 kill (single word)</td></tr>
+<tr><td><b>whatever</b></td><td>circular</td><td>10</td><td>💀 kill (single word)</td></tr>
+<tr><td><b>tell me</b></td><td>abuser_directives</td><td>10</td><td>LLM Pass-2 candidate</td></tr></table>
+
+<h2>4 · SAME DATA, TWO POLICIES — current chain vs curated</h2>
+<table><tr><th></th><th>Current chain (v2 as-committed)</th><th>Curated policy (proposed)</th></tr>
+<tr><td><b>Findings from this iMessage batch</b></td><td class="big">339</td>
+<td class="big">58 <span style="font-size:.9rem;font-weight:400">candidates → LLM Pass-2 context check</span></td></tr>
+<tr><td>Style metrics (hedge/certainty/pronoun)</td><td>mixed into findings (216 rows)</td><td>216 rows → separate metrics channel, never "findings"</td></tr>
+<tr><td>Single-word negative matches</td><td>committed as findings</td><td>65 rows killed at Pass-1 (owner-severe allowlist exempt — currently empty, you populate it)</td></tr>
+<tr><td>Context awareness</td><td>none (substring match)</td><td>every surviving candidate gets whole-message LLM classification (coercive_control_analyzer_prompt)</td></tr></table>
+
+<div class="warn"><b>Curated policy, spelled out:</b> (1) linguistic markers leave the findings table entirely — they become
+conversation-level metrics; (2) single-word literals are dead by default — the ONLY single words that can match are ones YOU
+put on a severe allowlist; (3) multi-word phrases survive Pass-1 only as <i>candidates</i> and must pass an LLM whole-message
+context check (reactive-vs-malicious, per the rubric) before becoming a reviewable finding; (4) everything stays
+bias_caution=true + human-review-gated as before.</div>
+
+<h3>4a · The 58 survivors (multi-word matches → would go to LLM Pass-2)</h3>
+<table><tr><th>when</th><th>who</th><th>category</th><th>matched</th><th>message</th></tr><tr class='keep'><td>2019-04-16 19:49</td><td>them</td><td>excessive_gratitude</td><td><b>thank you for everything</b></td><td>Lol... No. Thank you for everything the past couple days. None of it has gone unnoticed I promise.</td></tr>
+<tr class='keep'><td>2019-04-17 20:57</td><td>them</td><td>abuser_directives</td><td><b>where are you</b></td><td>Where are you?</td></tr>
+<tr class='keep'><td>2019-04-25 00:04</td><td>me</td><td>abuser_directives</td><td><b>do this</b></td><td>￼I should do this for Luna lmao IMG_2805.JPG.jpeg</td></tr>
+<tr class='keep'><td>2019-04-25 07:01</td><td>them</td><td>abuser_directives</td><td><b>come here</b></td><td>It was alright. Niki let me and kassie come here before the meeting to smoke after i made her breadsticks and cheese dip lol. And the meeting started at 8:00 and ended at 8:06 lmao. I was assigned a …</td></tr>
+<tr class='keep'><td>2019-04-25 07:06</td><td>them</td><td>darvo_deny</td><td><b>i didn&#x27;t</b></td><td>I didn&#x27;t think so... Neither of them liked each other and they worked that long together but what ever lol. And okay see you when you get here.</td></tr>
+<tr class='keep'><td>2019-04-30 23:27</td><td>them</td><td>darvo_deny</td><td><b>i didn&#x27;t</b></td><td>If i didn&#x27;t want you to go i wouldn&#x27;t have told you.... And I&#x27;m sorry I&#x27;ve been sleeping all day. You told me when you left this morning  that you weren&#x27;t going to be gone all day becsuse you dont fe…</td></tr>
+<tr class='keep'><td>2019-04-30 23:27</td><td>them</td><td>love_bombing</td><td><b>need you</b></td><td>I need you to answer the phone</td></tr>
+<tr class='keep'><td>2019-04-30 23:29</td><td>them</td><td>abuser_directives</td><td><b>tell me</b></td><td>&quot;I wanted you to tell me you wanted me to go&quot; And i need to grow up</td></tr>
+<tr class='keep'><td>2019-05-01 00:27</td><td>them</td><td>abuser_directives</td><td><b>tell me</b></td><td>No I want to go that&#x27;s what I just said. And maybe I see shit, and maybe it isn&#x27;t your intention but that&#x27;s what I&#x27;ve seen and that&#x27;s what I feel in my heart. Idk that or shit got comfortable too soo…</td></tr>
+<tr class='keep'><td>2019-05-01 00:28</td><td>me</td><td>darvo_deny</td><td><b>i didn&#x27;t</b></td><td>So i didn&#x27;t just say I would work on what you asked me to work</td></tr>
+<tr class='keep'><td>2019-05-01 00:29</td><td>me</td><td>darvo_deny</td><td><b>i didn&#x27;t</b></td><td>I didn&#x27;t just say I would work on not being disrespectful ?</td></tr>
+<tr class='keep'><td>2019-05-06 21:18</td><td>them</td><td>darvo_deny</td><td><b>i didn&#x27;t</b></td><td>Because I didn&#x27;t have his number</td></tr>
+<tr class='keep'><td>2019-05-07 19:58</td><td>them</td><td>love_bombing</td><td><b>need you</b></td><td>Ok well that doesn&#x27;t really matter but I need you to put tools in the apartment for me. Like a little tool box or some shit cuz I&#x27;m gonna freak</td></tr>
+<tr class='keep'><td>2019-05-08 21:43</td><td>them</td><td>love_bombing</td><td><b>need you</b></td><td>Now that it&#x27;s out there we can finish the conversation later.... I need you to not jump to conclusions though please</td></tr>
+<tr class='keep'><td>2019-05-08 21:46</td><td>them</td><td>abuser_directives</td><td><b>do this</b></td><td>I can&#x27;t do this shit anymore dud3</td></tr>
+<tr class='keep'><td>2019-05-08 21:46</td><td>them</td><td>abuser_directives</td><td><b>tell me</b></td><td>And you tell me I need to grow up and I need to be responsible.</td></tr>
+<tr class='keep'><td>2019-05-08 22:11</td><td>me</td><td>darvo_deny</td><td><b>that&#x27;s not true</b></td><td>That&#x27;s not true</td></tr>
+<tr class='keep'><td>2019-05-09 17:42</td><td>them</td><td>child_reference</td><td><b>the kid</b></td><td>She said she&#x27;s getting ahold of the kid right now so if you&#x27;re in town today they should be here soon</td></tr>
+<tr class='keep'><td>2019-05-09 17:43</td><td>me</td><td>circular</td><td><b>you know what i mean</b></td><td>Well that&#x27;s not what I meant . I&#x27;m talking about the rest of life and adding a shit ton of instability to an all ready fucked mess Katrina and you know what I meant</td></tr>
+<tr class='keep'><td>2019-05-09 17:45</td><td>me</td><td>abuser_directives</td><td><b>do this</b></td><td>But look I&#x27;m not being mean but I can&#x27;t do this texting shit all day today . I&#x27;m sorry I&#x27;ll see you later</td></tr>
+<tr class='keep'><td>2019-05-09 17:47</td><td>me</td><td>darvo_deny</td><td><b>i never</b></td><td>And it&#x27;s funny that I&#x27;m such an inconsiderate ass that I didn&#x27;t tel you I wanted to go to an AA meeting yesterday and I never tell or include you in anything , yet Sunday I asked you to go with me</td></tr>
+<tr class='keep'><td>2019-05-09 17:47</td><td>me</td><td>darvo_deny</td><td><b>i didn&#x27;t</b></td><td>And it&#x27;s funny that I&#x27;m such an inconsiderate ass that I didn&#x27;t tel you I wanted to go to an AA meeting yesterday and I never tell or include you in anything , yet Sunday I asked you to go with me</td></tr>
+<tr class='keep'><td>2019-05-09 17:56</td><td>me</td><td>darvo_deny</td><td><b>i didn&#x27;t</b></td><td>And I didn&#x27;t start this mess !</td></tr>
+<tr class='keep'><td>2019-05-09 18:04</td><td>me</td><td>abuser_directives</td><td><b>tell me</b></td><td>And you need to tell me to go</td></tr>
+<tr class='keep'><td>2019-05-09 18:07</td><td>me</td><td>darvo_deny</td><td><b>i didn&#x27;t</b></td><td>I thought we have had some funny lately we actually went somewhere together I asked you to go with me somewhere I don&#x27;t usually ask you . The apartment was coming together nicely . I didn&#x27;t things at…</td></tr>
+<tr class='keep'><td>2019-05-09 18:13</td><td>them</td><td>darvo_deny</td><td><b>i didn&#x27;t</b></td><td>Well when you told me not to put my feelings on hold i didn&#x27;t know you were still gonna sleep in the living room. It has nothing to do with providing attention, i told you when we first started seein…</td></tr>
+<tr class='keep'><td>2019-05-09 18:19</td><td>me</td><td>abuser_directives</td><td><b>tell me</b></td><td>Did you tell me you changed your mind on the sleeping aranagememt</td></tr>
+<tr class='keep'><td>2019-05-09 18:20</td><td>them</td><td>darvo_deny</td><td><b>i didn&#x27;t</b></td><td>No. I didn&#x27;t want to have to ask. I shouldn&#x27;t have had to..... If you were my bitch aint no mother fucking way you&#x27;d be sleeping alone don&#x27;t matter how mad at me you are.</td></tr>
+<tr class='keep'><td>2019-05-09 18:31</td><td>me</td><td>abuser_directives</td><td><b>show me</b></td><td>Show me where the fuck I said bitch ?</td></tr>
+<tr class='keep'><td>2019-05-09 18:33</td><td>me</td><td>abuser_directives</td><td><b>do this</b></td><td>Well then we need not do this over text</td></tr>
+<tr class='keep'><td>2019-05-09 18:35</td><td>me</td><td>darvo_deny</td><td><b>i didn&#x27;t</b></td><td>I didn&#x27;t say that ! But if you are going to block me why the fuck would I stay</td></tr>
+<tr class='keep'><td>2019-05-09 18:37</td><td>them</td><td>savior_complex</td><td><b>you need me</b></td><td>HOW ARE YOU NOT BEING MEAN YOU JUST TOLD ME YOU NEED ME TO UNDERSTAND AND THEN CALLED ME FUCKING NAMES</td></tr>
+<tr class='keep'><td>2019-05-09 18:40</td><td>me</td><td>abuser_directives</td><td><b>tell me</b></td><td>But you wanted to block me and tell me to fuck off</td></tr>
+<tr class='keep'><td>2019-05-09 18:40</td><td>me</td><td>darvo_deny</td><td><b>i didn&#x27;t</b></td><td>I didn&#x27;t say anything terrible at the point . I wasn&#x27;t being mean .</td></tr>
+<tr class='keep'><td>2019-05-09 19:27</td><td>them</td><td>abuser_directives</td><td><b>tell me</b></td><td>I love when you tell me to grow up lol</td></tr>
+<tr class='keep'><td>2019-05-11 03:31</td><td>them</td><td>abuser_directives</td><td><b>tell me</b></td><td>I truly think she just doesn&#x27;t want to tell me she doesn&#x27;t want me to close..</td></tr>
+<tr class='keep'><td>2019-05-11 03:46</td><td>me</td><td>abuser_directives</td><td><b>where are you</b></td><td>Where are you</td></tr>
+<tr class='keep'><td>2019-05-11 22:11</td><td>them</td><td>darvo_deny</td><td><b>i didn&#x27;t</b></td><td>I&#x27;m sorry if that&#x27;s what it sounded like I said but I promise I didn&#x27;t</td></tr>
+<tr class='keep'><td>2019-05-12 22:18</td><td>them</td><td>darvo_deny</td><td><b>i didn&#x27;t</b></td><td>I didn&#x27;t mean to send that my phone was ib my shirt</td></tr>
+<tr class='keep'><td>2019-05-12 22:23</td><td>me</td><td>darvo_deny</td><td><b>i didn&#x27;t</b></td><td>A. We didn&#x27;t get up till 11 
+B I didn&#x27;t think it about the fact she might have some till a few damn minutes ago</td></tr>
+<tr class='keep'><td>2019-05-12 22:31</td><td>them</td><td>darvo_deny</td><td><b>i didn&#x27;t</b></td><td>I didn&#x27;t mean to send the periods, the question marks were about jumping the van</td></tr>
+<tr class='keep'><td>2019-05-16 00:45</td><td>them</td><td>child_reference</td><td><b>the kid</b></td><td>Did I ever tell you Mikey knows the kid that you called 911 for?</td></tr>
+<tr class='keep'><td>2019-05-16 05:41</td><td>them</td><td>child_reference</td><td><b>the kid</b></td><td>The kid lives in pv</td></tr>
+<tr class='keep'><td>2019-05-16 23:12</td><td>me</td><td>darvo_deny</td><td><b>i didn&#x27;t</b></td><td>I didn&#x27;t know he didn&#x27;t like the sativas</td></tr>
+<tr class='keep'><td>2019-05-19 02:05</td><td>them</td><td>abuser_directives</td><td><b>where are you</b></td><td>Where are you?</td></tr>
+<tr class='keep'><td>2019-05-19 02:38</td><td>me</td><td>abuser_directives</td><td><b>tell me</b></td><td>Please tell me that you have smokes</td></tr>
+<tr class='keep'><td>2019-05-20 00:52</td><td>them</td><td>abuser_directives</td><td><b>tell me</b></td><td>And i want to feel like it.... And if you dont then i need you to tell me.</td></tr>
+<tr class='keep'><td>2019-05-20 00:52</td><td>them</td><td>love_bombing</td><td><b>need you</b></td><td>And i want to feel like it.... And if you dont then i need you to tell me.</td></tr>
+<tr class='keep'><td>2019-05-20 23:44</td><td>me</td><td>darvo_deny</td><td><b>i didn&#x27;t</b></td><td>But I didn&#x27;t want too</td></tr>
+<tr class='keep'><td>2019-05-21 06:38</td><td>them</td><td>darvo_deny</td><td><b>i didn&#x27;t</b></td><td>And i dont feel bad because i didn&#x27;t do it intentionally</td></tr>
+<tr class='keep'><td>2019-05-25 03:09</td><td>them</td><td>abuser_directives</td><td><b>where are you</b></td><td>Where are you?</td></tr>
+<tr class='keep'><td>2019-05-28 00:52</td><td>them</td><td>darvo_deny</td><td><b>i didn&#x27;t</b></td><td>I didn&#x27;t know you planned on being there late again</td></tr>
+<tr class='keep'><td>2019-05-28 00:52</td><td>me</td><td>darvo_deny</td><td><b>i didn&#x27;t</b></td><td>I didn&#x27;t</td></tr>
+<tr class='keep'><td>2019-05-28 00:54</td><td>them</td><td>darvo_deny</td><td><b>i didn&#x27;t</b></td><td>Yeah I didn&#x27;t know you had plans to do anything today, you asked me yesterday if I would help you clean up so I figured that was the agenda</td></tr>
+<tr class='keep'><td>2019-05-29 05:56</td><td>them</td><td>darvo_deny</td><td><b>i didn&#x27;t</b></td><td>No I didn&#x27;t close but I just got home a bit ago. Sorry my phone died.</td></tr>
+<tr class='keep'><td>2019-06-01 05:05</td><td>me</td><td>darvo_deny</td><td><b>i didn&#x27;t</b></td><td>I didn&#x27;t go to Ryan&#x27;s :/ I forgot till I walked in</td></tr>
+<tr class='keep'><td>2019-06-03 04:23</td><td>them</td><td>abuser_directives</td><td><b>what are you doing</b></td><td>What are you doing?</td></tr>
+<tr class='keep'><td>2019-06-07 00:49</td><td>me</td><td>debt_reminders</td><td><b>i gave you</b></td><td>Not the point . I gave you money for food and smokes for you . Not for her kids</td></tr></table>
+
+<h3>4b · Sample of the 65 killed single-word false positives</h3>
+<table><tr><th>when</th><th>who</th><th>category</th><th>matched</th><th>message</th></tr><tr class='kill'><td>2019-02-21 22:22</td><td>me</td><td>circular</td><td><b>whatever</b></td><td>Thr full 750 or whatever ?</td></tr>
+<tr class='kill'><td>2019-02-22 02:25</td><td>them</td><td>circular</td><td><b>anyway</b></td><td>But I don&#x27;t have credit anyways whether good or bad</td></tr>
+<tr class='kill'><td>2019-04-16 19:49</td><td>them</td><td>love_bombing</td><td><b>everything</b></td><td>Lol... No. Thank you for everything the past couple days. None of it has gone unnoticed I promise.</td></tr>
+<tr class='kill'><td>2019-04-17 22:28</td><td>them</td><td>love_bombing</td><td><b>always</b></td><td>Well then maybe starting over isn&#x27;t a bad idea... It&#x27;ll be different than last time. You&#x27;ll learn from some mistakes and you&#x27;ll do things differently this time. Starting over isn&#x27;t always a bad thing…</td></tr>
+<tr class='kill'><td>2019-04-17 22:28</td><td>them</td><td>love_bombing</td><td><b>everything</b></td><td>Well then maybe starting over isn&#x27;t a bad idea... It&#x27;ll be different than last time. You&#x27;ll learn from some mistakes and you&#x27;ll do things differently this time. Starting over isn&#x27;t always a bad thing…</td></tr>
+<tr class='kill'><td>2019-04-19 01:16</td><td>them</td><td>adderall_control</td><td><b>split</b></td><td>Idk where you are but it only poured hard here for like a split second</td></tr>
+<tr class='kill'><td>2019-04-19 21:35</td><td>them</td><td>love_bombing</td><td><b>everything</b></td><td>And don&#x27;t you dare think for a second Matthew, that giving me back to back orgasms the other night has distracted me from everything else</td></tr>
+<tr class='kill'><td>2019-04-23 02:17</td><td>them</td><td>love_bombing</td><td><b>forever</b></td><td>Mike and Teresa were here... And maybe. A while back Amal had said something about him working with some family members in Detroit forever ago</td></tr>
+<tr class='kill'><td>2019-04-26 04:36</td><td>me</td><td>love_bombing</td><td><b>everything</b></td><td>Either way I&#x27;m coming down ... kinda wanna make sure everything is good for Sunday ... but woood be nice to not come alone</td></tr>
+<tr class='kill'><td>2019-04-28 21:23</td><td>them</td><td>adderall_control</td><td><b>share</b></td><td>And if you&#x27;re stopping anywhere for food and starbucks please share</td></tr>
+<tr class='kill'><td>2019-04-30 23:29</td><td>me</td><td>circular</td><td><b>whatever</b></td><td>Whatever</td></tr>
+<tr class='kill'><td>2019-05-01 00:20</td><td>me</td><td>minimizing</td><td><b>relax</b></td><td>Relax and have fun</td></tr>
+<tr class='kill'><td>2019-05-01 00:23</td><td>them</td><td>minimizing</td><td><b>relax</b></td><td>Relaxing is not even an option now unfortunately. The cats will be fine</td></tr>
+<tr class='kill'><td>2019-05-01 00:31</td><td>me</td><td>love_bombing</td><td><b>everything</b></td><td>I&#x27;m losing everything</td></tr>
+<tr class='kill'><td>2019-05-01 23:49</td><td>me</td><td>love_bombing</td><td><b>desperate</b></td><td>Waitill he&#x27;s desperate and sees that you are better that anyone he hires</td></tr>
+<tr class='kill'><td>2019-05-02 23:23</td><td>them</td><td>substance_alcohol</td><td><b>wasted</b></td><td>My whole day has been fuckin wasted</td></tr>
+<tr class='kill'><td>2019-05-02 23:25</td><td>me</td><td>love_bombing</td><td><b>always</b></td><td>Always Monicas keys lol</td></tr>
+<tr class='kill'><td>2019-05-02 23:26</td><td>them</td><td>love_bombing</td><td><b>everything</b></td><td>I&#x27;m fucking over everything</td></tr>
+<tr class='kill'><td>2019-05-03 22:02</td><td>them</td><td>love_bombing</td><td><b>always</b></td><td>She says, aren&#x27;t you the one who always comes in asking for a job lol</td></tr>
+<tr class='kill'><td>2019-05-04 04:52</td><td>them</td><td>substance_alcohol</td><td><b>drink</b></td><td>Drinks too if u can</td></tr>
+<tr class='kill'><td>2019-05-04 23:25</td><td>me</td><td>love_bombing</td><td><b>always</b></td><td>It&#x27;s in June so I should buy them soon . He won&#x27;t be Touring much longer and I&#x27;ve always wanted to see him so I&#x27;de really like to go</td></tr>
+<tr class='kill'><td>2019-05-05 21:59</td><td>them</td><td>love_bombing</td><td><b>always</b></td><td>But i have all of my stuff from odyssey and NA book you could always take to Tiffany</td></tr>
+<tr class='kill'><td>2019-05-05 22:23</td><td>them</td><td>love_bombing</td><td><b>always</b></td><td>Hey, literature always looks good</td></tr>
+<tr class='kill'><td>2019-05-07 22:48</td><td>them</td><td>love_bombing</td><td><b>everything</b></td><td>I paid everything else, not that it&#x27;s more important but I did what I could</td></tr>
+<tr class='kill'><td>2019-05-07 23:53</td><td>them</td><td>circular</td><td><b>whatever</b></td><td>Idk what it was whatever i took for my cramps</td></tr></table>
+
+<h3>4c · Sample of the 216 style-metric rows (demoted, not deleted)</h3>
+<table><tr><th>when</th><th>who</th><th>category</th><th>matched</th><th>message</th></tr><tr class='metric'><td>2019-02-22 01:50</td><td>them</td><td>certainty_absolutes</td><td><b>never</b></td><td>I forgot the shit was by wal mart I&#x27;m sitting here wondering where at on north linden theres a fucking urgent care in Clio. I called to ask them to check if I have a balance due and when I started to…</td></tr>
+<tr class='metric'><td>2019-02-22 01:50</td><td>them</td><td>hedge_words</td><td><b>could</b></td><td>I forgot the shit was by wal mart I&#x27;m sitting here wondering where at on north linden theres a fucking urgent care in Clio. I called to ask them to check if I have a balance due and when I started to…</td></tr>
+<tr class='metric'><td>2019-02-22 01:58</td><td>them</td><td>victim_deference</td><td><b>sorry</b></td><td>I&#x27;m sorry I just got a new phone I thought I was texting Matt</td></tr>
+<tr class='metric'><td>2019-04-16 19:49</td><td>them</td><td>certainty_absolutes</td><td><b>everything</b></td><td>Lol... No. Thank you for everything the past couple days. None of it has gone unnoticed I promise.</td></tr>
+<tr class='metric'><td>2019-04-16 23:59</td><td>me</td><td>overelaboration</td><td><b>i was just</b></td><td>I was just wondering</td></tr>
+<tr class='metric'><td>2019-04-17 16:51</td><td>me</td><td>victim_deference</td><td><b>my bad</b></td><td>My bad</td></tr>
+<tr class='metric'><td>2019-04-17 22:25</td><td>them</td><td>hedge_words</td><td><b>maybe</b></td><td>Maybe tonight you should do a pros and cons</td></tr>
+<tr class='metric'><td>2019-04-17 22:28</td><td>them</td><td>certainty_absolutes</td><td><b>always</b></td><td>Well then maybe starting over isn&#x27;t a bad idea... It&#x27;ll be different than last time. You&#x27;ll learn from some mistakes and you&#x27;ll do things differently this time. Starting over isn&#x27;t always a bad thing…</td></tr>
+<tr class='metric'><td>2019-04-17 22:28</td><td>them</td><td>certainty_absolutes</td><td><b>everything</b></td><td>Well then maybe starting over isn&#x27;t a bad idea... It&#x27;ll be different than last time. You&#x27;ll learn from some mistakes and you&#x27;ll do things differently this time. Starting over isn&#x27;t always a bad thing…</td></tr>
+<tr class='metric'><td>2019-04-17 22:28</td><td>them</td><td>hedge_words</td><td><b>maybe</b></td><td>Well then maybe starting over isn&#x27;t a bad idea... It&#x27;ll be different than last time. You&#x27;ll learn from some mistakes and you&#x27;ll do things differently this time. Starting over isn&#x27;t always a bad thing…</td></tr>
+<tr class='metric'><td>2019-04-18 02:01</td><td>them</td><td>hedge_words</td><td><b>could</b></td><td>I forgot to tell you i was coming in. I tried calling Mike to ask him if i could wait until Friday but he didn&#x27;t answer</td></tr>
+<tr class='metric'><td>2019-04-18 21:01</td><td>me</td><td>hedge_words</td><td><b>could</b></td><td>Or female ejaculation ... like really ... I could almost understand face sitting and fisting as injuries can happen . I could see a fat bitch suffocating someone lol</td></tr>
+<tr class='metric'><td>2019-04-19 00:46</td><td>them</td><td>certainty_absolutes</td><td><b>never</b></td><td>Never mind it stopped lol</td></tr>
+<tr class='metric'><td>2019-04-19 21:14</td><td>them</td><td>hedge_words</td><td><b>could</b></td><td>I haven&#x27;t gotten smokes yet and I could really use one right about now lol</td></tr>
+<tr class='metric'><td>2019-04-19 21:35</td><td>them</td><td>certainty_absolutes</td><td><b>everything</b></td><td>And don&#x27;t you dare think for a second Matthew, that giving me back to back orgasms the other night has distracted me from everything else</td></tr></table>
+
+<h2>5 · Annotate your decisions</h2>
+<p>Mark up anything above. The decisions I need: <b>(a)</b> populate analysis.message/message_participant as the master
+(and strip rollup columns yes/no); <b>(b)</b> adopt the curated policy (kill single-words, metrics channel, LLM Pass-2);
+<b>(c)</b> which single words, if any, go on YOUR severe allowlist; <b>(d)</b> variant A/C commit — hold until (b) is settled?</p>
+</body></html>

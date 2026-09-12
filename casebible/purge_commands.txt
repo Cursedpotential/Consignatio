@@ -1,0 +1,33 @@
+# purge_commands.txt  (regenerated 2026-08-23)
+#
+# CORRECTED DESTINATION.
+# `.review_hold` is NOT a quarantine bin - it holds IMPLEMENTED TODOs and
+# HANDOFFS awaiting archiving. Nothing below belongs there.
+#
+# These MOVE (not delete) into explicit, self-describing prefixes.
+# NOT EXECUTED. Run only if you want these out of casebible-raw.
+
+# ---------------------------------------------------------------------------
+# ISOLATED: exported browser credentials.
+# Never ingest, never index, never embed.
+# NOTE: moving the object does NOT invalidate the credentials inside it.
+# If any of these logins still work, ROTATE THEM. That is the real fix.
+# ---------------------------------------------------------------------------
+rclone moveto "r2:casebible-raw/_backup_import/Documents/tmp/Chrome Passwords.csv" "r2:casebible-quarantine/_isolated_credentials/_backup_import/Documents/tmp/Chrome Passwords.csv"
+rclone moveto "r2:casebible-raw/_backup_import/Documents/tmp/Chrome Passwords 3.csv" "r2:casebible-quarantine/_isolated_credentials/_backup_import/Documents/tmp/Chrome Passwords 3.csv"
+
+# ---------------------------------------------------------------------------
+# EXCLUDED: non-case content, owner-directed 2026-08-23
+# ---------------------------------------------------------------------------
+rclone moveto "r2:casebible-raw/_backup_import/Documents/tmp/ph5f68a7bed856b[DownPorn.net].mp4" "r2:casebible-quarantine/_excluded/_backup_import/Documents/tmp/ph5f68a7bed856b[DownPorn.net].mp4"
+
+# ---------------------------------------------------------------------------
+# VERIFY AFTER (should list the 3 objects in their new homes):
+# rclone lsl r2:casebible-quarantine/_isolated_credentials/ --max-depth 5
+# rclone lsl r2:casebible-quarantine/_excluded/ --max-depth 5
+#
+# The other 141 files in _backup_import/Documents/tmp/ STAY WHERE THEY ARE.
+# They are real evidence (WhatsApp/Katrina, iMessage export, K- Timeline 3.json,
+# Kailah legacy contact key, location history, medical + financial records).
+# That folder is an ATOMIC UNIT - _chat.txt + archive_browser.html present.
+# ---------------------------------------------------------------------------

@@ -1,0 +1,115 @@
+# Case Bible is a source-and-governance repository. Evidence bytes, databases,
+# generated indexes, runtime caches, and exported review data stay outside Git.
+
+# Local agent/editor/runtime state
+.cocoindex_code/
+.cnf/
+.memsearch/
+.remember/
+.vscode/
+.idea/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.env
+.env.*
+!.env.example
+
+# Large data and generated corpus material
+backups/
+exports/
+gdrive/
+pilot/
+recovery_by_tree/
+samples/
+vault-sorted/
+to_be_deleted/
+*.db
+*.db-*
+*.duckdb
+*.duckdb.*
+*.sqlite
+*.sqlite3
+*.parquet
+*.csv
+*.tsv
+*.xlsx
+*.xls
+*.log
+*.err
+*.out
+*.dump
+*.bak
+*.tmp
+
+# Root scan/hash/manifest receipts generated from local or cloud corpora
+raw_hashes.txt
+raw_sizehash.txt
+od_list.log
+od_case_bible.tsv
+*_out.txt
+*.lnk
+
+# JavaScript application output
+**/node_modules/
+**/dist/
+**/build/
+**/.storybook-cache/
+**/storybook-static/
+**/coverage/
+**/.vite/
+**/.svelte-kit/
+viz/.evidence/
+
+# Tauri output
+**/src-tauri/target/
+
+# Operating system debris
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# --- nested independent child repositories (2026-09-09) ---
+# xplorer-copilot-buildkit/ holds two child Git roots, ignore-only, no gitlink:
+#   xplorer-copilot-buildkit/  kit repo  -> github.com/Cursedpotential/xplorer-copilot-buildkit (private)
+#   xplorer-copilot/           fork      -> github.com/Cursedpotential/xplorer (upstream kimlimjustin/xplorer, fetch-only)
+xplorer-copilot-buildkit/
+
+# --- _intake exports that embed private keys / live DSNs (secret scan 2026-09-09) ---
+_intake/drive-download-20260907-deduped/conversations-20251215_153247-2f08f0ab.json
+_intake/drive-download-20260907-deduped/Claude - Balancing AI guardrails with conversational nuance - Claude.md
+
+# Relocated original Case Bible material: preserve previous secret exclusions.
+casebible/_intake/drive-download-20260907-deduped/conversations-20251215_153247-2f08f0ab.json
+casebible/_intake/drive-download-20260907-deduped/Claude - Balancing AI guardrails with conversational nuance - Claude.md
+Intake/xplorer-copilot-buildkit/
+
+# Private source publication: local corpus and machine state remain on disk.
+**/.claude/
+casebible/_intake/
+casebible/data/
+casebible/*.ndjson
+casebible/*.ndjson.html
+casebible/data.html
+casebible/*.csv.html
+casebible/casebible-coordination/specs/sorted-index.json
+casebible/casebible-coordination/specs/sorted-restructure-v2-ledger/
+casebible/casebible-coordination/specs/*LIVE-OUTPUT.txt
+# Independent local repair-kit Git root; record separately, never flatten it.
+repair-tool-kit-codex/
+**/.evidence/
+*.tsbuildinfo
+Intake/vite.config.js
+Intake/vite.config.d.ts
+# Local copy-operation reports, not product UI.
+Intake/evidanceio.html
+Intake/evidanceio (2).html
+Intake/xplorer-copilot-buildkit.html
+casebible/Consignatio.html
+casebible/casebible-coordination-e.html
+casebible/casebible-coordination/specs/_survivors58.json
+casebible/casebible-coordination/specs/*-paths.txt
+casebible/casebible-coordination/specs/*-OUTPUT.txt
+casebible/tmpcheck.txt

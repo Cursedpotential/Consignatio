@@ -1,0 +1,4 @@
+name: casebible
+type: duckdb
+options:
+  filename: casebible.duckdb

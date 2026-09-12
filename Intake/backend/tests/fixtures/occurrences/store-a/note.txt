@@ -1,0 +1,1 @@
+Synthetic occurrence identity fixture. Identical bytes in separate stores must remain separate occurrences.

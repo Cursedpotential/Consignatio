@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Case Bible Corpus Backend — System Design</title>
+  <style>
+    :root {
+      --paper: #f5efe3;
+      --paper-2: #fffaf0;
+      --ink: #27231f;
+      --muted: #6f665e;
+      --clay: #a85237;
+      --clay-dark: #743522;
+      --sage: #5f745f;
+      --ochre: #b47b24;
+      --blue: #375f73;
+      --line: #cdbfac;
+      --soft: #e9dfcf;
+      --ok: #2f6b4f;
+      --warn: #8a5a12;
+      --hold: #7b4457;
+      --max: 1500px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font: 16px/1.55 Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    a { color: var(--clay-dark); text-underline-offset: 3px; }
+    code { font-family: "Cascadia Code", Consolas, monospace; font-size: .92em; }
+    header {
+      border-bottom: 3px solid var(--clay);
+      background: var(--paper-2);
+    }
+    .masthead { max-width: var(--max); margin: auto; padding: 54px 34px 42px; }
+    .eyebrow { color: var(--clay); font-weight: 800; letter-spacing: .16em; text-transform: uppercase; font-size: .75rem; }
+    h1 { max-width: 1000px; margin: 12px 0 10px; font-family: Georgia, serif; font-size: clamp(2.25rem, 5vw, 5.2rem); line-height: .98; font-weight: 600; }
+    .dek { max-width: 980px; color: var(--muted); font-size: 1.18rem; }
+    .byline { margin-top: 24px; border-top: 1px solid var(--line); padding-top: 14px; font-size: .88rem; color: var(--muted); }
+    .layout { max-width: var(--max); margin: auto; display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 42px; padding: 30px 34px 80px; }
+    nav { position: sticky; top: 18px; align-self: start; max-height: calc(100vh - 36px); overflow: auto; border-right: 1px solid var(--line); padding-right: 20px; }
+    nav strong { display: block; margin-bottom: 9px; color: var(--clay); }
+    nav a { display: block; padding: 4px 0; color: var(--muted); text-decoration: none; font-size: .88rem; }
+    nav a:hover { color: var(--clay-dark); }
+    main { min-width: 0; }
+    section { padding: 30px 0 34px; border-bottom: 1px solid var(--line); }
+    section:first-child { padding-top: 4px; }
+    h2 { font: 600 clamp(1.65rem, 2.5vw, 2.45rem)/1.15 Georgia, serif; margin: 0 0 16px; }
+    h3 { margin: 27px 0 9px; font-size: 1.02rem; color: var(--clay-dark); text-transform: uppercase; letter-spacing: .08em; }
+    p { max-width: 960px; }
+    .lead { font-size: 1.12rem; }
+    .callout { border-left: 5px solid var(--clay); background: var(--paper-2); padding: 18px 22px; margin: 18px 0; max-width: 1000px; }
+    .callout strong { color: var(--clay-dark); }
+    .decision { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); margin: 20px 0; }
+    .decision article { background: var(--paper-2); padding: 18px; }
+    .decision b { display: block; color: var(--clay-dark); margin-bottom: 4px; }
+    .cards { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 14px; margin: 18px 0; }
+    .card { border: 1px solid var(--line); background: var(--paper-2); padding: 18px; }
+    .card h3 { margin-top: 0; }
+    .metric { font: 600 2rem Georgia, serif; color: var(--clay-dark); display: block; }
+    .tag { display: inline-block; border: 1px solid currentColor; border-radius: 999px; padding: 1px 8px; font-size: .75rem; font-weight: 700; margin: 2px; }
+    .ok { color: var(--ok); } .warn { color: var(--warn); } .hold { color: var(--hold); } .blue { color: var(--blue); }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); background: var(--paper-2); margin: 16px 0 24px; }
+    table { width: 100%; border-collapse: collapse; min-width: 760px; font-size: .89rem; }
+    th, td { padding: 10px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--soft); }
+    th { position: sticky; top: 0; color: var(--paper-2); background: var(--clay-dark); font-size: .76rem; letter-spacing: .05em; text-transform: uppercase; }
+    tr:last-child td { border-bottom: 0; }
+    .diagram { background: var(--paper-2); border: 1px solid var(--line); padding: 12px; overflow-x: auto; }
+    .diagram svg { width: 100%; min-width: 930px; height: auto; display: block; }
+    .route { display: grid; grid-template-columns: 1fr 42px 1fr 42px 1fr; align-items: stretch; gap: 4px; }
+    .route .node { border: 1px solid var(--line); background: var(--paper-2); padding: 16px; }
+    .route .arrow { display: grid; place-items: center; color: var(--clay); font-size: 1.6rem; }
+    .phase { display: grid; grid-template-columns: 90px 1fr; gap: 18px; padding: 14px 0; border-bottom: 1px dotted var(--line); }
+    .phase:last-child { border-bottom: 0; }
+    .phase b { color: var(--clay); }
+    .path { overflow-wrap: anywhere; color: var(--blue); font-family: "Cascadia Code", Consolas, monospace; }
+    details { border: 1px solid var(--line); background: var(--paper-2); margin: 10px 0; padding: 12px 16px; }
+    summary { cursor: pointer; font-weight: 750; color: var(--clay-dark); }
+    .small { font-size: .84rem; color: var(--muted); }
+    footer { background: var(--ink); color: var(--paper); }
+    footer div { max-width: var(--max); margin: auto; padding: 30px 34px; }
+    @media (max-width: 1000px) {
+      .layout { grid-template-columns: 1fr; }
+      nav { position: static; border-right: 0; border-bottom: 1px solid var(--line); padding: 0 0 16px; columns: 2; }
+      .decision, .cards { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 660px) {
+      .masthead, .layout { padding-left: 18px; padding-right: 18px; }
+      nav { columns: 1; }
+      .decision, .cards { grid-template-columns: 1fr; }
+      .route { grid-template-columns: 1fr; }
+      .route .arrow { transform: rotate(90deg); }
+    }
+    @media print {
+      nav { display: none; }
+      .layout { display: block; padding: 0 24px; }
+      section { break-inside: avoid; }
+      a { color: inherit; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div class="masthead">
+    <div class="eyebrow">Canonical planning artifact · backend first</div>
+    <h1>Case Bible Corpus Backend</h1>
+    <p class="dek">A lake-first system for discovering, fingerprinting, structuring, indexing, searching, and safely relocating mixed evidence corpora—without confusing corroborating records with disposable duplicates.</p>
+    <div class="byline">Byline: Codex · GPT-5 · prepared for Matthew Salem · 2026-09-09 · Status: design baseline, implementation not authorized by this artifact</div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav aria-label="Document sections">
+    <strong>Contents</strong>
+    <a href="UNIFIED-WORKBENCH-PLAN.html">Updated unified desktop plan</a>
+    <a href="#decisions">1. Decisions</a>
+    <a href="#boundary">2. Boundary</a>
+    <a href="#corpus">3. Corpus reality</a>
+    <a href="#architecture">4. Architecture</a>
+    <a href="#sources">5. Sources</a>
+    <a href="#router">6. Detector &amp; router</a>
+    <a href="#units">7. Atomic units</a>
+    <a href="#identity">8. Identity &amp; dedup</a>
+    <a href="#formats">9. Format routes</a>
+    <a href="#vectors">10. Multi-vector model</a>
+    <a href="#lake">11. Lake contract</a>
+    <a href="#projections">12. Search &amp; graph</a>
+    <a href="#providers">13. Providers &amp; Docling</a>
+    <a href="#operations">14. Isolation &amp; errors</a>
+    <a href="#paths">15. File map</a>
+    <a href="#phases">16. Delivery phases</a>
+    <a href="#premortem">17. Pre-mortem</a>
+    <a href="#examples">18. Example traceability</a>
+    <a href="#acceptance">19. Acceptance gates</a>
+  </nav>
+
+  <main>
+    <section id="decisions">
+      <h2>1. Decisions that anchor the build</h2>
+      <p class="lead">This is a separate backend product lane. It learns from the docstore lane’s failures, but it does not reuse its state, edit its files, or compete with its ownership.</p>
+      <div class="decision">
+        <article><b>System of durable analytical record</b>Immutable, versioned Parquet and Lance datasets, published to a Backblaze B2 S3-compatible lake.</article>
+        <article><b>Online retrieval</b>Weaviate owns advanced vector, named-vector, hybrid, and future multi-vector search.</article>
+        <article><b>Relationships</b>SurrealDB owns graph, temporal, provenance, atomic-unit, corroboration, and decision relationships.</article>
+        <article><b>Pipeline</b>CocoIndex drives incremental discovery and transformations; projections are rebuildable from the lake.</article>
+      </div>
+      <div class="callout"><strong>Critical evidence rule.</strong> “Duplicate” is not a deletion verdict. A matching message from two devices, the same fact in a screenshot and native export, or equivalent content in different formats may corroborate identity, timing, possession, or authenticity. The system retains every occurrence and models the relationship.</div>
+      <p><span class="tag ok">Chosen</span> Lake-first publication with independent projections. <span class="tag hold">Benchmark gate</span> Multimodal provider, ColPali-class service, and production Docling execution profile. <span class="tag warn">Human approval</span> Any source relocation or copy-suppression decision.</p>
+    </section>
+
+    <section id="boundary">
+      <h2>2. Product and authority boundary</h2>
+      <div class="cards">
+        <article class="card"><h3>In scope</h3><p>Read-only discovery; source manifests; content and structural fingerprinting; sidecar association; atomic/nested unit detection; typed extraction; summaries; embeddings; Parquet/Lance publication; Weaviate and Surreal projections; semantic/hybrid/session search; copy proposals and receipts.</p></article>
+        <article class="card"><h3>Outside this build</h3><p>TanStack/front-end design; custody approvals; changing original evidence; direct deletion; automatic identity claims from faces; silent movement of source bytes; treating the Workbench or this service as a canonical legal approval authority.</p></article>
+        <article class="card"><h3>Promotion boundary</h3><p>Imported values remain immutable. Machine-derived metadata is a versioned proposal. Human annotation is a separate overlay. Anything promoted into governed Platform/PostgreSQL workflows must cross a separately approved, receipt-producing boundary.</p></article>
+      </div>
+      <h3>Non-negotiable invariants</h3>
+      <ul>
+        <li>Every output traces to source occurrence, acquisition/export unit, run, processor, model, prompt/schema, and hash assertions.</li>
+        <li>Every projection can be dropped and rebuilt from a published lake snapshot; no projection is the sole copy.</li>
+        <li>No removal action is inferred from similarity. Physical source operations require a reviewed plan, copy, destination checksum, receipt, and explicit retention decision.</li>
+        <li>One application instance cannot share runtime state, ports, collection names, graph namespaces, checkpoints, staging prefixes, or logs with another instance or with <code>ccc</code>.</li>
+      </ul>
+    </section>
+
+    <section id="corpus">
+      <h2>3. The corpus this design must actually handle</h2>
+      <p>The current DuckDB inventory makes media and export packages first-class scale concerns—not later edge cases.</p>
+      <div class="cards">
+        <article class="card"><span class="metric">418,787</span> JPG files</article>
+        <article class="card"><span class="metric">175,820</span> PNG files</article>
+        <article class="card"><span class="metric">126,779</span> JSON files</article>
+        <article class="card"><span class="metric">94,184</span> text files</article>
+        <article class="card"><span class="metric">88,284</span> HTML files</article>
+        <article class="card"><span class="metric">62,946</span> gzip files</article>
+        <article class="card"><span class="metric">57,189</span> HEIC files</article>
+        <article class="card"><span class="metric">45,742</span> MP4 files</article>
+        <article class="card"><span class="metric">23,176</span> Markdown files</article>
+        <article class="card"><span class="metric">18,172</span> Python files</article>
+        <article class="card"><span class="metric">8,764</span> PDFs</article>
+        <article class="card"><span class="metric">9,220+</span> MP3 and M4A audio files</article>
+      </div>
+      <p class="small">Planning snapshot from the existing <code>casebible.duckdb</code> <code>r2_files</code> inventory on 2026-09-09. Counts are prioritization evidence, not a custody or completeness attestation.</p>
+      <p>Known semantic classes include public records, photographs, screenshots, message threads, code, datasets, research, legal filings, notes, AI chats, export bundles, and financial records. The router must preserve uncertainty and allow later reclassification.</p>
+    </section>
+
+    <section id="architecture">
+      <h2>4. Lake-first architecture</h2>
+      <div class="diagram" role="img" aria-label="Architecture flow from sources through routing and processing into the lake and independent projections">
+        <svg viewBox="0 0 1200 550" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#a85237"/></marker></defs>
+          <style>.b{fill:#fffaf0;stroke:#cdbfac;stroke-width:2}.t{font:700 18px Inter, sans-serif;fill:#27231f}.s{font:14px Inter, sans-serif;fill:#6f665e}.a{stroke:#a85237;stroke-width:3;fill:none;marker-end:url(#arrow)}.lake{fill:#e7eee5;stroke:#5f745f;stroke-width:3}.proj{fill:#e5edf0;stroke:#375f73;stroke-width:2}</style>
+          <rect class="b" x="25" y="45" width="180" height="170"/><text class="t" x="45" y="78">Sources</text><text class="s" x="45" y="108">Local files</text><text class="s" x="45" y="132">B2 / S3</text><text class="s" x="45" y="156">Google Drive</text><text class="s" x="45" y="180">OneDrive</text><text class="s" x="45" y="204">PostgreSQL / exports</text>
+          <rect class="b" x="255" y="45" width="210" height="170"/><text class="t" x="275" y="78">Discovery</text><text class="s" x="275" y="108">Provider metadata</text><text class="s" x="275" y="132">MIME + signatures</text><text class="s" x="275" y="156">Hashes + sidecars</text><text class="s" x="275" y="180">Atomic/nested units</text><text class="s" x="275" y="204">Route decision</text>
+          <rect class="b" x="515" y="45" width="215" height="170"/><text class="t" x="535" y="78">Processor DAG</text><text class="s" x="535" y="108">Text · sessions · code</text><text class="s" x="535" y="132">PDF · layout · OCR</text><text class="s" x="535" y="156">Image · faces</text><text class="s" x="535" y="180">Audio · video</text><text class="s" x="535" y="204">Typed extraction</text>
+          <path class="a" d="M205 130H250"/><path class="a" d="M465 130H510"/>
+          <rect class="lake" x="790" y="30" width="370" height="200"/><text class="t" x="815" y="68">B2 analytical lake</text><text class="s" x="815" y="100">Immutable Parquet datasets</text><text class="s" x="815" y="126">Versioned Lance tables</text><text class="s" x="815" y="152">Manifests + checksums + receipts</text><text class="s" x="815" y="178">Vectors retained for reproducibility</text><text class="s" x="815" y="204">Published only after validation</text>
+          <path class="a" d="M730 130H785"/>
+          <rect class="proj" x="200" y="330" width="250" height="135"/><text class="t" x="225" y="365">Weaviate projection</text><text class="s" x="225" y="396">Hybrid + named vectors</text><text class="s" x="225" y="420">Multi-vector / MaxSim</text><text class="s" x="225" y="444">Filterable retrieval</text>
+          <rect class="proj" x="485" y="330" width="250" height="135"/><text class="t" x="510" y="365">Surreal projection</text><text class="s" x="510" y="396">Provenance + temporal graph</text><text class="s" x="510" y="420">Units + corroboration</text><text class="s" x="510" y="444">Entities + events + assertions</text>
+          <rect class="b" x="770" y="330" width="250" height="135"/><text class="t" x="795" y="365">Search / review API</text><text class="s" x="795" y="396">Semantic + lexical + graph</text><text class="s" x="795" y="420">Whole-session expansion</text><text class="s" x="795" y="444">Provenance-bearing results</text>
+          <path class="a" d="M915 230V275H325V325"/><path class="a" d="M940 230V285H610V325"/><path class="a" d="M450 398H480"/><path class="a" d="M735 398H765"/>
+          <text class="s" x="790" y="510">CocoIndex controls incremental flows; the lake is the reconciliation point.</text>
+        </svg>
+      </div>
+      <h3>Why this topology</h3>
+      <div class="table-wrap"><table><thead><tr><th>Alternative</th><th>Benefit</th><th>Failure mode</th><th>Disposition</th></tr></thead><tbody>
+        <tr><td>Direct multi-write</td><td>Low initial latency</td><td>Partial writes create three competing truths; recovery is bespoke.</td><td><span class="tag warn">Rejected</span></td></tr>
+        <tr><td>Lake first, projections second</td><td>Portable, inspectable, replayable, provider-independent.</td><td>Requires manifests, publication gates, and projection lag handling.</td><td><span class="tag ok">Selected</span></td></tr>
+        <tr><td>Event bus first</td><td>Strong decoupling at very high scale.</td><td>Operational complexity before stable contracts exist.</td><td><span class="tag blue">Later option</span></td></tr>
+      </tbody></table></div>
+      <p>Stocks are immutable occurrences, content objects, unit memberships, metadata assertions, and published dataset versions. Flows are discovery, processing, projection, review, and relocation. Feedback controls are error rates, provider spend, queue depth, route uncertainty, projection lag, and checksum reconciliation.</p>
+    </section>
+
+    <section id="sources">
+      <h2>5. Source connector contract</h2>
+      <div class="table-wrap"><table><thead><tr><th>Source</th><th>Discovery / change token</th><th>Native metadata</th><th>Implementation stance</th></tr></thead><tbody>
+        <tr><td>Local filesystem</td><td>Path, size, mtime, optional USN/file identity; full hash only when required.</td><td>Paths, timestamps, ADS if intentionally supported, file signature.</td><td>Baseline exists; add explicit instance checkpoint and signature-first routing.</td></tr>
+        <tr><td>Backblaze B2 / S3</td><td>Object key, ETag, version ID where enabled, last modified.</td><td>User metadata, content type, storage class, checksum fields.</td><td>Use CocoIndex S3 source through B2’s S3-compatible endpoint; scope application keys to prefixes.</td></tr>
+        <tr><td>Google Drive</td><td>Drive file ID and connector checkpoint.</td><td>MIME, modified time, parents, ownership/sharing metadata permitted by scope.</td><td>Use the CocoIndex connector; MIME filters and native Docs/Sheets/Slides export become explicit representation records.</td></tr>
+        <tr><td>OneDrive / SharePoint</td><td>Microsoft Graph item ID plus delta link; IDs, not paths, are identity.</td><td>MIME/file facets, parents, hashes where supplied, permissions only if approved.</td><td>Custom source adapter or storage abstraction; Graph delta is preferred for business/SharePoint. Validate consumer-account behavior; keep rclone adapter as bounded fallback.</td></tr>
+        <tr><td>PostgreSQL</td><td>Primary key plus update field/CDC contract.</td><td>Existing normalized metadata or governed references.</td><td>Import references and overlays only within authority rules; no evidence-byte staging in Git.</td></tr>
+        <tr><td>Azure Blob / OCI</td><td>Provider object version/checkpoint.</td><td>Provider metadata.</td><td>Supported extension path inherited from upstream examples; not an initial delivery dependency.</td></tr>
+      </tbody></table></div>
+      <p>Each adapter emits the same <code>SourceOccurrenceEnvelope</code>: <code>instance_id</code>, source system/account/root, stable provider ID, display path, parent ID, provider MIME, size, source timestamps, source version/checkpoint, byte-access capability, and raw provider metadata. Secrets never enter envelopes, logs, or datasets.</p>
+    </section>
+
+    <section id="router">
+      <h2>6. Detector and router</h2>
+      <p class="lead">Routing is evidence-bearing classification. It records how the decision was made, its confidence, and what fallback was used.</p>
+      <div class="route">
+        <div class="node"><b>1 · Provider hints</b><br>MIME, native type, object metadata, Drive/Graph facets.</div><div class="arrow">→</div>
+        <div class="node"><b>2 · Byte evidence</b><br>Magic/signature, encoding, container headers, bounded sample.</div><div class="arrow">→</div>
+        <div class="node"><b>3 · Structural probes</b><br>Archive members, export manifests, repo markers, sidecar patterns.</div>
+      </div>
+      <div class="route" style="margin-top:8px">
+        <div class="node"><b>4 · Policy</b><br>Size, sensitivity, parser safety, budget, allowed processors.</div><div class="arrow">→</div>
+        <div class="node"><b>5 · Route</b><br>Primary processor plus zero or more augmenters.</div><div class="arrow">→</div>
+        <div class="node"><b>6 · Receipt</b><br>Evidence, confidence, model/parser version, fallback, errors.</div>
+      </div>
+      <h3>Route decision schema</h3>
+      <p><code>route_decision_id</code>, occurrence ID, detected media/container type, evidence list, selected route, augmenters, atomic-unit candidate, sidecar candidate, confidence, uncertainty codes, policy version, detector version, byte range inspected, timestamp, and terminal/fallback state.</p>
+      <p>Extension is a hint only. Unknown, malformed, encrypted, oversized, password-protected, and potentially hostile containers receive explicit routes; they do not silently disappear.</p>
+    </section>
+
+    <section id="units">
+      <h2>7. Atomic and nested organizational units</h2>
+      <p>An atomic unit is the smallest package whose internal relationships must survive extraction or movement. Units can contain units and can overlap through typed memberships.</p>
+      <div class="table-wrap"><table><thead><tr><th>Recognizer</th><th>Unit / nesting</th><th>Evidence</th><th>Required behavior</th></tr></thead><tbody>
+        <tr><td>Facebook / social export</td><td>Export → product area → thread/album → item</td><td>Manifest files, directory vocabulary, participant/thread IDs, HTML/JSON pairing.</td><td>Preserve export lineage and connect repeated items across export dates as corroboration candidates.</td></tr>
+        <tr><td>Google Takeout</td><td>Takeout → service → album/conversation → asset</td><td>Takeout paths, service manifests, Google Photos JSON sidecars.</td><td>Associate sidecars before generic JSON indexing; retain unmatched sidecars and ambiguity.</td></tr>
+        <tr><td>ChatGPT export</td><td>Export → conversation → message → attachment</td><td><code>conversations.json</code>, node IDs, parent/child mapping, timestamps.</td><td>Reconstruct branches and whole sessions; extract decisions without losing original order.</td></tr>
+        <tr><td>iMessage export</td><td>Export/database → chat → message → attachment</td><td>Database IDs, handles, joins, attachment references.</td><td>Preserve database/export identity and device origin; compare messages across devices as corroboration.</td></tr>
+        <tr><td>Code repository</td><td>Repository → worktree/ref → file → symbol</td><td><code>.git</code>, manifests, language grammar, Git object/ref where available.</td><td>Keep repository boundaries; chunk structurally with Tree-sitter-compatible parsing.</td></tr>
+        <tr><td>Archive</td><td>Archive → nested archive/folder → member</td><td>Container signature and bounded member listing.</td><td>Prevent zip bombs/path traversal; maintain container/member relationship and original archive hash.</td></tr>
+        <tr><td>Media collection</td><td>Export/album/event → asset → sidecar/derivative</td><td>Folder context, capture times, EXIF, filenames, sidecars.</td><td>Do not flatten away album/export/device evidence.</td></tr>
+      </tbody></table></div>
+      <p>Recognizer output includes unit type, confidence, root occurrence, member selectors, child-unit candidates, evidence, resolver version, and conflicts. Human corrections are overlays; recognizers remain replayable.</p>
+    </section>
+
+    <section id="identity">
+      <h2>8. Identity, fingerprinting, and evidence-safe deduplication</h2>
+      <p>Five identities remain separate:</p>
+      <ol>
+        <li><b>Occurrence identity:</b> this provider/path/version observed at this acquisition point.</li>
+        <li><b>Raw content identity:</b> byte hash of the acquired object, normally SHA-256 plus size; optional fast hash is only a prefilter.</li>
+        <li><b>Representation identity:</b> normalized/textual/perceptual equivalence within a declared format family and algorithm version.</li>
+        <li><b>Semantic assertion identity:</b> a candidate claim/message/event that may be expressed by multiple independent artifacts.</li>
+        <li><b>Atomic-unit identity:</b> the export, conversation, album, repository, or package context that gives occurrences meaning.</li>
+      </ol>
+      <div class="table-wrap"><table><thead><tr><th>Relationship</th><th>Meaning</th><th>Automatic action allowed?</th></tr></thead><tbody>
+        <tr><td><code>byte_identical_copy</code></td><td>Same cryptographic hash and size. Storage may be content-addressed, but all occurrences survive.</td><td>Logical byte reuse only; copy suppression requires lineage/policy review.</td></tr>
+        <tr><td><code>corroborates</code></td><td>Independent device, export, account, or acquisition supports the same message/event/fact.</td><td>No removal. Increase evidentiary context, never silently merge origins.</td></tr>
+        <tr><td><code>alternate_representation</code></td><td>Native message versus screenshot, PDF versus DOCX, photo of a document, reformatted export.</td><td>No removal. Link representations and retain modality-specific evidence.</td></tr>
+        <tr><td><code>derived_from</code></td><td>OCR, transcript, thumbnail, caption, normalized text, extraction, or generated summary.</td><td>Derived object may be regenerated; source relationship is mandatory.</td></tr>
+        <tr><td><code>near_duplicate_candidate</code></td><td>Perceptual/text similarity above a versioned threshold.</td><td>Candidate clustering only; never an automatic fact or deletion decision.</td></tr>
+      </tbody></table></div>
+      <p>Hash assertions are append-only: algorithm, implementation/version, byte range/full object, digest, observed size, time, worker, and verification result. Existing hashes and provenance sidecars are imported as assertions, not overwritten as truth; independently recomputed hashes can confirm or dispute them.</p>
+    </section>
+
+    <section id="formats">
+      <h2>9. Format and processing routes</h2>
+      <div class="table-wrap"><table><thead><tr><th>Family</th><th>Detection</th><th>Primary product</th><th>Augmenters / later vectors</th></tr></thead><tbody>
+        <tr><td>Plain text, Markdown, logs</td><td>MIME, encoding, bounded content probe</td><td>Normalized document, structural chunks, summary, typed metadata</td><td>Session/decision extraction, entities, <code>text_semantic</code>, <code>summary_semantic</code></td></tr>
+        <tr><td>HTML, XML</td><td>Signature/parse probe</td><td>DOM-preserving text plus links and document structure</td><td>Export recognizer, visible-text and raw-source representations</td></tr>
+        <tr><td>JSON, JSONL, CSV</td><td>Parse/schema sample</td><td>Typed rows or export-specific route; not blindly flattened</td><td>Schema inference, conversation/media sidecar recognizers</td></tr>
+        <tr><td>DOCX/PPTX/XLSX/ODF</td><td>ZIP container signatures and internal manifest</td><td>Text/table/slide structure with source package retained</td><td>Manual-like typed extraction; page/slide visual representation later</td></tr>
+        <tr><td>PDF</td><td>PDF signature + text/layout probe</td><td>Docling document, Markdown, pages, layout elements, OCR status</td><td><code>text_semantic</code>, <code>page_visual</code>, <code>layout_late_interaction</code>, figures/tables</td></tr>
+        <tr><td>Images: JPG/PNG/HEIC/WebP/GIF/SVG</td><td>Image decoder/signature; frame count</td><td>Technical metadata, EXIF, perceptual hash, safe preview reference</td><td>OCR, caption, global image vector, faces, regions, screenshot classification</td></tr>
+        <tr><td>Audio: MP3/M4A/WAV/other</td><td>Container and codec probe</td><td>Timecoded transcript segments, language, speaker candidates</td><td>Transcript vector, acoustic/future speaker vector, summary</td></tr>
+        <tr><td>Video: MP4/MOV/other</td><td>Container/stream probe</td><td>Audio transcript plus scene/keyframe manifest</td><td>Scene image vectors, captions, face instances, timeline events</td></tr>
+        <tr><td>Code</td><td>Repo context, language detection, parser support</td><td>File/symbol units and dependency/context metadata</td><td><code>code_semantic</code>, <code>symbol_semantic</code>, repository summary</td></tr>
+        <tr><td>AI/chat/session exports</td><td>Export recognizer and schema signatures</td><td>Conversation graph, ordered/branched messages, decisions</td><td>Message, session-summary, decision, and attachment vectors</td></tr>
+        <tr><td>Email/mailboxes</td><td>RFC headers, MBOX/PST/EML container route</td><td>Message/thread/attachment units</td><td>Thread expansion, entities, timelines, duplicate/corroboration links</td></tr>
+        <tr><td>Archives/databases/unknown</td><td>Signature and bounded safe probe</td><td>Container inventory or explicit unsupported/quarantine route</td><td>Specialized adapters after risk and value gate</td></tr>
+      </tbody></table></div>
+    </section>
+
+    <section id="vectors">
+      <h2>10. Named and multi-vector contract</h2>
+      <p>A content unit can have many vector views. Each view is separately versioned and cannot be silently replaced with another model or dimension.</p>
+      <div class="table-wrap"><table><thead><tr><th>Vector name</th><th>Shape / scope</th><th>Use</th><th>Initial status</th></tr></thead><tbody>
+        <tr><td><code>text_semantic</code></td><td>Single per chunk/message</td><td>Primary semantic retrieval</td><td>NVIDIA NIM baseline</td></tr>
+        <tr><td><code>summary_semantic</code></td><td>Single per document/unit</td><td>Broad concept retrieval</td><td>NIM baseline after summary validation</td></tr>
+        <tr><td><code>code_semantic</code></td><td>Single per structural code chunk</td><td>Code search</td><td>Planned</td></tr>
+        <tr><td><code>symbol_semantic</code></td><td>Single per symbol</td><td>Definitions and implementation search</td><td>Planned</td></tr>
+        <tr><td><code>image_global</code></td><td>Single per image/keyframe</td><td>Text-to-image and image similarity</td><td>Provider benchmark</td></tr>
+        <tr><td><code>page_visual</code></td><td>Single per page</td><td>Cross-modal PDF/page retrieval</td><td>Provider benchmark</td></tr>
+        <tr><td><code>layout_late_interaction</code></td><td>Multi-vector per page</td><td>ColPali-class MaxSim retrieval</td><td>Provider and Weaviate capability gate</td></tr>
+        <tr><td><code>ocr_text</code></td><td>Single per region/page</td><td>Screenshot/scanned-document retrieval</td><td>Planned</td></tr>
+        <tr><td><code>caption_semantic</code></td><td>Single per image/page/scene</td><td>Descriptive search and classification</td><td>Planned</td></tr>
+        <tr><td><code>face_embedding</code></td><td>Single per detected face</td><td>Similarity clusters for human review</td><td>Sensitive; explicit gate</td></tr>
+        <tr><td><code>audio_transcript</code></td><td>Single per timed segment</td><td>Audio search</td><td>Planned</td></tr>
+        <tr><td><code>video_scene</code></td><td>Single/multi per scene</td><td>Video moment search</td><td>Later</td></tr>
+      </tbody></table></div>
+      <p>Every row records <code>vector_name</code>, source unit, modality, provider, model, revision, dimension/shape, normalization, input digest, created time, cost/latency, and policy version. A provider/model/dimension change creates a new vector-space version and normally a new Weaviate collection—not a mixed collection.</p>
+    </section>
+
+    <section id="lake">
+      <h2>11. Parquet and Lance lake contract</h2>
+      <p>Parquet is the interoperable tabular interchange. Lance is the versioned analytical table form optimized for later random access and ML/media workflows. Both are durable lake products; Weaviate is not the export of record.</p>
+      <h3>Dataset families</h3>
+      <p><code>source_occurrences</code>, <code>content_objects</code>, <code>hash_assertions</code>, <code>atomic_units</code>, <code>atomic_memberships</code>, <code>unit_edges</code>, <code>sidecars</code>, <code>sidecar_links</code>, <code>metadata_assertions</code>, <code>effective_metadata</code>, <code>documents</code>, <code>text_chunks</code>, <code>pages</code>, <code>images</code>, <code>faces</code>, <code>audio_segments</code>, <code>video_scenes</code>, <code>code_symbols</code>, <code>sessions</code>, <code>messages</code>, <code>decisions</code>, <code>entities</code>, <code>events</code>, <code>relationships</code>, <code>vectors</code>, <code>route_decisions</code>, <code>processing_runs</code>, <code>stage_attempts</code>, <code>errors</code>, <code>projection_checkpoints</code>, <code>copy_proposals</code>, and <code>copy_receipts</code>.</p>
+      <h3>B2 object layout</h3>
+      <pre><code>s3://&lt;bucket&gt;/casebible/lake/
+  staging/&lt;instance_id&gt;/&lt;run_id&gt;/&lt;dataset&gt;/part-*.parquet
+  published/&lt;dataset&gt;/schema=&lt;version&gt;/run_id=&lt;run_id&gt;/part-*.parquet
+  lance/&lt;dataset&gt;/schema=&lt;version&gt;/table=&lt;fresh-versioned-name&gt;/...
+  manifests/&lt;run_id&gt;.json
+  receipts/&lt;run_id&gt;/publish.json
+  dead-letter/&lt;instance_id&gt;/&lt;run_id&gt;/...</code></pre>
+      <p>Publication is append-only: stage, validate counts/schema/checksums, write manifest, publish versioned objects/table, then atomically advance a small catalog pointer. Never overwrite an existing remote Lance table name. B2 lifecycle/object-lock decisions are infrastructure policy, not application assumptions.</p>
+      <p>DuckDB validates and queries Parquet locally or through its S3 extension. Partitioning follows common filters—dataset/schema/run and bounded source/date buckets—without creating millions of tiny files. Bulk writers use bounded record batches.</p>
+    </section>
+
+    <section id="projections">
+      <h2>12. Weaviate, SurrealDB, and search behavior</h2>
+      <div class="cards">
+        <article class="card"><h3>Weaviate</h3><p>Versioned collections such as <code>ContentUnitV1</code>, <code>VisualPageV1</code>, and <code>FaceInstanceV1</code>, all prefixed/scoped by instance and deployment. Named vectors preserve modality. Store lake IDs and filter metadata, not the only copy of extracted content.</p></article>
+        <article class="card"><h3>SurrealDB</h3><p>Nodes for occurrence, content, unit, artifact, representation, assertion, entity candidate, event candidate, person candidate, run, and review. Typed edges express containment, origin, derivation, corroboration, alternate representation, mention, timing, and review decisions.</p></article>
+        <article class="card"><h3>Search service</h3><p>Hybrid/lexical/vector retrieval with explicit target vectors, metadata/time/source filters, whole-session expansion, atomic-unit expansion, graph neighbors, reranking, and provenance-bearing citations to occurrence and lake version.</p></article>
+      </div>
+      <p>The search result contract includes score components, vector space/model, matched unit, surrounding unit/session context, source occurrences, representation and corroboration links, extraction/summary provenance, and permissions/policy redactions. It never presents a generated summary as source text.</p>
+    </section>
+
+    <section id="providers">
+      <h2>13. Provider and Docling strategy</h2>
+      <h3>Text and summarization</h3>
+      <p>Keep the existing NVIDIA NIM text embedding and structured enrichment path as the first working baseline. Before scale, probe model availability, dimension, token limits, rate limits, structured-output reliability, and cost. Store response metadata and model revision; do not infer success from an HTTP 200 with malformed output.</p>
+      <h3>Multimodal benchmark—not a premature selection</h3>
+      <div class="table-wrap"><table><thead><tr><th>Candidate</th><th>Best fit</th><th>Must prove</th></tr></thead><tbody>
+        <tr><td>NVIDIA hosted visual embedding / NeMo Retriever candidate</td><td>Existing provider alignment and image/PDF retrieval</td><td>Current API availability, input limits, quality on screenshots/scans/photos, cost, and multi-vector shape.</td></tr>
+        <tr><td>Hosted ColPali / ColModernVBERT-class service</td><td>Late-interaction page retrieval</td><td>MaxSim quality, token-vector volume, Weaviate import/query compatibility, operational cost.</td></tr>
+        <tr><td>Weaviate-supported multimodal provider</td><td>Managed named-vector integration</td><td>Portability, provider lock-in, collection migration, private-media policy.</td></tr>
+        <tr><td>Google Vertex multimodal embedding</td><td>Cross-modal image/text alternative</td><td>Recall on case corpus, dimensions, region/privacy, batch pricing.</td></tr>
+        <tr><td>Jina CLIP/multimodal path</td><td>Image/text shared space</td><td>Recall versus late interaction, hosting terms, throughput.</td></tr>
+      </tbody></table></div>
+      <p>Benchmark on a reviewed golden set spanning native text, scans, screenshots, photos of documents, visually rich PDFs, faces, and near-duplicate/corroborating artifacts. Score recall@k, nDCG, evidence-safe false merges, p50/p95 latency, bytes/tokens, storage amplification, and cost per 1,000 items.</p>
+      <h3>Cheap Docling</h3>
+      <ol>
+        <li><b>CPU baseline:</b> local Docling standard pipeline, bounded concurrency, OCR only when the text probe requires it, document timeout enabled, results cached by content hash + pipeline version.</li>
+        <li><b>Opportunistic GPU worker:</b> separate queue/profile for high-value scanned/layout-heavy PDFs; tune OCR/layout/table batch sizes against actual memory.</li>
+        <li><b>Remote worker spike:</b> a disposable <code>docling-serve</code> execution profile only if measured local cost/throughput fails the gate.</li>
+      </ol>
+      <p>Parse once and keep the Docling document/JSON, Markdown, page/layout records, error list, timing, and parser/model versions. A <code>PARTIAL_SUCCESS</code> is a recorded partial result, never silently promoted to complete. No bulk PDF run starts without a sampled cost/time estimate.</p>
+    </section>
+
+    <section id="operations">
+      <h2>14. Multi-instance isolation and failure handling</h2>
+      <h3>Isolation key</h3>
+      <p><code>CASEBIBLE_INSTANCE_ID</code> is required and validated. It controls CocoIndex application/environment name and state database, working directory, lock names, ports, log/run paths, B2 staging prefix, Weaviate collection prefix/tenant, Surreal namespace/database, source checkpoints, cache keys, and metrics labels. The default must not overlap <code>~/.cocoindex_code</code> or the <code>ccc</code> command.</p>
+      <div class="table-wrap"><table><thead><tr><th>Failure point</th><th>Policy</th><th>Evidence retained</th></tr></thead><tbody>
+        <tr><td>Source unavailable / permission denied</td><td>Bounded retry with jitter for transient failures; fail closed for auth/scope.</td><td>Stage attempt, source ID, class, retry schedule, redacted provider response.</td></tr>
+        <tr><td>Malformed/encrypted/hostile input</td><td>Safe bounded probe, resource limits, explicit unsupported/quarantine route.</td><td>Detection evidence and parser error; no silent skip.</td></tr>
+        <tr><td>NIM/provider timeout, 429, bad JSON</td><td>Concurrency budget, timeout, retry-after, circuit breaker, schema validation.</td><td>Request digest, provider/model, attempt, latency, cost if known, terminal state.</td></tr>
+        <tr><td>Partial parser success</td><td>Persist partial output with status; prevent “complete” promotion.</td><td>Per-page/component errors and completeness fields.</td></tr>
+        <tr><td>Lake write/publish failure</td><td>Write only to run staging; validate before immutable publish; resume by manifest.</td><td>Part checksums, counts, manifest state, orphan-staging cleanup proposal.</td></tr>
+        <tr><td>Weaviate/Surreal projection failure</td><td>Checkpoint per published lake version; idempotent upsert; replay from lake.</td><td>Projection checkpoint, failed IDs, target response, reconciliation counts.</td></tr>
+        <tr><td>Process interruption</td><td>Lease/heartbeat expires; next worker resumes incomplete stages, never assumes completion.</td><td>Run heartbeat, worker identity, last committed batch.</td></tr>
+      </tbody></table></div>
+      <p>Every run ends as <code>complete</code>, <code>complete_with_errors</code>, <code>failed</code>, or <code>cancelled</code>. “Processed” counts never include dead-letter rows. Concurrency limits exist at application, provider, parser, and target levels. Import/export connectors use documented CocoIndex target lifecycle and exception hooks where applicable.</p>
+    </section>
+
+    <section id="paths">
+      <h2>15. Planned repository map</h2>
+      <p>The unified application lives at <span class="path">E:\AI_Workspace\Projects\Propria\casebible\workbench</span>, with this backend in <code>backend/</code>. The <a href="UNIFIED-WORKBENCH-PLAN.html">updated unified plan</a> includes React/Tauri, Glide, Storybook, Context Forge, Portkey, Filestash, Whisper and nested-unit requirements and supersedes earlier frontend exclusions.</p>
+      <div class="table-wrap"><table><thead><tr><th>Path</th><th>Ownership / deliverable</th></tr></thead><tbody>
+        <tr><td class="path">docs/CASEBIBLE-CORPUS-BACKEND-SYSTEM-DESIGN.html</td><td>This canonical design.</td></tr>
+        <tr><td class="path">docs/MASTER-TODO.md</td><td>Stable work IDs, dependencies, acceptance checks, and decision holds.</td></tr>
+        <tr><td class="path">src/casebible_index/config.py<br>src/casebible_index/instance.py</td><td>Typed settings, required instance identity, namespacing, secrets references, startup collision checks.</td></tr>
+        <tr><td class="path">src/casebible_index/sources/{base,local,s3,google_drive,onedrive,postgres}.py</td><td>Uniform occurrence envelope and connector-specific checkpoints.</td></tr>
+        <tr><td class="path">src/casebible_index/detection/{mime,router,atomic_units,sidecars}.py</td><td>Signature/MIME/structure detection, evidence-bearing routing, nested unit and sidecar resolution.</td></tr>
+        <tr><td class="path">src/casebible_index/processors/{text,sessions,code,pdf,image,face,audio,video,structured}.py</td><td>Modality processors and derived-artifact provenance.</td></tr>
+        <tr><td class="path">src/casebible_index/lake/{schemas,materialize,b2,catalog}.py</td><td>Arrow schemas, Parquet/Lance batches, immutable B2 publication, manifests.</td></tr>
+        <tr><td class="path">src/casebible_index/projections/{weaviate,surreal}.py</td><td>Rebuildable vector/search and graph/temporal projections.</td></tr>
+        <tr><td class="path">src/casebible_index/search/service.py</td><td>Hybrid/multi-vector/session/graph query orchestration and provenance result contract.</td></tr>
+        <tr><td class="path">src/casebible_index/operations/{copy_plan,receipts,errors}.py</td><td>Dry-run relocation proposals, checksum receipts, retry/dead-letter model.</td></tr>
+        <tr><td class="path">src/casebible_index/{cli,api,tui,pipeline}.py</td><td>Backend commands, API, thin management TUI, CocoIndex flow wiring—unique command and ports.</td></tr>
+        <tr><td class="path">tests/fixtures/golden-corpus/</td><td>Synthetic/redacted route, sidecar, dedup, PDF, media, session, and failure fixtures.</td></tr>
+        <tr><td class="path">tests/{unit,integration,contract,recovery}/</td><td>Schema, provider, projection, replay, collision, and crash-recovery tests.</td></tr>
+      </tbody></table></div>
+    </section>
+
+    <section id="phases">
+      <h2>16. Delivery sequence</h2>
+      <div class="phase"><b>Phase 0</b><div><strong>Contracts and golden corpus.</strong> Freeze identities, relationship vocabulary, occurrence envelope, route receipt, lake schemas, provider interface, and synthetic/redacted test package.</div></div>
+      <div class="phase"><b>Phase 1</b><div><strong>Isolation and error kernel.</strong> Required instance ID, unique CocoIndex environment/state, locks/ports/paths, attempt ledger, retry/circuit/dead-letter semantics, crash recovery.</div></div>
+      <div class="phase"><b>Phase 2</b><div><strong>Discovery intelligence.</strong> MIME/signature router, atomic/nested units, sidecars, prior hash/provenance import, evidence-safe dedup relationships.</div></div>
+      <div class="phase"><b>Phase 3</b><div><strong>Text, sessions, and code.</strong> Harden NIM path, structured logs/AI chats, whole-session retrieval units, Tree-sitter-compatible structural code chunks.</div></div>
+      <div class="phase"><b>Phase 4</b><div><strong>Lake materialization.</strong> Versioned Arrow schemas, compact Parquet batches, Lance tables, DuckDB verification, manifests and reconciliation.</div></div>
+      <div class="phase"><b>Phase 5</b><div><strong>Weaviate search projection.</strong> Named text vectors, hybrid filtering, versioned collection migration, replay and quality harness.</div></div>
+      <div class="phase"><b>Phase 6</b><div><strong>Surreal graph projection.</strong> Units, provenance, derivation, corroboration, alternate representations, candidates, events, temporal links.</div></div>
+      <div class="phase"><b>Phase 7</b><div><strong>PDF/Docling.</strong> Text-versus-scan routing, layout/page tables, cache, partial-success semantics, CPU/GPU/remote benchmark.</div></div>
+      <div class="phase"><b>Phase 8</b><div><strong>Images, multi-vector, and faces.</strong> Technical metadata, OCR/caption, shared-space and late-interaction benchmark, sensitive face-cluster review.</div></div>
+      <div class="phase"><b>Phase 9</b><div><strong>Audio and video.</strong> Timed transcripts, segmentation, summaries, scene/keyframe pipeline, whole-recording search.</div></div>
+      <div class="phase"><b>Phase 10</b><div><strong>Remote sources.</strong> B2/S3 and Google Drive production adapters; OneDrive Graph spike and fallback decision.</div></div>
+      <div class="phase"><b>Phase 11</b><div><strong>B2 publish and relocation.</strong> Immutable remote publication, verification, dry-run copy plans, destination checksum and receipts.</div></div>
+      <div class="phase"><b>Phase 12</b><div><strong>Scale hardening.</strong> Backpressure, cost budgets, observability, drift/rebuild exercises, disaster recovery, operational runbooks.</div></div>
+      <p>The detailed executable register is in <a href="MASTER-TODO.md">MASTER-TODO.md</a>. No phase begins because it appears here; each phase has an explicit entry gate and acceptance evidence.</p>
+    </section>
+
+    <section id="premortem">
+      <h2>17. Pre-mortem: assume the project failed</h2>
+      <div class="table-wrap"><table><thead><tr><th>Failure</th><th>Early warning</th><th>Prevention / gate</th><th>Owner</th></tr></thead><tbody>
+        <tr><td>Corroborating evidence was collapsed as a duplicate.</td><td>Clusters cross device/export/source boundaries; occurrence counts fall after dedup.</td><td>Relationship-only dedup; independent-origin override; golden adversarial fixtures; no automatic deletion.</td><td>Identity/dedup module + human reviewer</td></tr>
+        <tr><td>Sidecars were indexed as random JSON or separated from assets.</td><td>Unmatched Google Photos JSON spikes; capture metadata conflicts.</td><td>Package-aware recognizers run before generic JSON; unmatched/conflict tables and reconciliation gate.</td><td>Atomic-unit/sidecar module</td></tr>
+        <tr><td>Vector spaces mixed models or dimensions.</td><td>Import errors, recall collapse, unexplained score shifts.</td><td>Immutable vector-space ID; schema gate; new collection/table for model changes; benchmark receipt.</td><td>Embedding/projection module</td></tr>
+        <tr><td>Lake, Weaviate, and Surreal diverged after partial writes.</td><td>Projection counts/checkpoints disagree; some results lack lake IDs.</td><td>Lake-first manifest; idempotent projections; checkpoint reconciliation and replay drill.</td><td>Lake/projection modules</td></tr>
+        <tr><td>Two app instances or <code>ccc</code> corrupted shared state.</td><td>Overlapping app names, locks, ports, state paths, or collection prefixes.</td><td>Required instance ID and startup collision test across every named resource.</td><td>Instance/runtime module</td></tr>
+        <tr><td>Media parsing/embedding caused an uncontrolled bill or retry storm.</td><td>429s, queue growth, cost-per-item drift, repeated timeouts.</td><td>Preflight sample, cost budget, tiered routes, backpressure, retry caps, circuit breaker.</td><td>Operations/provider modules</td></tr>
+        <tr><td>Archives or parsers exhausted resources or executed unsafe content.</td><td>Extreme expansion ratios, long tail runtimes, path escapes.</td><td>Sandbox/bounded extraction, signature checks, expansion/time/memory limits, no shell escape for untrusted content.</td><td>Detection/processors</td></tr>
+        <tr><td>B2 contained partial or overwritten datasets.</td><td>Missing parts, manifest mismatch, reused Lance table names.</td><td>Per-run staging, checksum/count validation, immutable versioned publish, catalog pointer last.</td><td>Lake/B2 module</td></tr>
+        <tr><td>Generated summaries were mistaken for original evidence.</td><td>Search results lack source spans or model provenance.</td><td>Separate derived tables, visible labels, mandatory source citations and prompt/model version.</td><td>Extraction/search modules</td></tr>
+        <tr><td>Face similarity became an unsupported identity assertion.</td><td>UI/API exposes person names from threshold alone.</td><td>Candidate clusters only, biometric access policy, human confirmation overlay, audit log.</td><td>Face processor + reviewer</td></tr>
+      </tbody></table></div>
+    </section>
+
+    <section id="examples">
+      <h2>18. CocoIndex example-to-feature traceability</h2>
+      <p>Reviewed against the upstream <a href="https://github.com/cocoindex-io/cocoindex/tree/main/examples">examples tree</a> at commit <code>859896c431fbe70d3ce62069cb3dbd6312af1058</code> and the <a href="https://cocoindex.io/docs/examples/">curated examples catalog</a>. “Adopt” means reuse the documented pattern, then fit it to this design’s evidence and lake contracts.</p>
+      <div class="table-wrap"><table><thead><tr><th>Upstream example</th><th>Feature extracted for this application</th><th>Disposition</th></tr></thead><tbody>
+        <tr><td>amazon_s3_embedding</td><td>S3 discovery, matcher/filtering, incremental embedding; adapt endpoint/config for B2.</td><td>Adopt Phase 10</td></tr>
+        <tr><td>audio_to_text</td><td>Transcriber transform feeding text processing and timed searchable units.</td><td>Adopt Phase 9</td></tr>
+        <tr><td>azure_blob_embedding</td><td>Provider-neutral object-source adapter pattern.</td><td>Extension</td></tr>
+        <tr><td>bigquery_target</td><td>Warehouse/custom target lifecycle and schema mapping.</td><td>Learn for lake target</td></tr>
+        <tr><td>code_embedding</td><td>Language detection and recursive structural code splitting.</td><td>Adopt Phase 3</td></tr>
+        <tr><td>code_embedding_lancedb</td><td>Structural code chunks materialized to Lance.</td><td>Adopt Phase 3–4</td></tr>
+        <tr><td>conversation_to_knowledge</td><td>Conversation-derived statements and graph relations.</td><td>Adopt with proposal boundary</td></tr>
+        <tr><td>csv_to_kafka</td><td>Row transforms and decoupled sink pattern.</td><td>Reference; event bus later</td></tr>
+        <tr><td>docs_to_knowledge_graph</td><td>Document → entities/relationships graph flow.</td><td>Adopt Phase 6</td></tr>
+        <tr><td>entire_session_search</td><td>Index individual items but expand retrieval to full session context.</td><td>Adopt Phase 3/5</td></tr>
+        <tr><td>face_recognition</td><td>Image → multiple face boxes and embeddings.</td><td>Adopt with sensitive-review gate</td></tr>
+        <tr><td>files_transform</td><td>Generic file discovery and transformation mechanics.</td><td>Baseline</td></tr>
+        <tr><td>gdrive_text_embedding</td><td>Google Drive source, MIME filtering, native document export.</td><td>Adopt Phase 10</td></tr>
+        <tr><td>hn_trending_topics</td><td>Incremental grouping/aggregation and topic extraction.</td><td>Use for corpus trend views</td></tr>
+        <tr><td>image_search</td><td>Shared text/image vector space for evidence photography and screenshots.</td><td>Benchmark Phase 8</td></tr>
+        <tr><td>image_search_colpali</td><td>MultiVectorSchema and MaxSim late-interaction retrieval.</td><td>Benchmark Phase 8</td></tr>
+        <tr><td>kafka_to_lancedb</td><td>Streaming/batched ingestion into Lance.</td><td>Reference for later bus</td></tr>
+        <tr><td>manuals_llm_extraction</td><td>Docling conversion followed by typed structured LLM extraction.</td><td>Adopt Phase 7</td></tr>
+        <tr><td>meeting_notes_to_falkor_graph</td><td>Meeting-note entity/relation extraction into a graph.</td><td>Translate to Surreal</td></tr>
+        <tr><td>meeting_notes_to_neo4j_graph</td><td>Alternate graph target modeling and target lifecycle.</td><td>Translate to Surreal</td></tr>
+        <tr><td>meeting_notes_to_surrealdb_graph</td><td>Native Surreal graph target and relation creation.</td><td>Adopt Phase 6</td></tr>
+        <tr><td>multi_codebase_summarization</td><td>Repository/file aggregation and hierarchical summaries.</td><td>Adopt Phase 3</td></tr>
+        <tr><td>multi_format_indexing</td><td>PDF/image normalization into page units with multimodal multi-vectors.</td><td>Core Phase 7–8</td></tr>
+        <tr><td>oci_object_storage_embedding</td><td>Additional object-storage source pattern.</td><td>Extension</td></tr>
+        <tr><td>paper_metadata</td><td>Typed metadata extraction from scholarly documents.</td><td>Adopt schema pattern</td></tr>
+        <tr><td>patient_intake_baml</td><td>Schema-first, validated LLM extraction.</td><td>Adopt validation lessons</td></tr>
+        <tr><td>patient_intake_dspy</td><td>Alternative typed extraction/evaluation approach.</td><td>Reference for benchmark</td></tr>
+        <tr><td>pdf_embedding</td><td>PDF parsing, chunking, embeddings, incremental target.</td><td>Core Phase 7</td></tr>
+        <tr><td>pdf_to_markdown</td><td>Document conversion to reusable Markdown representation.</td><td>Core Phase 7</td></tr>
+        <tr><td>postgres_source</td><td>Incremental relational source adapter.</td><td>Bounded extension</td></tr>
+        <tr><td>product_recommendation</td><td>Multiple representations and recommendation-style similarity.</td><td>Use for related-evidence views</td></tr>
+        <tr><td>rust</td><td>Non-Python integration and language boundary examples.</td><td>Reference only</td></tr>
+        <tr><td>sec_edgar_analytics</td><td>Large document corpus extraction, analytics, and traceable metadata.</td><td>Use scale patterns</td></tr>
+        <tr><td>slides_to_speech</td><td>Page/slide units, generated media, and Lance materialization.</td><td>Reverse pattern useful for A/V derivatives</td></tr>
+        <tr><td>snowflake_source</td><td>Warehouse source incrementality.</td><td>Extension</td></tr>
+        <tr><td>snowflake_target</td><td>Warehouse target lifecycle and bulk writes.</td><td>Learn for target rigor</td></tr>
+        <tr><td>text_embedding</td><td>Canonical source → chunk → embedding → target flow.</td><td>Existing baseline</td></tr>
+        <tr><td>text_embedding_lancedb</td><td>LanceDB table output and vector lookup.</td><td>Core lake pattern</td></tr>
+        <tr><td>text_embedding_qdrant</td><td>Alternative vector target abstraction.</td><td>Learn for projection interface</td></tr>
+        <tr><td>text_embedding_turbopuffer</td><td>Remote vector target and operational separation.</td><td>Learn for projection interface</td></tr>
+      </tbody></table></div>
+      <h3>Primary documentation references</h3>
+      <p><a href="https://cocoindex.io/docs/connectors/amazon_s3/">CocoIndex Amazon S3 connector</a> · <a href="https://cocoindex.io/docs/connectors/google_drive/">Google Drive connector</a> · <a href="https://cocoindex.io/docs/connectors/surrealdb/">SurrealDB connector</a> · <a href="https://cocoindex.io/docs/examples/image-search/">image search</a> · <a href="https://cocoindex.io/docs/examples/image-search-colpali/">ColPali image search</a> · <a href="https://cocoindex.io/docs/examples/entire-session-search/">entire-session search</a> · <a href="https://cocoindex.io/docs/examples/manuals-llm-extraction/">manual extraction</a> · <a href="https://cocoindex.io/docs/examples/audio-to-text/">audio to text</a> · <a href="https://cocoindex.io/docs/examples/face-recognition/">face recognition</a> · <a href="https://cocoindex.io/docs/examples/text-embedding-lancedb/">LanceDB text embedding</a>.</p>
+      <p><a href="https://docs.weaviate.io/weaviate/concepts/search/vector-search">Weaviate vector search and named vectors</a> · <a href="https://docs.weaviate.io/weaviate/client-libraries/python/async">async client</a> · <a href="https://docs.weaviate.io/weaviate/model-providers/jinaai/embeddings-multimodal">multimodal embeddings</a> · <a href="https://docs.lancedb.com/tables">Lance tables</a> · <a href="https://docs.lancedb.com/tables/versioning">versioning</a> · <a href="https://docs.lancedb.com/storage/configuration">storage configuration</a> · <a href="https://www.backblaze.com/docs/en/cloud-storage-call-the-s3-compatible-api">B2 S3-compatible API</a> · <a href="https://learn.microsoft.com/en-us/graph/api/driveitem-delta?view=graph-rest-1.0">Microsoft Graph drive delta</a> · <a href="https://docling-project.github.io/docling/_generated/examples/batch_convert/">Docling batch conversion</a> · <a href="https://docling-project.github.io/docling/usage/gpu/">Docling GPU support</a>.</p>
+    </section>
+
+    <section id="acceptance">
+      <h2>19. Acceptance and release gates</h2>
+      <ul>
+        <li><b>Contract gate:</b> schemas and relationship vocabulary pass fixtures for independent copies, alternate formats, derived OCR/transcripts, and nested exports.</li>
+        <li><b>Isolation gate:</b> two simultaneous instances plus <code>ccc</code> demonstrate disjoint state, ports, locks, targets, and logs.</li>
+        <li><b>Recovery gate:</b> forced interruption at every stage resumes without duplicate publication or missing occurrences.</li>
+        <li><b>Lake gate:</b> DuckDB can query published Parquet; Lance can reopen the versioned tables; manifest counts and checksums reconcile.</li>
+        <li><b>Projection gate:</b> Weaviate and Surreal rebuild from the same lake snapshot and reconcile IDs/counts/checkpoints.</li>
+        <li><b>Quality gate:</b> NIM text and every multimodal candidate meet golden-set retrieval/extraction thresholds before corpus scale.</li>
+        <li><b>Cost gate:</b> sampled throughput and cost forecasts are recorded before PDF, image, audio, or video bulk runs.</li>
+        <li><b>Evidence gate:</b> search results expose original source occurrences and derivation; generated content is visibly separate.</li>
+        <li><b>Relocation gate:</b> dry-run plan, human approval, copied bytes, destination checksum, receipt, and explicit source-retention outcome.</li>
+      </ul>
+      <div class="callout"><strong>Definition of “done.”</strong> Done is not a successful demo query. It is a reproducible, isolated, resumable ingest of the golden corpus and a representative sampled corpus; immutable lake publication; reconciled Weaviate and Surreal projections; provenance-bearing search; cost and failure receipts; and zero source mutation.</div>
+    </section>
+  </main>
+</div>
+
+<footer><div>Case Bible Corpus Backend · design baseline · 2026-09-09<br><span class="small">This document plans implementation. It is not proof that later phases, providers, remote stores, or relocation operations have been executed.</span></div></footer>
+</body>
+</html>

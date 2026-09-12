@@ -1,0 +1,6 @@
+Subject: Synthetic scheduling note
+Date: January 2, 2026
+
+This is a fictional test document. A review meeting is scheduled for January 5, 2026 at 10:00 AM.
+The purpose is to validate structured metadata, summarization, and semantic search.
+

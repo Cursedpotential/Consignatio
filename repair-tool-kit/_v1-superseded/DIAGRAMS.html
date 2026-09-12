@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>casekit — Architecture Blueprint</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
+<style>
+ :root{--bg:#0f1115;--panel:#171a21;--ink:#e6e8ec;--dim:#9aa3b2;--line:#2a2f3a;
+       --acc:#e8a33d;--ok:#5fb87a;--bad:#d4574e;--warn:#d9a441}
+ *{box-sizing:border-box}
+ body{margin:0;background:var(--bg);color:var(--ink);
+      font:15px/1.65 ui-sans-serif,-apple-system,"Segoe UI",system-ui,sans-serif}
+ .wrap{max-width:1180px;margin:0 auto;padding:48px 28px 120px}
+ header{border-bottom:1px solid var(--line);padding-bottom:28px;margin-bottom:40px}
+ h1{font-size:30px;margin:0 0 6px;letter-spacing:-.4px}
+ .sub{color:var(--dim);font-size:14px}
+ h2{font-size:20px;margin:56px 0 6px;padding-top:22px;border-top:1px solid var(--line)}
+ h2:first-of-type{border-top:none}
+ h3{font-size:15px;margin:30px 0 8px;color:var(--acc);font-weight:600;
+    text-transform:uppercase;letter-spacing:.7px}
+ p{color:var(--dim);margin:6px 0 18px;max-width:80ch}
+ .fig{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+      padding:22px;margin:18px 0;overflow-x:auto}
+ .cap{color:var(--dim);font-size:12.5px;margin-top:10px;font-style:italic}
+ table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.5px}
+ th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+ th{color:var(--acc);font-size:11.5px;text-transform:uppercase;letter-spacing:.7px}
+ code{background:#000;padding:1.5px 6px;border-radius:4px;font-size:12.5px;
+      color:#e8d9a8;font-family:ui-monospace,"Cascadia Code",Consolas,monospace}
+ pre{background:#000;border:1px solid var(--line);border-radius:8px;padding:16px;
+     overflow-x:auto;font-size:12.5px;line-height:1.55}
+ pre code{background:none;padding:0;color:#cfd6e4}
+ .ok{color:var(--ok);font-weight:600}.bad{color:var(--bad);font-weight:600}
+ .warn{color:var(--warn);font-weight:600}
+ .rule{background:var(--panel);border-left:3px solid var(--acc);border-radius:0 8px 8px 0;
+       padding:14px 18px;margin:12px 0}
+ .rule b{color:var(--acc)}
+ .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin:18px 0}
+ .card{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:16px}
+ .card h4{margin:0 0 6px;font-size:13.5px;color:var(--acc)}
+ .card p{margin:0;font-size:13px}
+ .big{font-size:26px;font-weight:700;color:var(--ink);display:block;margin-bottom:2px}
+</style></head><body><div class="wrap">
+
+<header>
+<h1>casekit — Architecture Blueprint</h1>
+<div class="sub">Evidence extraction &amp; packaging · 2026-09-11 · forward mode (greenfield)</div>
+</header>
+
+<p><b>Read <code>RULES.md</code> before anything here.</b> Every diagram below is
+<em>guidance</em>. None of it is binding, and no agent may convert it into a rule.</p>
+
+<h2>1 · System context</h2>
+<p>What talks to what. The orchestrator owns no parsing logic of its own — it profiles, routes, and packages.</p>
+<div class="fig"><pre class="mermaid">
+flowchart TB
+  subgraph U["User surfaces"]
+    EX["Windows Explorer<br/>right-click verb"]
+    CLI["Terminal<br/>casekit.exe"]
+  end
+  subgraph CK["casekit · single Go binary"]
+    PR["profile"]; RT["route"]; EXT["extract"]; CHK["check"]; PKG["package + seal"]
+  end
+  subgraph EN["Engines · subprocess, any language"]
+    PO["poppler<br/>oneshot · C++"]
+    PY["pypdf<br/>worker · Python"]
+    DX["duckxml<br/>worker · Py+DuckDB"]
+    RAW["raw-stream<br/>qpdf --qdf"]
+  end
+  subgraph ST["Storage"]
+    SRC[("Case Bible<br/>read-only")]
+    OUT[("_derived/<br/>packages")]
+    LED[("ledger.jsonl")]
+  end
+  EX --> CK; CLI --> CK
+  SRC --> PR --> RT --> EXT --> CHK --> PKG
+  CHK -. "fail → next engine" .-> RT
+  EXT --> PO & PY & DX & RAW
+  PKG --> OUT; PKG --> LED
+</pre><div class="cap">Deferred: tsnet daemon and review UI attach to the same core (Phases 8–9).</div></div>
+
+<h2>2 · The pipeline</h2>
+<p>One engine per file. The profile predicts what the output must contain, so a single engine can be graded without a second opinion.</p>
+<div class="fig"><pre class="mermaid">
+flowchart LR
+  A["file"] --> B["PROFILE<br/><small>6 signals</small>"]
+  B --> C["ROUTE<br/><small>rule table</small>"]
+  C --> D["EXTRACT<br/><small>1 engine</small>"]
+  B -. "symbol_font=true" .-> R["raw-stream<br/>channel"]
+  R --> E
+  D --> E["CHECK<br/><small>vs prediction</small>"]
+  E -->|pass| F["PACKAGE"]
+  E -->|fail| C
+  F --> G["sealed pkg<br/>+ ledger line"]
+</pre><div class="cap">The raw-stream channel runs <em>alongside</em> the engine, not as a fallback — it is the only path that surfaced content all seven readers dropped.</div></div>
+
+<h2>3 · Engine dispatch</h2>
+<div class="fig"><pre class="mermaid">
+sequenceDiagram
+  participant O as orchestrator
+  participant R as registry
+  participant E as engine process
+  O->>R: discover engines/*/engine.toml
+  R-->>O: manifests (id, lang, mode, capabilities)
+  O->>E: spawn (oneshot | worker)
+  O->>E: stdin {op, input, blob_dir, args}
+  E-->>O: stdout {ok, engine, elements[], blobs[], commands[]}
+  O->>O: run profile-derived checks
+  alt check fails
+    O->>O: log escalation, next engine in rank
+  else passes
+    O->>O: accept, write sidecar
+  end
+</pre></div>
+
+<h2>4 · Why no primary engine</h2>
+<p>Seven readers, same file, same line. The obvious pick was the worst, and that was not knowable from documentation.</p>
+<table>
+<tr><th>Reader</th><th>Lang</th><th>Output</th><th>Codepoint</th><th>Glyphs</th><th>Verdict</th></tr>
+<tr><td><b>poppler</b></td><td>C++</td><td><code>… ■</code></td><td>U+25A0</td><td>33/33</td><td class="ok">correct</td></tr>
+<tr><td><b>pypdf</b></td><td>Python</td><td><code>… ■</code></td><td>U+25A0</td><td>33/33</td><td class="ok">correct</td></tr>
+<tr><td><b>pdfium</b></td><td>C++</td><td><code>… ■</code></td><td>U+25A0</td><td>33/33</td><td class="ok">correct</td></tr>
+<tr><td>pdf.js</td><td>JS</td><td><code>… n</code></td><td>U+006E</td><td>0</td><td class="warn">raw byte</td></tr>
+<tr><td>pdfminer.six</td><td>Python</td><td><code>… n</code></td><td>U+006E</td><td>0</td><td class="warn">raw byte</td></tr>
+<tr><td>pdfplumber</td><td>Python</td><td><code>… n</code></td><td>U+006E</td><td>0</td><td class="warn">raw byte</td></tr>
+<tr><td><b>mutool</b></td><td>C</td><td><code>… I</code></td><td>U+0049</td><td>0</td><td class="bad">corrupt</td></tr>
+</table>
+<div class="rule"><b>Why mutool is different.</b> <code>n</code> is the literal
+content-stream byte — wrong but reversible. <code>I</code> corresponds to
+nothing and is indistinguishable from a real capital I in running text.</div>
+
+<h2>5 · The substitution</h2>
+<div class="grid">
+<div class="card"><h4>Show operations</h4><span class="big">22</span><p>text ops in ZapfDingbats</p></div>
+<div class="card"><h4>Total glyphs</h4><span class="big">33</span><p>across 24 pages</p></div>
+<div class="card"><h4>Distinct codes</h4><span class="big" style="color:var(--bad)">1</span><p><code>0x6E</code> → a73 → U+25A0</p></div>
+<div class="card"><h4>ToUnicode maps</h4><span class="big" style="color:var(--bad)">0</span><p>identity not in the file</p></div>
+</div>
+<pre><code>(Nvm she pooped ) Tj  /F4 10 Tf  (n) Tj
+                      └ ZapfDingbats   └ 0x6E → U+25A0 BLACK SQUARE</code></pre>
+<div class="fig"><pre class="mermaid">
+flowchart LR
+  S["original message<br/>😢 💩 ❤️ 😡"] -->|"Stirling-PDF v1.1.1"| P["PDF content stream<br/>ZapfDingbats 0x6E ×33"]
+  P --> A["poppler / pypdf / pdfium<br/>■ U+25A0"]
+  P --> B["pdf.js / pdfminer / pdfplumber<br/>n U+006E"]
+  P --> C["mutool<br/>I U+0049"]
+  A --> D["count + position<br/>PRESERVED"]
+  A --> E["which emoji<br/>DESTROYED"]
+</pre><div class="cap">Recoverable: <code>emoji_count: 4</code>. Not recoverable: <code>emoji_identity</code>. Report both honestly.</div></div>
+
+<h2>6 · XML two-stage ingestion</h2>
+<p>DuckDB is the query engine, but it cannot be pointed at the raw file. Two limits force a pre-pass.</p>
+<div class="fig"><pre class="mermaid">
+flowchart TB
+  A["source.xml<br/>3,852,198 B"] --> B["slim pass · lxml"]
+  B --> C["blobs/&lt;sha256&gt;<br/>8 files · 2,822,412 B"]
+  B --> D["slim.xml<br/>89,925 B"]
+  B -.-> N["set data_sha256 on<br/>ALL parts, even empty"]
+  D --> E["DuckDB read_xml"]
+  E --> F["messages · 231"]
+  E --> G["mms_parts · 14"]
+  E --> H["mms_addrs · 12"]
+  F & G & H --> I["Parquet"]
+</pre></div>
+<div class="rule"><b>S-1 · Sparse attributes vanish.</b> Only 8 of 14 parts had
+<code>data=</code>. DuckDB's sample-based inference omitted the field entirely
+and every image disappeared with no warning. <code>sample_size=-1</code> does
+not help. Setting the attribute on every element does.</div>
+<div class="rule"><b>S-3 · XPath functions OOM.</b>
+<code>xml_extract_attributes(xml,'//sms')</code> consumed 3.1&nbsp;GiB on a
+3.8&nbsp;MB file. Never use them for bulk work.</div>
+
+<h2>7 · Data model</h2>
+<div class="fig"><pre class="mermaid">
+erDiagram
+  PACKAGE ||--|| SOURCE_FILE : seals
+  PACKAGE ||--o{ EXTRACTION : contains
+  PACKAGE ||--o{ BLOB : contains
+  PACKAGE ||--|| MANIFEST : verified_by
+  EXTRACTION ||--o{ ELEMENT : has
+  ELEMENT }o--o| BLOB : references
+  MESSAGE ||--o{ MMS_PART : has
+  MESSAGE ||--o{ MMS_ADDR : has
+  MMS_PART }o--o| BLOB : payload
+  PACKAGE {
+    string package_id PK
+    string source_sha256
+    string engine_used
+    string checks_json
+    timestamp sealed_utc
+  }
+  ELEMENT {
+    string id PK
+    string kind
+    int offset
+    int length
+    string sha256
+    bool resolved
+    int emoji_count
+    string emoji_identity
+  }
+  MESSAGE {
+    int row_id PK
+    string kind
+    string address
+    bigint date_epoch_ms
+    string readable_date
+    string raw_code
+    string direction
+    bool body_present
+    string body
+  }
+  MMS_PART {
+    int row_id FK
+    int seq
+    string ct
+    string cl
+    string data_sha256
+  }
+  MMS_ADDR {
+    int row_id FK
+    string address
+    string raw_type
+    string role
+  }
+  BLOB { string sha256 PK
+    int bytes
+    string content_type }
+</pre><div class="cap">Every decoded label sits beside its <code>raw_code</code>, so a wrong mapping is a SQL update rather than a re-extraction.</div></div>
+
+<h2>8 · File status lifecycle</h2>
+<div class="fig"><pre class="mermaid">
+stateDiagram-v2
+  [*] --> discovered
+  discovered --> profiled
+  profiled --> routed
+  routed --> extracted
+  extracted --> checked
+  checked --> sealed : passes
+  checked --> routed : fails, next engine
+  checked --> flagged : all engines exhausted
+  flagged --> review
+  review --> sealed : accepted
+  sealed --> [*]
+  sealed --> repaired : on request only
+  repaired --> sealed : new package version
+  note right of sealed
+    original byte-identical
+    never modified, never deleted
+  end note
+</pre></div>
+
+<h2>9 · Sealed package</h2>
+<pre><code>CB-20260911-a3f9c2e1b40d/
+├── README.txt          how to verify with sha256sum alone
+├── original/           byte-identical, hash unchanged
+├── extracted/
+│   ├── extraction.json elements + offsets + hashes
+│   ├── text/  metadata/  structure/
+├── blobs/&lt;sha256&gt;      content-addressed payloads
+├── reports/            profile · route · checks · log
+├── MANIFEST.json       every file: path, size, sha256
+└── SHA256SUMS          stock-tool verifiable</code></pre>
+<div class="rule"><b>R6.</b> Originals are never opened for write. A correction
+never edits a package — it creates a successor naming its predecessor.</div>
+
+<h2>10 · Build sequence</h2>
+<div class="fig"><pre class="mermaid">
+flowchart LR
+  P0["0 · Preflight"] --> P1["1 · Engine<br/>registry"] --> P2["2 · Profile"]
+  P2 --> P3["3 · Route<br/>+ check"] --> P4["4 · PDF<br/>extract"]
+  P4 --> P5["5 · XML<br/>extract"] --> P6["6 · Package<br/>+ seal"]
+  P6 --> D1["7 · Shell menu"]
+  D1 --> D2["8 · tsnet daemon"] --> D3["9 · Review UI"] --> D4["10 · More formats"]
+  style P6 fill:#1d3a26,stroke:#5fb87a
+  style D1 stroke-dasharray:4 4
+  style D2 stroke-dasharray:4 4
+  style D3 stroke-dasharray:4 4
+  style D4 stroke-dasharray:4 4
+</pre><div class="cap">Phases 0–6 are the usable product. Dashed phases are deferred under R5 — do not start them until 0–6 are running on real files.</div></div>
+
+<h2>11 · Decisions and reversals</h2>
+<table>
+<tr><th>Decision</th><th>Status</th><th>Why</th></tr>
+<tr><td>Go orchestrator</td><td class="ok">locked</td><td>tsnet is Go-native; dual-platform static builds; COM advantage for Rust evaporated when v1 chose a registry cascade</td></tr>
+<tr><td>Subprocess engines, JSON contract</td><td class="ok">locked</td><td>no language lock-in; the winning reader was not predictable</td></tr>
+<tr><td>Extract always, repair on request</td><td class="ok">locked</td><td>extraction is non-destructive, so it needs no justification</td></tr>
+<tr><td>Profile → route → one engine → check</td><td class="ok">locked</td><td>consensus on every file does not pay for itself</td></tr>
+<tr><td>DuckDB + slim pre-pass for XML</td><td class="ok">locked</td><td>verified on the real export; neither half works alone</td></tr>
+<tr><td>mutool as primary text engine</td><td class="bad">reversed</td><td>chosen on reputation for a bbox requirement that did not exist; worst of seven on the first real file</td></tr>
+<tr><td>Rust orchestrator</td><td class="bad">reversed</td><td>only advantage was COM, which v1 does not use</td></tr>
+<tr><td>Consensus on every file</td><td class="bad">cut</td><td>over-engineering (R2, R5)</td></tr>
+<tr><td>Calibration framework, fidelity vectors</td><td class="bad">cut</td><td>Matt inspects output directly; a hand-edited table suffices</td></tr>
+<tr><td>Per-file RFC 3161 timestamps</td><td class="warn">deferred</td><td>above the bar set by R2</td></tr>
+</table>
+
+<h2>12 · Open questions</h2>
+<table>
+<tr><th>#</th><th>Question</th><th>Blocks</th></tr>
+<tr><td>1</td><td>Output location — <code>_derived/</code> beside source, or one staging dir?</td><td>Phase 6</td></tr>
+<tr><td>2</td><td>Package granularity — per file, or per intake batch?</td><td>Phase 6</td></tr>
+<tr><td>3</td><td>Blob dedup — shared across packages, or self-contained per package?</td><td>Phase 6</td></tr>
+<tr><td>4</td><td>Does reconstruction-failure block sealing, or just get recorded?</td><td>Phase 6</td></tr>
+<tr><td>5</td><td>Repair target ranking: opens / preserves / defensible / parseable</td><td>repair work only</td></tr>
+<tr><td>6</td><td>Retention window on WORM storage</td><td>Phase 8</td></tr>
+</table>
+<p>None of these block Phases 0–5. Start building.</p>
+
+<script>
+mermaid.initialize({startOnLoad:true,theme:"dark",securityLevel:"loose",
+ themeVariables:{background:"#171a21",primaryColor:"#1e2330",primaryTextColor:"#e6e8ec",
+ primaryBorderColor:"#3a4152",lineColor:"#6b7689",secondaryColor:"#242a38",
+ tertiaryColor:"#1a1f2b",fontSize:"13px"}});
+</script>
+</div></body></html>

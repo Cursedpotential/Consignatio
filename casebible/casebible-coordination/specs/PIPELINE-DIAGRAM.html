@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Case Bible — Planned Evidence Pipeline</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+  :root{
+    --bg:#0e1116; --panel:#161b22; --ink:#e6edf3; --mut:#9aa7b4; --line:#30363d;
+    --sort:#4493f8; --proc:#3fb950; --pipe:#f85149; --gw:#d29922; --ui:#bc8cff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.6 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}
+  .wrap{max-width:1100px;margin:0 auto;padding:32px 22px 80px;}
+  h1{font-size:26px;margin:0 0 4px}
+  h2{font-size:19px;margin:34px 0 10px;border-bottom:1px solid var(--line);padding-bottom:6px}
+  .byline{color:var(--mut);font-size:13px;margin-bottom:18px}
+  .diagram{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;overflow:auto;text-align:center}
+  .note{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--gw);border-radius:8px;padding:12px 16px;margin:14px 0;color:var(--mut)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:12px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+  .card h3{margin:0 0 6px;font-size:15px}
+  .card p{margin:0;color:var(--mut);font-size:13.5px}
+  .tag{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;margin-left:6px;vertical-align:middle}
+  .live{background:rgba(63,185,80,.15);color:#3fb950;border:1px solid #2ea043}
+  .pend{background:rgba(210,153,34,.15);color:#d29922;border:1px solid #9e6a03}
+  .plan{background:rgba(188,140,255,.15);color:#bc8cff;border:1px solid #8957e5}
+  ul{margin:8px 0 0;padding-left:20px;color:var(--mut)} li{margin:4px 0}
+  code{background:#0b0f14;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:12.5px;color:#e6edf3}
+  .legend span{display:inline-block;margin-right:14px;font-size:13px}
+  .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:middle}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Case Bible — Planned Evidence Pipeline</h1>
+  <div class="byline">Byline: Claude Code (ORCHESTRATOR) · Opus 4.8 · 2026-06-27 · for owner verification before the pipeline runs end-to-end</div>
+
+  <div class="legend">
+    <span><i class="dot" style="background:var(--ui)"></i>Unified surface</span>
+    <span><i class="dot" style="background:var(--sort)"></i>SORT</span>
+    <span><i class="dot" style="background:var(--proc)"></i>PROCESS (evidence)</span>
+    <span><i class="dot" style="background:var(--gw)"></i>Gateway/access</span>
+    <span><i class="dot" style="background:var(--pipe)"></i>PIPELINE owns infra/parsers</span>
+  </div>
+
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart TB
+  UI["🖥️ UNIFIED CONTROL and VIEWING SURFACE — web (planned)<br/>view · tweak · change · monitor EVERYTHING<br/>evidence · pipeline · DBs · agents · custody · jobs"]
+
+  subgraph SRC["📥 SOURCES — raw evidence (casebible-raw R2 + /data)"]
+    S1["Messaging: SMS-XML S+R · FB DYI JSON<br/>iMessage HTML static + script-embedded<br/>transcript TXT/CSV · tabular CSV<br/>Snapchat JSON · phone logs · XLSX · PDF"]
+    S2["Other: screenshots · records · docs · media · audio"]
+  end
+
+  subgraph SORTL["🟦 SORT — raw to sorted vault"]
+    SO["dedup md5 to sha256 · type-first vault<br/>best-format select · quarantine · enrich tags"]
+  end
+
+  subgraph EV["🟩 PROCESS — evidence vertical"]
+    C["1 CUSTODY<br/>sha256 identity + write-once blob /data<br/>3-level SHA-256: file to per-msg to linked chain<br/>evidence_hash append-only · Ed25519 ph2 · RFC-3161"]
+    P["2 PARSE — registry by content-sniff<br/>sms_xml/SBV · facebook_json · imessage_html static+regex<br/>transcript-marker · messaging_csv · snapchat · xlsx · extract.text OCR<br/>per-message normalized_record · speakers never blended"]
+    ST["3 STORE — normalized_record · PG = relational SSOT"]
+    K["4 KNOWLEDGE — embed bge-m3 1024d to Milvus casebible_evidence + PG"]
+    G["5 GRAPH ADR-0031 — entities/timeline to Graphiti/Neo4j group_id=casebible"]
+    C --> P --> ST --> K --> G
+  end
+
+  subgraph GW["🚪 GATEWAY and ACCESS"]
+    F["facade :8090 platform-tools<br/>11 tools · registry_ok:true"]
+    CF["ContextForge — single MCP gateway"]
+    SBV["SBV viewer :8085<br/>view + open file + manual-process"]
+  end
+
+  AG["🤖 Agno agents + platform<br/>Graphiti memory · MCP tools"]
+
+  S1 --> SO
+  S2 --> SO
+  SORTL --> C
+  P -. served by .-> F
+  F --> CF --> AG
+  G --> AG
+  SBV -. manual file .-> C
+  UI -.-> SORTL
+  UI -.-> EV
+  UI -.-> GW
+  UI -.-> AG
+    </pre>
+  </div>
+
+  <div class="note">Dotted lines = control/serving relationships; solid lines = data flow. The <b>Unified Surface</b> (top) sits over every layer for view/tweak/change/monitor. Custody (step 1) is the <b>first</b> thing that touches any evidence — including a file you open manually in SBV — so nothing enters the schema without a hash + chain.</div>
+
+  <h2>Stage by stage</h2>
+  <div class="grid">
+    <div class="card"><h3>📥 Sources</h3><p>The owner's real evidence, mixed-format. Messaging spans raw structured (SMS-XML, FB DYI JSON) <i>and</i> derived (transcript TXT/CSV, tabular CSV, PDF, XLSX) plus Snapchat JSON and phone logs. Canonical structured formats live in <code>casebible-raw</code>; derived views are secondary.</p></div>
+    <div class="card"><h3>🟦 SORT — raw → sorted</h3><p>Dedup (md5 pre-filter → <b>sha256 canonical</b>), type-first vault, best-format selection (structured &gt; derived), quarantine junk, enrich tags. One writer, one reader (PROCESS, read-only).</p></div>
+    <div class="card"><h3>🟩 1 · Custody <span class="tag live">spine de-risked</span></h3><p><b>sha256</b> = the one identity. Write-once blob to the <code>/data</code> store. 3-level SHA-256: file hash → per-message hash → hash-linked chain (verifies). Ed25519 signing = phase-2; RFC-3161 external timestamp = recommended anchor.</p></div>
+    <div class="card"><h3>🟩 2 · Parse <span class="tag pend">owner-custom built, deploy pending</span></h3><p>Registry picks the parser by <b>content-sniff</b> (not extension): sms_xml / SBV-primary, facebook_json, imessage_html (static-DOM + script-embedded regex + silent-empty hard-fail), transcript-marker, messaging_csv, snapchat, xlsx, extract.text/OCR. <b>Per-message records; speakers never blended.</b></p></div>
+    <div class="card"><h3>🟩 3 · Store <span class="tag live">live</span></h3><p><code>analysis.normalized_record</code> in Postgres — the relational source of truth. Survives Milvus resets (bind-mount). The 1,918 provisional iMessage rows live here now.</p></div>
+    <div class="card"><h3>🟩 4 · Knowledge</h3><p>Embed (bge-m3, 1024-d) → Milvus <code>casebible_evidence</code> + PG knowledge contents. Milvus now fault-isolated on its own stack.</p></div>
+    <div class="card"><h3>🟩 5 · Graph <span class="tag plan">ADR-0031</span></h3><p>Entities / relationships / timeline → Graphiti (Neo4j, <code>group_id=casebible</code>). This is the lane that needs Graphiti wired into the Agno agents.</p></div>
+    <div class="card"><h3>🚪 Gateway &amp; access <span class="tag live">facade live</span></h3><p>facade :8090 (11 tools, <code>registry_ok:true</code>) → ContextForge single MCP gateway → Agno agents. <b>SBV viewer :8085</b> for view + open-file + manual-process (routes back through custody).</p></div>
+  </div>
+
+  <h2>🖥️ Unified control &amp; viewing surface <span class="tag plan">planned — design starting</span></h2>
+  <p>From the original iterations: a single web surface to <b>view, tweak, change, and monitor everything</b> — evidence rows, the pipeline stages and jobs, the DBs (PG/Neo4j/Milvus/Surreal), the agents, and the custody chain. Today these are scattered across separate tools (AgentOS UI, SBV viewer, Attu for Milvus, ContextForge admin). The plan consolidates them into one pane of glass. PIPELINE is being asked to mine the original-iteration design intent and propose the architecture (extend AgentOS UI vs. a dedicated dashboard) before building.</p>
+
+  <h2>Where it stands today</h2>
+  <ul>
+    <li><span class="tag live">live</span> SBV→MCP facade verified — 11 tools, <code>registry_ok:true</code>, <code>sbv.reachable:true</code>, public surfaces 200.</li>
+    <li><span class="tag live">live</span> Data tier healthy after the Milvus-split (PG/Neo4j/graphiti/SurrealDB isolated from Milvus; SurrealDB now genuinely healthy).</li>
+    <li><span class="tag live">live</span> SBV viewer usable at <code>http://100.72.169.40:8085</code> (tailnet) — view today; manual-process-with-custody is the next add.</li>
+    <li><span class="tag pend">pending</span> Owner-custom iMessage parser (static + script-embedded + hard-fail) built (<code>3f6f161</code>) — folds into the next platform-tools rebuild + <code>build_imessage_workflow</code>.</li>
+    <li><span class="tag pend">pending</span> Gap parsers: XLSX, Snapchat JSON, phone call-logs.</li>
+    <li><span class="tag plan">planned</span> Graphiti wired into the Agno agents (it's already an MCP in Claude Code).</li>
+    <li><span class="tag plan">planned</span> Unified web control/viewing surface.</li>
+  </ul>
+
+  <h2>Open decision for you</h2>
+  <p><b>Ingest path:</b> the provisional best-effort ingest is paused at the 1,918 iMessage rows (safe in PG). Now that the facade works, the recommendation is to ingest the rest through the <i>proper</i> pipeline (deploy the owner-custom parser + register the workflow) rather than rebuild a throwaway provisional writer. Your call.</p>
+</div>
+
+<script>
+  mermaid.initialize({ startOnLoad:true, theme:"dark", securityLevel:"loose", flowchart:{useMaxWidth:true, htmlLabels:true, curve:"basis"} });
+</script>
+</body>
+</html>
