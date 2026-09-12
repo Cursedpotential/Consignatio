@@ -2,6 +2,10 @@
 
 ## Active delivery update — 2026-09-11
 
+- [x] Real one-note CocoIndex/NIM/Weaviate/HTTP proof; unchanged repeat skips
+  transformation. Runtime teardown bug fixed, 23 scoped tests pass. See
+  `LIVE-PROOF-2026-09-11.md`. Native interactive search remains pending.
+
 **Owner priority correction:** Xplorer-based live filesystem organization is phase
 one. Run the actual native file manager, its splits/previews/multi-selection and
 direct user-directed moves. Selection-aware chat and local/cloud access belong

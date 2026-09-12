@@ -62,9 +62,18 @@ def index(
 
     settings = _settings(source, output, source_id)
     # Import only after CLI overrides are reflected in the environment.
-    from .pipeline import app as index_app
+    import cocoindex as coco
 
-    index_app.update_blocking(report_to_stdout=True)
+    from .pipeline import app as index_app
+    from .run_status import latest_run_status
+
+    # Programmatic callers own runtime teardown, unlike the CocoIndex CLI.
+    # Closing it flushes the lifespan's final receipt and releases source locks.
+    with coco.runtime():
+        index_app.update_blocking(report_to_stdout=True)
+    run_status = latest_run_status(settings.output_dir)
+    if run_status.get("state") != "finished" or run_status.get("failure_events"):
+        raise RuntimeError("Index run did not finish cleanly; inspect retained run status")
     snapshot = build_active_snapshot(settings)
     receipt: dict[str, object] = {
         "operation": "index",

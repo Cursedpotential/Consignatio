@@ -1,4 +1,22 @@
-# Proposed synthetic live proof — not executed
+# Synthetic live proof
+
+**2026-09-11 execution update:** the backend proof now passes against the settled
+8082 instance. See `LIVE-PROOF-2026-09-11.md` for results and the lifecycle bug
+found/fixed. The original proposed commands below are retained as historical
+context; physical target selection is no longer pending.
+
+Repeatable runner (creates a fresh synthetic collection and makes real NIM calls):
+
+```powershell
+cd "E:\AI_Workspace\Projects\Propria\Consignatio\Intake\backend" && & { $env:PYTHONDONTWRITEBYTECODE='1'; $env:TEMP='E:\AI_Workspace\.intake-dev\temp'; $env:TMP=$env:TEMP; $env:INTAKE_WEAVIATE_URL='http://100.91.190.107:8082'; .\.venv\Scripts\python.exe scripts/synthetic_live_proof.py }
+```
+
+The runner accepts no corpus source path; it only indexes the committed fictional
+note. Each index subprocess times out after 150 seconds. It starts its own
+loopback API for HTTP checks and terminates only that process on completion.
+Limits are file/chunk/concurrency/time bounds, **not an OS memory ceiling**.
+
+## Original pre-execution plan
 
 Physical Weaviate instance selection is pending owner direction. No collection,
 schema, service, corpus index or provider request was created by this document.

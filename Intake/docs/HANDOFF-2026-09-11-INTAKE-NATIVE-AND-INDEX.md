@@ -9,8 +9,14 @@ Do not repeat the whole investigation, restart architecture planning, or run bro
 audits/tests. Continue from the verified state below. This handoff creation does
 not dispatch another model, schedule work, or authorize new background spending.
 
-**Status: PARTIAL. Native desktop runs; combined-index source is integrated and
-tested, but live CocoIndex → Weaviate → desktop search proof is still outstanding.**
+**Status: PARTIAL. Native desktop runs; real CocoIndex → NIM → Weaviate → HTTP
+search proof passed. Native search-panel/chat click-through remains outstanding.**
+
+Latest continuation: `../backend/docs/LIVE-PROOF-2026-09-11.md`. One fictional note
+indexed in 12.94s; unchanged repeat 2.07s/zero transformations; keyword and hybrid
+both retrieve it. CLI runtime teardown was fixed and regression-tested. Use the
+successful synthetic collection `IntakeSynthetic20260912T023403` for desktop proof;
+do not repeat provisioning or treat old pending-live text below as current.
 
 **The Weaviate choice is SETTLED: use 100.91.190.107:8082 (gRPC50052).** The owner
 ordered the old8081 instance retired. It is gone from Coolify. Do not reopen the
