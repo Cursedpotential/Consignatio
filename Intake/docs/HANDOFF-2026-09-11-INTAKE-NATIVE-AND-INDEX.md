@@ -30,21 +30,24 @@ choice, resurrect it, or follow historical migration holds that say preserve bot
 - Filestash → OpenList WebDAV is the separate remote abstraction. Local/mounted
   paths are the initial working route, not its replacement.
 
-## Locations / Git — do not lose dirty work
+## Locations / Git — private publication update
 
 | Component | Absolute path / state |
 |---|---|
-| Vault repository | `E:\AI_Workspace\Projects\Propria\Consignatio` — branch `main`, HEAD `161d3c4` |
+| Vault repository | `E:\AI_Workspace\Projects\Propria\Consignatio` — branch `main`, private `Cursedpotential/Consignatio` |
 | Intake | `E:\AI_Workspace\Projects\Propria\Consignatio\Intake` |
 | Backend | `E:\AI_Workspace\Projects\Propria\Consignatio\Intake\backend` |
-| Actual desktop fork | `E:\AI_Workspace\Projects\Propria\Consignatio\Intake\xplorer-copilot-buildkit\xplorer-copilot` — branch `feat/acp-copilot`, HEAD `f59e6202` |
+| Actual desktop fork | `E:\AI_Workspace\Projects\Propria\Consignatio\Intake\xplorer-copilot-buildkit\xplorer-copilot` — branch `feat/acp-copilot`, checkpoint `6990b7ed`, private `Cursedpotential/Intake-desktop` |
 | Original legacy work | `E:\AI_Workspace\Projects\Propria\Consignatio\casebible` |
 
-At handoff: parent1082 tracked status entries (includes prior relocation work);
-fork75 dirty entries. No implementation commits/pushes were made in this run.
-Do not claim all changes, reset/clean/stash, broad-stage, or modify child Git
-boundaries. The fork is independent and ignored by the parent, not a gitlink.
-Preserve pre-existing fork CLAUDE.md edits. Never push upstream.
+Superseding Git update: owner authorized new private repositories and cleanup.
+Source and documentation have been checkpointed, with independent desktop and
+build-kit boundaries preserved. See `../../REPOSITORIES.md` for clone commands,
+branch map, original local-history preservation, secret-scan receipts and exclusions.
+The original parent history includes imported corpus files and is LOCAL ONLY;
+never push all branches, mirror the repo, or publish its archival refs.
+Desktop pushes go to `private`, never the public origin or upstream. Existing
+fork CLAUDE.md edits are included in the checkpoint. No source files were deleted.
 
 Read parent and Intake AGENTS.md/AGENT_MEMORY.md and the fork's CLAUDE.md before
 editing. Installed CocoIndex/Weaviate skills are at `C:\Users\matts\.agents\skills`.

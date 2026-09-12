@@ -75,6 +75,11 @@ explicit, least-privilege native commands.
 | Child | Path | Remote | Rule |
 |---|---|---|---|
 | Xplorer copilot build kit | `Intake/xplorer-copilot-buildkit/xplorer-copilot-buildkit/` | `Cursedpotential/xplorer-copilot-buildkit` (private) | own `CLAUDE.md`; push to `origin` only |
-| Xplorer fork (`xplorer-copilot`) | `Intake/xplorer-copilot-buildkit/xplorer-copilot/` | `origin` = `Cursedpotential/xplorer`; `upstream` = `kimlimjustin/xplorer`, push DISABLED | personal tool; **never push upstream**; base branch `next` |
+| Xplorer fork (`xplorer-copilot`) | `Intake/xplorer-copilot-buildkit/xplorer-copilot/` | `private` = `Cursedpotential/Intake-desktop`; public `origin` and `upstream` are fetch-only | push Intake work to `private` only; active branch `feat/acp-copilot` |
+
+Private source publication is documented in `REPOSITORIES.md`. Never push all
+branches or mirror this repository: local archival branches contain imported
+corpus history intentionally excluded from GitHub. `repair-tool-kit-codex/` is
+a linked local worktree, not an independent repository; preserve its branch.
 
 > _Byline amendment: Claude Code · Fable 5.1 · 2026-09-09 — added Child repositories section for the Xplorer copilot kit and fork._
