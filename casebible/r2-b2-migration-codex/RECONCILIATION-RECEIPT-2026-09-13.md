@@ -34,8 +34,16 @@ material remains preserved locally but is excluded by this lane's `.gitignore`:
 - `to_be_deleted/`, including prior safe-operation backups.
 
 These exclusions keep generated data, machine controls, and backups out of Git
-without deleting them. The original loose directory remains intact until the
-owner chooses its later quarantine or retention disposition.
+without deleting them. After the branch was committed and its exact remote SHA
+was verified, the complete 102-file loose directory was moved intact to:
+
+```text
+E:/AI_Workspace/Projects/Propria/Consignatio/to_be_deleted/r2-b2-migration-codex-loose-lane-20260913
+```
+
+The quarantined directory still contains 96,686,343 bytes. The owner is the only
+person who may delete it. The former loose path under `casebible/` is absent in
+the main checkout, so it no longer pollutes that checkout's untracked status.
 
 ## Reconciled destination contract
 
