@@ -113,3 +113,7 @@ casebible/casebible-coordination/specs/_survivors58.json
 casebible/casebible-coordination/specs/*-paths.txt
 casebible/casebible-coordination/specs/*-OUTPUT.txt
 casebible/tmpcheck.txt
+
+# Machine-generated session/runtime files preserved locally, never published.
+**/COMPACT-SUMMARY-*.md
+/version
