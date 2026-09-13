@@ -51,5 +51,12 @@ Safety boundaries used throughout:
 
 The preservation branch rebased cleanly onto `origin/main` at `1db6e9d`. Both
 R2/B2 commits, `fc58c1c` and `1db6e9d`, are verified ancestors of the reconciled
-branch. The branch is four commits ahead of `origin/main` before this final receipt
-update. Push proof remains pending.
+branch. Post-rebase validation again passed all 107 Intake backend tests. The
+publishable content tip `f06a14956096993836205e5de86b466e756e8213` was pushed to
+`origin/codex/consignatio-preserve-20260913`; the receipt-only commit that contains
+this final push record is pushed to the same branch immediately afterward.
+
+Final range checks cover 64 changed files: no file exceeds 5 MiB, `git diff --check`
+passes, and the high-confidence private-key/provider-token/credential-URL scan has
+zero findings after sanitization. The canonical checkout has no tracked or untracked
+publishable remainder. The two ignored local artifacts listed above remain present.
