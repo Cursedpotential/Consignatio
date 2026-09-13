@@ -1,0 +1,136 @@
+{
+  "id": "ppo-hearing",
+  "title": "Personal Protection Order (PPO) Hearing",
+  "what_it_is": "A hearing on a petition for a personal protection order, or on a motion to modify/terminate one already entered. PPOs cannot be made mutual, and an existing custody/parenting-time order does not automatically survive unmodified once a PPO takes precedence (MCR 3.706(C)(3)).",
+  "who_is_in_the_room": [
+    "The judge.",
+    "The petitioner (who must attend, MCR 3.705(B)(4)) and the respondent, if the hearing is contested."
+  ],
+  "sequence": [
+    "If the petition sought an ex parte order, the court must rule within one business day of filing (MCR 3.705(A)(1)); an ex parte order is valid for not less than 182 days (MCR 3.705(A)(3)).",
+    "If no ex parte order was requested, or one was refused and a hearing is requested, the court schedules a hearing as soon as possible (MCR 3.705(B)(1)).",
+    "The hearing is held on the record (MCR 3.705(B)(3)); the petitioner must attend or the court may adjourn or dismiss (MCR 3.705(B)(4)).",
+    "At the conclusion, the court states its reasons for granting or denying on the record, and in writing if denying (MCR 3.705(B)(6)).",
+    "A respondent to an ex parte order may move to modify or terminate within 14 days of service/actual notice (MCR 3.706(A)(7)).",
+    "If custody/parenting time is affected, the issuing court must contact the court with jurisdiction over that matter (MCR 3.706(C)(1)); a party seeking to modify the existing custody/parenting-time order must file a motion, with a hearing held within 21 days (MCR 3.706(C)(3)(a))."
+  ],
+  "prepare": [
+    "Specific facts, in an affidavit or verified petition, of the conduct you rely on - dates, what happened, how you know.",
+    "Copies of any existing custody/parenting-time order that may be affected.",
+    "A safety plan for attending: separate waiting areas, staggered arrival, or a remote appearance request made in advance."
+  ],
+  "applicable_rules": [
+    {
+      "cite": "MCR 3.705(A)(1)",
+      "summary": "The court must rule on a request for an ex parte PPO within one business day of filing.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 3.705(A)(1)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    },
+    {
+      "cite": "MCR 3.705(A)(3)",
+      "summary": "An ex parte order is valid for not less than 182 days and must state its expiration date.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 3.705(A)(3)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    },
+    {
+      "cite": "MCR 3.706(A)(7)",
+      "summary": "An ex parte PPO must state that the restrained individual may, within 14 days of service or actual notice, file a motion to modify or terminate it and request a hearing.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 3.706(A)(7)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    },
+    {
+      "cite": "MCR 3.706(C)(3)(a)",
+      "summary": "A party seeking to modify an existing custody/parenting-time order affected by a PPO must file a motion, with a hearing held within 21 days of filing.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 3.706(C)(3)(a)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    }
+  ],
+  "deadlines": [
+    {
+      "label": "Ruling on an ex parte PPO request",
+      "rule_preset": null,
+      "cite": "MCR 3.705(A)(1)",
+      "status": "PROVISIONAL_VERIFY"
+    },
+    {
+      "label": "Motion to modify/terminate an ex parte PPO",
+      "rule_preset": null,
+      "cite": "MCR 3.706(A)(7)",
+      "status": "PROVISIONAL_VERIFY"
+    },
+    {
+      "label": "Hearing on a motion to modify the existing custody/parenting-time order",
+      "rule_preset": null,
+      "cite": "MCR 3.706(C)(3)(a)",
+      "status": "PROVISIONAL_VERIFY"
+    }
+  ],
+  "traps": [
+    {
+      "trap": "Believing a PPO can run both directions.",
+      "safe_move": "Mutual PPOs are prohibited (MCR 3.706(B)). A cross-petition is a separate proceeding."
+    },
+    {
+      "trap": "Missing that the PPO takes precedence over an existing custody/parenting-time order.",
+      "safe_move": "It does, until the PPO expires or the other court modifies its order to accommodate it (MCR 3.706(C)(3))."
+    },
+    {
+      "trap": "Not attending as the petitioner.",
+      "safe_move": "Failure to appear can lead to adjournment or dismissal (MCR 3.705(B)(4))."
+    },
+    {
+      "trap": "Trying to use the PPO hearing to litigate the whole custody dispute.",
+      "safe_move": "Stay on the conduct the petition alleges; custody/parenting-time changes go through the separate motion track (MCR 3.706(C)(3)(a))."
+    }
+  ],
+  "do_not": [
+    "Never characterize the other parent with a clinical label as a pleaded claim (narcissist, alienator, PAS, coercive control) - GUARDRAILS.md S2.",
+    "Never use the child as a witness, messenger, interviewee, or source, and never record the child - GUARDRAILS.md S8, absolute.",
+    "Never assert that any recording you made is lawful - Michigan law is unsettled and the exposure is criminal.",
+    "Never sign or stipulate to anything on the spot without reading it fully first.",
+    "Do not contact the other party to discuss the petition or order, in person or by proxy, while it is pending or in force."
+  ],
+  "phrases": {
+    "openers": [
+      "Good morning/afternoon, Your Honor. My name is [Party], and I am representing myself.",
+      "I am here to address [narrow issue]. I have [N] exhibits and a short chronology."
+    ],
+    "closers": [
+      "That is the factual answer.",
+      "I don't have that information, but I can provide records if needed.",
+      "I'd like the record to reflect [narrow, factual point] and I reserve my right to address anything broader in the appropriate forum."
+    ]
+  },
+  "safety_gates": [
+    "route_issue first",
+    "immediate danger -> 911, do not proceed on this guide alone",
+    "PPO/DV/CPS contact live -> stop, safety resources, do not proceed on this guide alone",
+    "UCCJEA/interstate fact -> stop, MC 416 affidavit guidance",
+    "recording question in any form -> unsettled law, criminal exposure, attorney question only",
+    "child asked/expected to speak to anyone about the case -> stop"
+  ],
+  "exit_checklist": [
+    "Write down the date, who appeared, and what was decided or taken under advisement before leaving the building.",
+    "Write on any document handed to you the date you received it - that date can start a clock.",
+    "Calendar every deadline this event started, counted from the earliest possible trigger date.",
+    "Note whether anything was requested that you did not have time to answer fully, and follow up in writing."
+  ],
+  "sources": [
+    {
+      "file": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 3.705, Rule 3.706"
+    },
+    {
+      "file": "content/custody-guide/sources/primary/mcl/mcl-600-2950.md",
+      "section": "definitions"
+    },
+    {
+      "file": "content/custody-guide/GUARDRAILS.md",
+      "section": "S9"
+    }
+  ]
+}

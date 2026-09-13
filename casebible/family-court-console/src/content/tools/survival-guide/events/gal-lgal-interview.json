@@ -1,0 +1,95 @@
+{
+  "id": "gal-lgal-interview",
+  "title": "Guardian ad Litem / Lawyer-Guardian ad Litem Interview",
+  "what_it_is": "A meeting with a guardian ad litem (GAL) or lawyer-guardian ad litem (LGAL) the court has appointed. In a custody dispute, the court may utilize a GAL or community behavioral-science resources to investigate and study the dispute, and consider their recommendations (MCL 722.27(1)(d)). The GAL/LGAL represents the child's interests, not either parent's.",
+  "who_is_in_the_room": [
+    "The GAL/LGAL - appointed by the court; may interview each parent, the child, and third parties.",
+    "You, typically alone."
+  ],
+  "sequence": [
+    "The court appoints a GAL/LGAL (or refers to community behavioral-science resources) as part of the custody investigation (MCL 722.27(1)(d)).",
+    "The GAL/LGAL interviews each parent, and may interview the child, teachers, providers, or others.",
+    "The GAL/LGAL may prepare a recommendation the court considers alongside the other best-interest evidence."
+  ],
+  "prepare": [
+    "The same factual chronology and documentation used for the FOC interview - consistency across interviews matters.",
+    "A clear description of your parenting role, the child's routine, and any concerns stated as observed facts with dates.",
+    "Nothing prepared for or rehearsed with the child - the GAL/LGAL's contact with the child is the GAL/LGAL's own process."
+  ],
+  "applicable_rules": [
+    {
+      "cite": "MCL 722.27(1)(d)",
+      "summary": "The court may utilize a guardian ad litem or community behavioral-science resources in the investigation and study of custody disputes and consider their recommendations for resolution.",
+      "source": "content/custody-guide/sources/primary/mcl/mcl-722-27.md",
+      "section": "722.27(1)(d)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    }
+  ],
+  "deadlines": [
+    {
+      "label": "No fixed statutory day-count located for a GAL/LGAL report in a custody matter",
+      "rule_preset": null,
+      "cite": "MCL 722.27(1)(d)",
+      "status": "PROVISIONAL_VERIFY"
+    }
+  ],
+  "traps": [
+    {
+      "trap": "Coaching or debriefing the child before or after the GAL/LGAL's contact.",
+      "safe_move": "Absolute prohibition (GUARDRAILS.md S8). Do not discuss the GAL/LGAL's questions with the child at all."
+    },
+    {
+      "trap": "Treating the GAL/LGAL as your advocate.",
+      "safe_move": "The GAL/LGAL represents the child's interests, not yours - do not share strategy or ask them to relay messages to the other parent."
+    },
+    {
+      "trap": "Volunteering diagnoses or labels for the other parent.",
+      "safe_move": "Describe conduct and dates; a clinical label is banned as a pleaded claim and undermines credibility with the GAL/LGAL too (GUARDRAILS.md S2)."
+    },
+    {
+      "trap": "Assuming the GAL/LGAL role and process are identical to the FOC's.",
+      "safe_move": "They are different appointments with different statutory bases - PROVISIONAL, confirm which role (if any) is appointed in this case with the clerk."
+    }
+  ],
+  "do_not": [
+    "Never characterize the other parent with a clinical label as a pleaded claim (narcissist, alienator, PAS, coercive control) - GUARDRAILS.md S2.",
+    "Never use the child as a witness, messenger, interviewee, or source, and never record the child - GUARDRAILS.md S8, absolute.",
+    "Never assert that any recording you made is lawful - Michigan law is unsettled and the exposure is criminal.",
+    "Never sign or stipulate to anything on the spot without reading it fully first."
+  ],
+  "phrases": {
+    "openers": [
+      "Good morning/afternoon, Your Honor. My name is [Party], and I am representing myself.",
+      "I am here to address [narrow issue]. I have [N] exhibits and a short chronology."
+    ],
+    "closers": [
+      "That is the factual answer.",
+      "I don't have that information, but I can provide records if needed.",
+      "I'd like the record to reflect [narrow, factual point] and I reserve my right to address anything broader in the appropriate forum."
+    ]
+  },
+  "safety_gates": [
+    "route_issue first",
+    "immediate danger -> 911, do not proceed on this guide alone",
+    "PPO/DV/CPS contact live -> stop, safety resources, do not proceed on this guide alone",
+    "UCCJEA/interstate fact -> stop, MC 416 affidavit guidance",
+    "recording question in any form -> unsettled law, criminal exposure, attorney question only",
+    "child asked/expected to speak to anyone about the case -> stop"
+  ],
+  "exit_checklist": [
+    "Write down the date, who appeared, and what was decided or taken under advisement before leaving the building.",
+    "Write on any document handed to you the date you received it - that date can start a clock.",
+    "Calendar every deadline this event started, counted from the earliest possible trigger date.",
+    "Note whether anything was requested that you did not have time to answer fully, and follow up in writing."
+  ],
+  "sources": [
+    {
+      "file": "content/custody-guide/sources/primary/mcl/mcl-722-27.md",
+      "section": "722.27(1)(d)"
+    },
+    {
+      "file": "content/custody-guide/GUARDRAILS.md",
+      "section": "S8"
+    }
+  ]
+}

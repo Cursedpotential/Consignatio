@@ -1,0 +1,11 @@
+# Byline: Claude Code · Sonnet 5 · 2026-09-07
+# Build context for mcp-app/Dockerfile.cloud is this plugin root. Keep the
+# build context small and never ship dev-only, host-only, or review material.
+**/node_modules
+**/tests
+docs
+.review_hold
+app
+.remember
+.git
+*.log

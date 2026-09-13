@@ -1,0 +1,64 @@
+# Byline: Claude Code · Sonnet 5 · 2026-09-07
+#
+# Cloud container for the family-court-console MCP server, served over MCP
+# Streamable HTTP (MCP_TRANSPORT=http) and federated through ContextForge —
+# owner rulings 2026-09-07 16:16-17:12: the console runs in the cloud as its
+# own app; no client downloads anything.
+#
+# BUILD CONTEXT IS THE PLUGIN ROOT (family-court-toolkit/), not mcp-app/ —
+# every COPY below is written relative to that root. This matters because
+# core.ts / court-language.ts / survival-guide.ts resolve content/ and
+# skills/ via pluginRootPath(): dirname(import.meta.url of dist/server.js)
+# + "/../.." — i.e. two directories up from mcp-app/dist/server.js. Placing
+# content/ and skills/ next to mcp-app/ under /app reproduces exactly the
+# desktop plugin's directory shape, so no path-resolution code changes.
+#
+# In the probata repo this Dockerfile is built from
+# deploy/docker/family-court-console/src/ (a synced runtime-subset copy —
+# see scripts/sync_family_court_console.sh and
+# deploy/docker/family-court-console/README.md), because the plugin itself
+# lives outside the probata repo at
+# ~/.claude/local-plugins/plugins/family-court-toolkit/.
+FROM node:22-bookworm-slim
+
+WORKDIR /app
+
+# --- Runtime dependencies only -------------------------------------------
+# package-lock.json pins @modelcontextprotocol/sdk, @modelcontextprotocol/
+# ext-apps, surrealdb, @surrealdb/node, zod. dist/server.js is an esbuild
+# bundle that marks ONLY "surrealdb" and "@surrealdb/node" external (see
+# build.mjs) — @surrealdb/node ships native .node binaries that esbuild
+# cannot bundle, so real node_modules for these two packages are required at
+# runtime. In ws:// mode (this container always talks to a remote SurrealDB
+# service — CUSTODY_CASE_DB=ws://surreal-case:8000 — never an embedded
+# mem:///rocksdb:// engine) surrealdb's own WS engine does the work;
+# @surrealdb/node stays a plain dependency that installs cleanly on linux
+# and is simply unused at runtime in that mode.
+COPY mcp-app/package.json mcp-app/package-lock.json ./mcp-app/
+RUN cd mcp-app && npm ci --omit=dev
+
+# --- Pre-built server -------------------------------------------------------
+# `node build.mjs` is run on the host before packaging (see
+# scripts/sync_family_court_console.sh) — this image never runs esbuild or
+# tsc itself.
+COPY mcp-app/dist ./mcp-app/dist
+
+# --- Content the server reads at runtime -----------------------------------
+COPY content ./content
+COPY skills ./skills
+
+RUN chown -R node:node /app
+USER node
+
+ENV MCP_TRANSPORT=http
+ENV MCP_HTTP_HOST=0.0.0.0
+ENV MCP_HTTP_PORT=8765
+# MCP_BEARER_TOKEN, CUSTODY_CASE_DB, CUSTODY_CASE_DB_USER, CUSTODY_CASE_DB_PASS
+# are supplied at deploy time (Coolify env) — never baked into the image.
+
+EXPOSE 8765
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:'+(process.env.MCP_HTTP_PORT||8765)+'/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+
+CMD ["node", "mcp-app/dist/server.js"]

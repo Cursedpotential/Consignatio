@@ -1,0 +1,129 @@
+{
+  "id": "objection-to-referee-recommendation",
+  "title": "Objection to Referee Recommended Order (FOC 68)",
+  "what_it_is": "The document that obtains a judicial hearing on a referee's recommendation. It must be specific - naming the exact findings or applications of law objected to - and it must be filed with a notice of hearing, not by itself (MCR 3.215(E)(4)-(5)). The current SCAO form is FOC 68 (notice language on FOC 60); do not recreate it, use the current official version.",
+  "who_reads_it": [
+    "The judge who will hold the judicial hearing.",
+    "The other party or their counsel, who must be served per MCR 2.119(C).",
+    "The court clerk, who must receive it within 21 days of service of the recommendation."
+  ],
+  "sequence": [
+    "Identify each specific finding or application of law you dispute, using the finding-by-finding worksheet.",
+    "Draft the written objection naming those findings specifically (MCR 3.215(E)(4)).",
+    "Draft and attach a notice of hearing - required, not optional.",
+    "File with the court clerk within 21 days after the recommendation is served (MCR 3.215(E)(4)).",
+    "Serve the opposing party or counsel per MCR 2.119(C) (MCR 3.215(E)(5)), and file proof of service.",
+    "If you intend to use the referee-hearing record, serve the required 7-day notice separately (MCR 3.215(D)(4)(c))."
+  ],
+  "prepare": [
+    "The finding-by-finding worksheet: finding, why it is wrong (fact or law), record cite.",
+    "Confirm the current FOC 68/FOC 60 revision on courts.michigan.gov - PROVISIONAL, unconfirmed as of this pack's authoring.",
+    "Confirm whether Genesee requires a concurrence certificate and proposed order on an objection - PROVISIONAL, ask the clerk."
+  ],
+  "applicable_rules": [
+    {
+      "cite": "MCR 3.215(E)(4)",
+      "summary": "The objection must include a clear and concise statement of the specific findings or application of law objected to, filed with a notice of hearing within 21 days after service.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 3.215(E)(4)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    },
+    {
+      "cite": "MCR 3.215(E)(5)",
+      "summary": "The objection and notice of hearing must be served on the opposing party or counsel per MCR 2.119(C).",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 3.215(E)(5)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    },
+    {
+      "cite": "MCR 3.215(F)(3)",
+      "summary": "A frivolous or delay-motivated objection can draw costs and attorney fees.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 3.215(F)(3)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    }
+  ],
+  "deadlines": [
+    {
+      "label": "File objection + notice of hearing",
+      "rule_preset": "referee_objection",
+      "cite": "MCR 3.215(E)(4)",
+      "status": "PROVISIONAL_VERIFY"
+    },
+    {
+      "label": "Objection to a proposed recommended order's accuracy/completeness",
+      "rule_preset": null,
+      "cite": "MCR 3.215(E)(3)(d)",
+      "status": "PROVISIONAL_VERIFY"
+    },
+    {
+      "label": "Notice of intent to use the referee record",
+      "rule_preset": null,
+      "cite": "MCR 3.215(D)(4)(c)",
+      "status": "PROVISIONAL_VERIFY"
+    }
+  ],
+  "traps": [
+    {
+      "trap": "Writing \"I object to the entire recommendation.\"",
+      "safe_move": "Not specific enough - MCR 3.215(E)(4) requires naming the specific finding or legal application. Unobjected findings can become conclusive."
+    },
+    {
+      "trap": "Filing the objection without a notice of hearing.",
+      "safe_move": "The rule requires both in the same filing (MCR 3.215(E)(4))."
+    },
+    {
+      "trap": "Counting 21 days from the wrong trigger.",
+      "safe_move": "Served (MCR 3.215(E)(4)) vs. made available (MCL 552.507(4)) vs. a Genesee packet's 'mailed' language can produce different dates - count from the earliest possible date, per M16 S16.3."
+    },
+    {
+      "trap": "Objecting because you are unhappy rather than because a specific finding is wrong.",
+      "safe_move": "Risks MCR 3.215(F)(3) costs. Get advice before filing if you cannot state the specific finding in one sentence."
+    }
+  ],
+  "do_not": [
+    "Never characterize the other parent with a clinical label as a pleaded claim (narcissist, alienator, PAS, coercive control) - GUARDRAILS.md S2.",
+    "Never use the child as a witness, messenger, interviewee, or source, and never record the child - GUARDRAILS.md S8, absolute.",
+    "Never assert that any recording you made is lawful - Michigan law is unsettled and the exposure is criminal.",
+    "Never sign or stipulate to anything on the spot without reading it fully first."
+  ],
+  "phrases": {
+    "openers": [
+      "Good morning/afternoon, Your Honor. My name is [Party], and I am representing myself.",
+      "I am here to address [narrow issue]. I have [N] exhibits and a short chronology."
+    ],
+    "closers": [
+      "That is the factual answer.",
+      "I don't have that information, but I can provide records if needed.",
+      "I'd like the record to reflect [narrow, factual point] and I reserve my right to address anything broader in the appropriate forum."
+    ]
+  },
+  "safety_gates": [
+    "route_issue first",
+    "immediate danger -> 911, do not proceed on this guide alone",
+    "PPO/DV/CPS contact live -> stop, safety resources, do not proceed on this guide alone",
+    "UCCJEA/interstate fact -> stop, MC 416 affidavit guidance",
+    "recording question in any form -> unsettled law, criminal exposure, attorney question only",
+    "child asked/expected to speak to anyone about the case -> stop"
+  ],
+  "exit_checklist": [
+    "Every objected finding is named specifically, with a record cite.",
+    "A notice of hearing is attached, not filed separately or omitted.",
+    "Proof of service is filed.",
+    "The 7-day referee-record notice is served if you plan to use that record."
+  ],
+  "sources": [
+    {
+      "file": "content/custody-guide/draft/M16-referee-hearing-objection-de-novo.md",
+      "section": "16.4"
+    },
+    {
+      "file": "content/custody-guide/draft/P1-hearing-prep-referee.md",
+      "section": "Part D"
+    },
+    {
+      "file": "content/toolkit/templates/objection-to-referee-recommendation.md",
+      "section": "whole file"
+    }
+  ]
+}

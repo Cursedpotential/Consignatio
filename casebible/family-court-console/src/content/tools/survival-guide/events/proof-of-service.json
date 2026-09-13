@@ -1,0 +1,105 @@
+{
+  "id": "proof-of-service",
+  "title": "Proof of Service",
+  "what_it_is": "The document that proves who was served, with what, how, and when (MCR 2.107(D)). Without it, a filing's service cannot be established even if service actually happened correctly.",
+  "who_reads_it": [
+    "The court clerk, who files it in the case.",
+    "The judge or referee, who checks it before acting on the underlying filing."
+  ],
+  "sequence": [
+    "Serve the document on the party and, separately, on their attorney if the case has continued into a stage where MCR 3.203(I) requires it.",
+    "Complete the proof of service immediately after service - who, what document, how (mail/personal/other permitted method), and the date.",
+    "Sign it (MCR 1.109(D)(3)/(E) signature requirements apply).",
+    "File it with the court promptly, at or before any hearing that depends on the underlying filing."
+  ],
+  "prepare": [
+    "The exact last-known mailing address for the party, per MCR 3.203(B) (the address most recently given to the FOC or in the most recent order) - not an address you happen to remember.",
+    "A record of the exact date and method of service, made the same day."
+  ],
+  "applicable_rules": [
+    {
+      "cite": "MCR 2.107(D)",
+      "summary": "Proof of service must be filed promptly, and must show the manner, date, and person served.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 2.107(D)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    },
+    {
+      "cite": "MCR 2.107(B)(1)",
+      "summary": "Service must be made on the party.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 2.107(B)(1)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    },
+    {
+      "cite": "MCR 3.203(I)",
+      "summary": "Copies of notices required to be given to the parties must also be sent to the attorneys of record, until 21 days after judgment or postjudgment matters conclude, whichever is later.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 3.203(I)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    }
+  ],
+  "deadlines": [
+    {
+      "label": "File proof of service (no fixed universal day-count; tied to the underlying filing's own deadline)",
+      "rule_preset": null,
+      "cite": "MCR 2.107(D)",
+      "status": "PROVISIONAL_VERIFY"
+    }
+  ],
+  "traps": [
+    {
+      "trap": "Serving only the party when the attorney also had to be served (or vice versa).",
+      "safe_move": "Serve both to satisfy every reading of the rule (MCR 2.107(B)(1); MCR 3.203(I))."
+    },
+    {
+      "trap": "Guessing at the party's address instead of using the address of record.",
+      "safe_move": "Use the last known mailing address as MCR 3.203(B) defines it; guessing wrong can undo the filing."
+    },
+    {
+      "trap": "Filing the proof of service late, after a hearing already happened.",
+      "safe_move": "File it promptly - a missing or late proof of service can undermine the whole filing's validity, and was the cause of a prior failed filing in this project's own case-facts history."
+    }
+  ],
+  "do_not": [
+    "Never characterize the other parent with a clinical label as a pleaded claim (narcissist, alienator, PAS, coercive control) - GUARDRAILS.md S2.",
+    "Never use the child as a witness, messenger, interviewee, or source, and never record the child - GUARDRAILS.md S8, absolute.",
+    "Never assert that any recording you made is lawful - Michigan law is unsettled and the exposure is criminal.",
+    "Never sign or stipulate to anything on the spot without reading it fully first.",
+    "Do not investigate a confidential address yourself; if a party's address is confidential by order, the FOC supplies a service address."
+  ],
+  "phrases": {
+    "openers": [
+      "Good morning/afternoon, Your Honor. My name is [Party], and I am representing myself.",
+      "I am here to address [narrow issue]. I have [N] exhibits and a short chronology."
+    ],
+    "closers": [
+      "That is the factual answer.",
+      "I don't have that information, but I can provide records if needed.",
+      "I'd like the record to reflect [narrow, factual point] and I reserve my right to address anything broader in the appropriate forum."
+    ]
+  },
+  "safety_gates": [
+    "route_issue first",
+    "immediate danger -> 911, do not proceed on this guide alone",
+    "PPO/DV/CPS contact live -> stop, safety resources, do not proceed on this guide alone",
+    "UCCJEA/interstate fact -> stop, MC 416 affidavit guidance",
+    "recording question in any form -> unsettled law, criminal exposure, attorney question only",
+    "child asked/expected to speak to anyone about the case -> stop"
+  ],
+  "exit_checklist": [
+    "Both the party and the attorney (if any) are accounted for.",
+    "The address used is the address of record, not memory.",
+    "The proof of service is signed and filed promptly."
+  ],
+  "sources": [
+    {
+      "file": "content/custody-guide/draft/M12-pleadings-motions-service.md",
+      "section": "12.9"
+    },
+    {
+      "file": "content/toolkit/templates/proof-of-service.md",
+      "section": "whole file"
+    }
+  ]
+}

@@ -1,0 +1,152 @@
+{
+  "_byline": "Claude Code · Fable 5.1 · 2026-09-07",
+  "_note": "Deterministic detection lexicon for the court_language_review MCP tool and its CLI twin. Every pattern is a JavaScript-regex source string, matched case-insensitively. The REWRITE itself is done by the calling model following references/court-language/SKILL.md + TEMPLATES.md + EXAMPLES.md — this file only guarantees nothing banned survives undetected. Severities: stop (do not file/send until rewritten — child-protection, recording admissions, banned clinical labels, threats, profanity), fix (specific, correctable — replace with dated/observable fact), soften (weakens tone/credibility but is not a safety issue).",
+  "entries": [
+    {
+      "category": "banned_clinical_labels",
+      "pattern": "\\b(narcissist(?:ic)?|sociopath(?:ic)?|psychopath(?:ic)?|borderline(?: personality)?|bipolar|alienat(?:or|ion|ing)|\\bPAS\\b|coercive control(?:ling)?|gaslight(?:ing|ed)?|abuser|toxic|psycho|crazy|unstable|addict(?:ed)?|alcoholic|a drunk)\\b",
+      "severity": "stop",
+      "why": "Pleaded clinical/diagnostic labels are banned as claims (GUARDRAILS.md S2: narcissist, alienator, PAS, and coercive control are named explicitly). A diagnosis is not yours to make, and the label becomes the subject of the hearing instead of the conduct.",
+      "rewrite_pattern": "Replace the label with: the specific behavior + the date(s) it happened + its observed effect on you or the child. Let the court draw the conclusion the label was trying to assert.",
+      "example_before": "He is a narcissist and an alcoholic who gaslights me constantly.",
+      "example_after": "On 3/15/24 and 4/2/24, he raised his voice and told me events I documented at the time did not happen. On both dates I could smell alcohol on his breath at pickup."
+    },
+    {
+      "category": "absolutes",
+      "pattern": "\\b(always|never|constantly|every (?:single )?time|every time|refuses to ever|without exception|all the time)\\b",
+      "severity": "fix",
+      "why": "An absolute claim is easy to disprove with one counterexample and invites cross-examination on the word, not the conduct. Courts credit specific, countable incidents.",
+      "rewrite_pattern": "Replace the absolute with a specific count and the dates: \"on N occasions between [date] and [date]\" or list the dates.",
+      "example_before": "He always shows up late and never calls ahead.",
+      "example_after": "He arrived more than 20 minutes late for pickup on 1/12/24, 2/3/24, and 2/28/24, and did not call ahead on any of those three occasions."
+    },
+    {
+      "category": "mind_reading_and_motive",
+      "pattern": "\\b(she wants to|he wants to|she did it to|he did it to|on purpose|deliberately|intentionally|knows that|trying to hurt|trying to punish)\\b",
+      "severity": "fix",
+      "why": "Motive and intent are conclusions a court draws from conduct, not facts a witness can personally know. Asserting the other party's state of mind is speculation dressed as fact.",
+      "rewrite_pattern": "Remove the motive claim; state only the observable act and let the pattern (dates, repetition) imply intent if the record supports it.",
+      "example_before": "She scheduled the appointment during my parenting time on purpose to sabotage my time with our son.",
+      "example_after": "The appointment was scheduled for 4:00 PM on 6/10/24, during my scheduled parenting time of 3:00-7:00 PM under the current order."
+    },
+    {
+      "category": "characterizations",
+      "pattern": "\\b(liar|lying|manipulative|vindictive|controlling|lazy|unfit|dangerous|neglectful)\\b",
+      "severity": "fix",
+      "why": "A character label is an argument, not evidence, and reads as an attack rather than a fact. It also risks becoming the thing the court scrutinizes about the person who wrote it.",
+      "rewrite_pattern": "Replace the label with what happened: the specific statement or action, the date, and why it matters to the issue before the court.",
+      "example_before": "She is manipulative and an unfit parent.",
+      "example_after": "On 5/1/24, she told the school our son could not be picked up by me despite the current order granting me that day; the school called me directly to confirm."
+    },
+    {
+      "category": "emotional_intensifiers",
+      "pattern": "\\b(obviously|clearly|outrageous|disgusting|insane|unbelievable|ridiculous)\\b",
+      "severity": "soften",
+      "why": "Intensifiers read as editorializing rather than fact, and can make a filing sound less credible even when the underlying fact is accurate.",
+      "rewrite_pattern": "Delete the intensifier; state the fact plainly and let the fact carry its own weight.",
+      "example_before": "It is obviously outrageous that he missed the exchange again.",
+      "example_after": "He did not appear for the exchange scheduled at 5:00 PM on 7/4/24."
+    },
+    {
+      "category": "profanity_insults",
+      "pattern": "\\b(damn|hell|shit|fuck(?:ing)?|bitch|asshole|idiot|stupid|moron|piece of (?:garbage|trash))\\b",
+      "severity": "stop",
+      "why": "Profanity and insults have no place in a court filing, testimony, or a message to the other parent, and can be used against the writer as evidence of tone or conduct.",
+      "rewrite_pattern": "Remove the language entirely; state the underlying fact in neutral, professional terms.",
+      "example_before": "He is a stupid idiot for missing the appointment again, damn it.",
+      "example_after": "He did not attend the scheduled 6/1/24 appointment."
+    },
+    {
+      "category": "threats_or_ultimatums",
+      "pattern": "\\b(or else|you('|')ll regret|i('|')ll make sure|i will make you pay|you('|')re going to be sorry|if you don('|')t .* i('|')ll)\\b",
+      "severity": "stop",
+      "why": "A threat or ultimatum, in a filing or a message to the other parent, can itself become evidence used against the writer and can escalate conflict the court is trying to reduce.",
+      "rewrite_pattern": "Remove the threat; state the request or position once, without a consequence attached, in BIFF register (brief, informative, friendly, firm).",
+      "example_before": "If you don't have him ready by 5, you'll regret it.",
+      "example_after": "Per the parenting time order, I will arrive for pickup at 5:00 PM."
+    },
+    {
+      "category": "child_as_witness",
+      "pattern": "\\b(my (?:son|daughter|child) (?:said|told me|says|tells me)|told me that (?:he|she|they) (?:said|told)|the kids? will testify|our (?:son|daughter|child) will testify)\\b",
+      "severity": "stop",
+      "why": "Absolute child-protection rule (GUARDRAILS.md S8): no exercise, template, or filing may use the child as a witness, messenger, or source. What the child said is also hearsay in nearly every posture, and MRE 803A's child-statement exception applies only in criminal/delinquency proceedings.",
+      "rewrite_pattern": "Remove the child's statement entirely. If the underlying fact matters, establish it through your own personal-knowledge observation, a document, or a properly noticed witness — never through what the child said.",
+      "example_before": "My son told me that dad left him home alone for three hours on Saturday.",
+      "example_after": "On Saturday between approximately 2:00 and 5:00 PM, I was unable to reach the household by phone despite three calls, which I logged at the time."
+    },
+    {
+      "category": "speculation",
+      "pattern": "\\b(probably|i think|i believe|must have|likely|i assume|i suspect)\\b",
+      "severity": "fix",
+      "why": "Speculation is not evidence and invites an objection (\"lack of personal knowledge\" or \"speculation\"). State only what you actually know.",
+      "rewrite_pattern": "State what you personally observed or know, or omit the sentence if you do not actually know it.",
+      "example_before": "He probably didn't take him to school again.",
+      "example_after": "The school's attendance record shows an absence on 3/1/24; I do not have personal knowledge of the reason."
+    },
+    {
+      "category": "legal_conclusions_by_layperson",
+      "pattern": "\\b(perjury|contempt|kidnapping|abuse(?:d)?|custodial interference)\\b",
+      "severity": "fix",
+      "why": "These are legal conclusions for the court to reach, not facts a layperson pleads. Asserting the legal label instead of the facts underlying it can read as argument and can overstate what the record actually shows.",
+      "rewrite_pattern": "Describe the specific facts (what happened, when, how you know) and let the court apply the legal label if warranted; do not assert the legal conclusion yourself.",
+      "example_before": "This is custodial interference and he should be held in contempt.",
+      "example_after": "He did not return our son at the 6:00 PM exchange time on 8/1/24 and 8/8/24, as required by the current order."
+    },
+    {
+      "category": "recording_or_surveillance_admissions",
+      "pattern": "\\b(i recorded|i taped|i secretly recorded|i tracked (?:her|him|them)|i logged into (?:her|his|their)|i installed (?:a )?(?:tracker|spyware|monitoring app)|i accessed (?:her|his|their) (?:phone|account|email))\\b",
+      "severity": "stop",
+      "why": "Michigan recording/surveillance law is unsettled and the exposure can be criminal (GUARDRAILS.md S9). An admission of recording, tracking, or unauthorized account access must go to a licensed Michigan attorney before it goes anywhere else — never to a filing or a message.",
+      "rewrite_pattern": "STOP. Do not include this sentence in any filing, testimony, or message. Consult a licensed Michigan attorney before referencing the recording/tracking/access in any way.",
+      "example_before": "I recorded the phone call where she admitted it, and I also logged into her email to check.",
+      "example_after": "[REMOVED — consult a licensed Michigan attorney before referencing any recording or account access in a filing, testimony, or message.]"
+    },
+    {
+      "category": "pii_minors",
+      "pattern": "\\b(?:[A-Z][a-z]+\\s[A-Z][a-z]+(?:'s)?\\s(?:date of birth|dob|birthday)|attends\\s[A-Z][a-zA-Z]+\\s(?:Elementary|Middle|High)\\s(?:School)?)\\b",
+      "severity": "fix",
+      "why": "A child's full name, date of birth, or school identifies the child in a filing that may become part of the public record. Redaction is the filer's sole responsibility (MCR 1.109(D)(10)(a)); this project's own rule is stricter than the bare minimum (GUARDRAILS.md S11a).",
+      "rewrite_pattern": "Replace the child's full name with initials and age; remove the specific school name unless the court has specifically required it, and use a generic descriptor (\"the child's school\") instead.",
+      "example_before": "Jane Marie Smith (DOB 4/1/2016) attends Lincoln Elementary School.",
+      "example_after": "J.M.S. (age 8) attends the child's current elementary school."
+    }
+  ],
+  "doc_profiles": {
+    "affidavit": {
+      "register": "First person, numbered paragraphs, facts within personal knowledge only, no argument.",
+      "allowed": ["Numbered factual paragraphs", "Dates, times, direct observations", "Attached, referenced exhibits"],
+      "forbidden": ["Argument or legal conclusions", "Anything not within personal knowledge", "Characterizations or clinical labels", "Paragraphs longer than roughly 3 sentences"],
+      "rewrite_recipe": "One fact per numbered paragraph. State how you know it. Attach any document referenced rather than describing it. Stop before the paragraph becomes argument."
+    },
+    "motion_brief": {
+      "register": "Argument allowed, but every factual predicate must be cited to an exhibit or the record.",
+      "allowed": ["Legal argument and analysis", "Citations to MCR/MCL/case law", "References to exhibits by number"],
+      "forbidden": ["An asserted fact with no exhibit or record cite", "Clinical labels or characterizations standing in for a legal standard", "Speculation about the other party's motive"],
+      "rewrite_recipe": "For every factual sentence, attach a citation to the exhibit or record that proves it. Keep the characterization-free rule even in argument — argue the standard, not the person."
+    },
+    "testimony_answer": {
+      "register": "Short, responsive, no volunteering.",
+      "allowed": ["A direct answer to the question asked", "\"I don't know\" or \"I don't have that information\"", "A request for clarification"],
+      "forbidden": ["A narrative answer to a yes/no question", "Volunteering facts not asked for", "Characterizing the other party while answering"],
+      "rewrite_recipe": "Answer only what was asked, in one to two sentences. Stop. Do not explain further unless asked to."
+    },
+    "message_to_other_parent": {
+      "register": "BIFF: brief, informative, friendly, firm. No history, no accusations.",
+      "allowed": ["The specific logistical fact or request", "A firm, single statement of your position", "A neutral, businesslike tone"],
+      "forbidden": ["A recap of relationship history or past grievances", "Accusations or characterizations", "Threats, ultimatums, or profanity", "More than roughly 2-5 sentences"],
+      "rewrite_recipe": "State the fact. State your position once. End the message. Do not respond to bait in the same message."
+    },
+    "incident_log": {
+      "register": "FACT: fact, action, consequence/context, time.",
+      "allowed": ["Observable behavior only", "Your response", "The pattern this incident fits, named neutrally", "Exact date, time, and location"],
+      "forbidden": ["Interpretation presented as fact", "Clinical labels", "What the child said, presented as your own knowledge"],
+      "rewrite_recipe": "Use the FACT structure: Facts (observable only) / Action (what you did) / Context (the pattern) / Time (date, time, location)."
+    },
+    "objection_to_recommendation": {
+      "register": "Specific finding + why the record does not support it + requested relief.",
+      "allowed": ["A named, specific finding or legal application objected to", "A record cite (transcript page or exhibit)", "A narrow, specific requested correction"],
+      "forbidden": ["A blanket objection to \"the entire recommendation\"", "New facts not in the referee-hearing record without a showing of unavailability", "Argument about the other party's character"],
+      "rewrite_recipe": "One row per objection: the finding (quoted or closely paraphrased), why it is wrong (fact or law), the record cite, and the correction requested."
+    }
+  }
+}

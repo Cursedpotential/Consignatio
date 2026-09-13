@@ -1,0 +1,110 @@
+{
+  "id": "affidavit",
+  "title": "Affidavit",
+  "what_it_is": "A sworn statement of facts within the affiant's personal knowledge, used to put facts before the court that are not already of record. It must show affirmatively that the affiant is competent to testify to the matters stated, and any referenced document must be attached, not just described (MCR 2.119(B)).",
+  "who_reads_it": [
+    "The judge or referee deciding the motion it supports.",
+    "The opposing party, who is served a copy with the motion."
+  ],
+  "sequence": [
+    "State facts only, in numbered paragraphs, within your personal knowledge - not argument, not characterization.",
+    "Attach every document referenced; do not describe a document instead of attaching it.",
+    "Use the exact verification declaration language from MCR 1.109(D)(3)(b) if verifying rather than swearing before a notary - do not paraphrase it.",
+    "Sign, notarize/verify as required, and file it with the motion it supports."
+  ],
+  "prepare": [
+    "A list of every fact you intend to state, each with a note of how you personally know it.",
+    "Copies of every document you will attach.",
+    "The exact declaration language for a verified statement, copied from the rule, not from memory."
+  ],
+  "applicable_rules": [
+    {
+      "cite": "MCR 2.119(B)",
+      "summary": "An affidavit must be made on personal knowledge, state facts admissible in evidence, and show the affiant is competent to testify; a referenced document must be attached.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 2.119(B)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    },
+    {
+      "cite": "MCR 1.109(D)(3)",
+      "summary": "Sets the verification declaration requirements and the signature standard for a verified pleading.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 1.109(D)(3)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    },
+    {
+      "cite": "MCR 1.109(E)",
+      "summary": "The signature certifies the document is well grounded in fact and law and not filed to harass; a knowingly false verification carries contempt exposure.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 1.109(E)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    }
+  ],
+  "deadlines": [
+    {
+      "label": "File with the motion it supports",
+      "rule_preset": "motion_response",
+      "cite": "MCR 2.119(C)(1)",
+      "status": "PROVISIONAL_VERIFY"
+    }
+  ],
+  "traps": [
+    {
+      "trap": "Describing a document instead of attaching it.",
+      "safe_move": "A described-but-absent document is argument, not evidence (MCR 2.119(B)(2))."
+    },
+    {
+      "trap": "Stating something you were told rather than something you observed.",
+      "safe_move": "That is hearsay in an affidavit too - state only what you personally know, and say how you know it."
+    },
+    {
+      "trap": "Paraphrasing the verification declaration.",
+      "safe_move": "Copy MCR 1.109(D)(3)(b)'s exact language; a knowingly false verification carries contempt exposure on top of other sanctions."
+    },
+    {
+      "trap": "Arguing in the affidavit.",
+      "safe_move": "Affidavits state facts; argument belongs in the brief. Mixing them invites a motion to strike."
+    }
+  ],
+  "do_not": [
+    "Never characterize the other parent with a clinical label as a pleaded claim (narcissist, alienator, PAS, coercive control) - GUARDRAILS.md S2.",
+    "Never use the child as a witness, messenger, interviewee, or source, and never record the child - GUARDRAILS.md S8, absolute.",
+    "Never assert that any recording you made is lawful - Michigan law is unsettled and the exposure is criminal.",
+    "Never sign or stipulate to anything on the spot without reading it fully first.",
+    "Do not state anything you did not personally observe or personally know."
+  ],
+  "phrases": {
+    "openers": [
+      "Good morning/afternoon, Your Honor. My name is [Party], and I am representing myself.",
+      "I am here to address [narrow issue]. I have [N] exhibits and a short chronology."
+    ],
+    "closers": [
+      "That is the factual answer.",
+      "I don't have that information, but I can provide records if needed.",
+      "I'd like the record to reflect [narrow, factual point] and I reserve my right to address anything broader in the appropriate forum."
+    ]
+  },
+  "safety_gates": [
+    "route_issue first",
+    "immediate danger -> 911, do not proceed on this guide alone",
+    "PPO/DV/CPS contact live -> stop, safety resources, do not proceed on this guide alone",
+    "UCCJEA/interstate fact -> stop, MC 416 affidavit guidance",
+    "recording question in any form -> unsettled law, criminal exposure, attorney question only",
+    "child asked/expected to speak to anyone about the case -> stop"
+  ],
+  "exit_checklist": [
+    "Every paragraph is a fact within personal knowledge, not argument.",
+    "Every referenced document is attached.",
+    "The verification declaration language is copied exactly, not paraphrased."
+  ],
+  "sources": [
+    {
+      "file": "content/custody-guide/draft/M12-pleadings-motions-service.md",
+      "section": "12.5"
+    },
+    {
+      "file": "content/toolkit/templates/affidavit.md",
+      "section": "whole file"
+    }
+  ]
+}

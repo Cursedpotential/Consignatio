@@ -1,0 +1,12 @@
+{
+  "dry_run": false,
+  "errors": [],
+  "ledger_source_ids": 110,
+  "limitations": [
+    "Checks identifiers and simple bidirectional references, not legal accuracy.",
+    "Does not infer unstated legal support or validate a pinpoint against source text."
+  ],
+  "ok": true,
+  "source_ids_used": 53,
+  "tool": "traceability_check.py"
+}

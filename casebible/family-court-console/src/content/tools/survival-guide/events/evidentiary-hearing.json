@@ -1,0 +1,122 @@
+{
+  "id": "evidentiary-hearing",
+  "title": "Evidentiary Hearing (e.g., Following an Ex Parte Custody/Parenting-Time Order)",
+  "what_it_is": "A hearing at which live testimony and exhibits are received under the Michigan Rules of Evidence, most commonly required after an ex parte order that could alter a child's established custodial environment (MCR 3.207(B)(1)(b)) or in any other matter the court sets for full proof.",
+  "who_is_in_the_room": [
+    "The judge (or referee, if referred).",
+    "You and the other party (or counsel).",
+    "Any subpoenaed witnesses."
+  ],
+  "sequence": [
+    "An ex parte order is entered that could alter the child's established custodial environment; the court must schedule an evidentiary hearing within 21 days of entry, with notice included in the ex parte order (MCR 3.207(B)(1)(b)).",
+    "Discovery/subpoenas are arranged in advance (unrepresented parties must move the court for a non-party discovery subpoena; the clerk can issue a hearing subpoena - MCR 2.305(A)(1); MCR 2.506(B)(1)).",
+    "The hearing is held on the record; testimony is live except by telephone for good cause or under MCR 2.407 (MCR 3.210(A)(4)).",
+    "Findings are entered; on a contested postjudgment motion to modify, findings of fact and conclusions of law are required (MCR 3.210(D)(1))."
+  ],
+  "prepare": [
+    "A proof table: for each element the court must find, the exhibit and the sponsoring witness.",
+    "Three tabbed exhibit sets, pre-marked.",
+    "Foundation scripts for each exhibit type (text thread, screenshot, photo, recording, records) - see L1 guide.",
+    "A clear statement of whether you concede the child's established custodial environment - conceding what is true is not a loss (Vodvarka/ Pierron doctrine)."
+  ],
+  "applicable_rules": [
+    {
+      "cite": "MCR 3.207(B)(1)(b)",
+      "summary": "The court must not issue an order that could alter a child's established custodial environment without also scheduling an evidentiary hearing under MCL 722.27, to be held within 21 days after entry.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 3.207(B)(1)(b)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    },
+    {
+      "cite": "MCR 3.210(A)(4)",
+      "summary": "Testimony must be taken in person except by telephone for good cause or by videoconference under MCR 2.407/2.408.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 3.210(A)(4)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    },
+    {
+      "cite": "MCR 3.210(D)(1)",
+      "summary": "Findings of fact and conclusions of law are required on contested postjudgment motions to modify a final judgment or order.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 3.210(D)(1)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    }
+  ],
+  "deadlines": [
+    {
+      "label": "Evidentiary hearing held after an ex parte custody/parenting-time order",
+      "rule_preset": null,
+      "cite": "MCR 3.207(B)(1)(b)",
+      "status": "PROVISIONAL_VERIFY"
+    },
+    {
+      "label": "Motion to amend/add findings after entry",
+      "rule_preset": null,
+      "cite": "MCR 2.517(B)",
+      "status": "PROVISIONAL_VERIFY"
+    }
+  ],
+  "traps": [
+    {
+      "trap": "Assuming a screenshot proves itself.",
+      "safe_move": "Michigan has no self-authentication route for digital records (MRE 902 ends at (11)). Every digital exhibit needs a sponsoring witness."
+    },
+    {
+      "trap": "Building any part of the case on what the child said.",
+      "safe_move": "MRE 803A's child-hearsay exception is criminal/delinquency-proceedings only. Do not rely on it here."
+    },
+    {
+      "trap": "Not asking for findings.",
+      "safe_move": "Ask for findings on the record on contested points; without them there is nothing to object to later."
+    },
+    {
+      "trap": "Offering your own letters for their truth.",
+      "safe_move": "Offer them only to show the request was made and its date (MRE 801(c)(2)) - state the limited purpose out loud; PROVISIONAL, no case read applying this framing."
+    }
+  ],
+  "do_not": [
+    "Never characterize the other parent with a clinical label as a pleaded claim (narcissist, alienator, PAS, coercive control) - GUARDRAILS.md S2.",
+    "Never use the child as a witness, messenger, interviewee, or source, and never record the child - GUARDRAILS.md S8, absolute.",
+    "Never assert that any recording you made is lawful - Michigan law is unsettled and the exposure is criminal.",
+    "Never sign or stipulate to anything on the spot without reading it fully first."
+  ],
+  "phrases": {
+    "openers": [
+      "Good morning/afternoon, Your Honor. My name is [Party], and I am representing myself.",
+      "I am here to address [narrow issue]. I have [N] exhibits and a short chronology."
+    ],
+    "closers": [
+      "That is the factual answer.",
+      "I don't have that information, but I can provide records if needed.",
+      "I'd like the record to reflect [narrow, factual point] and I reserve my right to address anything broader in the appropriate forum."
+    ]
+  },
+  "safety_gates": [
+    "route_issue first",
+    "immediate danger -> 911, do not proceed on this guide alone",
+    "PPO/DV/CPS contact live -> stop, safety resources, do not proceed on this guide alone",
+    "UCCJEA/interstate fact -> stop, MC 416 affidavit guidance",
+    "recording question in any form -> unsettled law, criminal exposure, attorney question only",
+    "child asked/expected to speak to anyone about the case -> stop"
+  ],
+  "exit_checklist": [
+    "Write down the date, who appeared, and what was decided or taken under advisement before leaving the building.",
+    "Write on any document handed to you the date you received it - that date can start a clock.",
+    "Calendar every deadline this event started, counted from the earliest possible trigger date.",
+    "Note whether anything was requested that you did not have time to answer fully, and follow up in writing."
+  ],
+  "sources": [
+    {
+      "file": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 3.207(B), Rule 3.210"
+    },
+    {
+      "file": "content/custody-guide/draft/P1-hearing-prep-referee.md",
+      "section": "A.5, A.6"
+    },
+    {
+      "file": "content/toolkit/cheatsheet/L1-pro-se-guide.md",
+      "section": "Foundation and authentication, Hearsay"
+    }
+  ]
+}

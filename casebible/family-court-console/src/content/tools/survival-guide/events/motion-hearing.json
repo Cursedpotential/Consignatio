@@ -1,0 +1,130 @@
+{
+  "id": "motion-hearing",
+  "title": "Motion Hearing (General Domestic Relations Motion)",
+  "what_it_is": "A hearing on a filed motion asking the court for a specific order. State the requested order in one sentence before the history; a brief is required only when the motion presents an issue of law (MCR 2.119(A)(2)).",
+  "who_is_in_the_room": [
+    "The judge (or a referee, if the motion was referred - see the referee-hearing event).",
+    "You and the other party (or counsel).",
+    "Possibly Friend of the Court staff, if support/parenting time is at issue."
+  ],
+  "sequence": [
+    "Motion, brief (if needed), notice of hearing, affidavit/verified statement (if facts are not already of record), and proof of service are filed and served (MCR 2.119(A)-(B); MCR 2.107(D)).",
+    "The response is due on the timeline in MCR 2.119(C) unless the court sets a different time.",
+    "Genesee LCR 2.119: a concurrence certificate and proposed order typically travel with the motion - PROVISIONAL, confirm current local practice.",
+    "The hearing proceeds: state the requested order in one sentence, then the material facts in date order with exhibits.",
+    "The court rules, or takes the matter under advisement."
+  ],
+  "prepare": [
+    "One-page chronology and exhibit list.",
+    "Three specific asks with a source citation for each.",
+    "The signed proposed order, ready to hand up.",
+    "Confirm the hearing notice's place, time, and remote-appearance instructions."
+  ],
+  "applicable_rules": [
+    {
+      "cite": "MCR 2.119(A)(1)",
+      "summary": "A motion must state the grounds, the authority, and the relief sought, and be signed.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 2.119(A)(1)",
+      "disposition": "VERIFIED - quoted in M12"
+    },
+    {
+      "cite": "MCR 2.119(A)(2)",
+      "summary": "A brief is required when the motion presents an issue of law.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 2.119(A)(2)",
+      "disposition": "VERIFIED - quoted in M12"
+    },
+    {
+      "cite": "MCR 2.119(C)",
+      "summary": "Sets the response/service timing for a motion unless the court sets a different time.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 2.119(C)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    },
+    {
+      "cite": "MCR 2.119(B)",
+      "summary": "An affidavit must be made on personal knowledge and show the affiant is competent to testify.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 2.119(B)",
+      "disposition": "VERIFIED - quoted in M12"
+    }
+  ],
+  "deadlines": [
+    {
+      "label": "Response to the motion",
+      "rule_preset": "motion_response",
+      "cite": "MCR 2.119(C)(1)",
+      "status": "PROVISIONAL_VERIFY"
+    },
+    {
+      "label": "Add for mail service",
+      "rule_preset": "mail_service_addon",
+      "cite": "MCR 2.107(C)(3)/MCR 1.108",
+      "status": "PROVISIONAL_VERIFY"
+    }
+  ],
+  "traps": [
+    {
+      "trap": "A long history instead of the one-sentence requested order first.",
+      "safe_move": "Lead with the narrow request; a 20-minute hearing plan gives the material facts second (L1 guide)."
+    },
+    {
+      "trap": "Vague relief (\"reasonable,\" \"as agreed\").",
+      "safe_move": "The FOC may decline to enforce a term that is not enforceable (MCL 552.641(2)(c), quoted in M12). Write specific, enforceable terms."
+    },
+    {
+      "trap": "Filing without the Genesee concurrence certificate or proposed order, if locally required.",
+      "safe_move": "PROVISIONAL - confirm current Genesee LCR 2.119 practice with the clerk before filing."
+    },
+    {
+      "trap": "Signing your own verification without reading MCR 1.109(D)(3)(b)'s exact declaration language.",
+      "safe_move": "Copy the declaration language exactly; a knowingly false verification carries contempt exposure."
+    }
+  ],
+  "do_not": [
+    "Never characterize the other parent with a clinical label as a pleaded claim (narcissist, alienator, PAS, coercive control) - GUARDRAILS.md S2.",
+    "Never use the child as a witness, messenger, interviewee, or source, and never record the child - GUARDRAILS.md S8, absolute.",
+    "Never assert that any recording you made is lawful - Michigan law is unsettled and the exposure is criminal.",
+    "Never sign or stipulate to anything on the spot without reading it fully first."
+  ],
+  "phrases": {
+    "openers": [
+      "Good morning/afternoon, Your Honor. My name is [Party], and I am representing myself.",
+      "I am here to address [narrow issue]. I have [N] exhibits and a short chronology."
+    ],
+    "closers": [
+      "That is the factual answer.",
+      "I don't have that information, but I can provide records if needed.",
+      "I'd like the record to reflect [narrow, factual point] and I reserve my right to address anything broader in the appropriate forum."
+    ]
+  },
+  "safety_gates": [
+    "route_issue first",
+    "immediate danger -> 911, do not proceed on this guide alone",
+    "PPO/DV/CPS contact live -> stop, safety resources, do not proceed on this guide alone",
+    "UCCJEA/interstate fact -> stop, MC 416 affidavit guidance",
+    "recording question in any form -> unsettled law, criminal exposure, attorney question only",
+    "child asked/expected to speak to anyone about the case -> stop"
+  ],
+  "exit_checklist": [
+    "Write down the date, who appeared, and what was decided or taken under advisement before leaving the building.",
+    "Write on any document handed to you the date you received it - that date can start a clock.",
+    "Calendar every deadline this event started, counted from the earliest possible trigger date.",
+    "Note whether anything was requested that you did not have time to answer fully, and follow up in writing."
+  ],
+  "sources": [
+    {
+      "file": "content/custody-guide/draft/M12-pleadings-motions-service.md",
+      "section": "12.1-12.9"
+    },
+    {
+      "file": "content/toolkit/cheatsheet/L0-hearing-day-card.md",
+      "section": "Bring, Courtroom words"
+    },
+    {
+      "file": "content/toolkit/cheatsheet/L1-pro-se-guide.md",
+      "section": "Motions and briefs, Motion timing"
+    }
+  ]
+}

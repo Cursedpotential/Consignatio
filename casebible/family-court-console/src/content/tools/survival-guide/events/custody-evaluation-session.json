@@ -1,0 +1,97 @@
+{
+  "id": "custody-evaluation-session",
+  "title": "Custody Evaluation Session (Court-Ordered or Stipulated Evaluator)",
+  "what_it_is": "A session with a mental-health or other behavioral-science professional the court has ordered or the parties have stipulated to, as part of a custody evaluation. MCL 722.27(1)(d) authorizes the court to use community resources in behavioral sciences and consider their recommendations; a completed custody-evaluation summary is a separate downstream member (custody-evaluation-summary).",
+  "who_is_in_the_room": [
+    "The evaluator - a licensed professional, working under a court order or stipulation, not a treating clinician for you.",
+    "You, and separately the child and the other parent at other sessions (format varies by evaluator and order)."
+  ],
+  "sequence": [
+    "The court orders (or the parties stipulate to) a custody evaluation, typically specifying the evaluator and scope (MCL 722.27(1)(d)).",
+    "The evaluator conducts individual sessions with each parent, may observe parent-child interaction, and may interview collateral sources.",
+    "The evaluator prepares a report with findings and, often, recommendations tied to the best-interest factors.",
+    "The report becomes evidence only through the process the case's own order or the evidence rules require - PROVISIONAL, confirm the admissibility path for this specific evaluator's report with the assigned judge/referee."
+  ],
+  "prepare": [
+    "Understand and, if unclear, ask in writing what the evaluation's scope and confidentiality terms are before the first session.",
+    "The same factual chronology used elsewhere - do not present a different narrative to the evaluator than to the FOC or the court.",
+    "A calm, factual account of parenting routine, involvement, and any concerns, without diagnosing the other parent."
+  ],
+  "applicable_rules": [
+    {
+      "cite": "MCL 722.27(1)(d)",
+      "summary": "The court may utilize community resources in behavioral sciences in the investigation and study of custody disputes and consider their recommendations.",
+      "source": "content/custody-guide/sources/primary/mcl/mcl-722-27.md",
+      "section": "722.27(1)(d)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    }
+  ],
+  "deadlines": [
+    {
+      "label": "Evaluation report due (case-specific; no general statutory day-count located)",
+      "rule_preset": null,
+      "cite": "MCL 722.27(1)(d)",
+      "status": "PROVISIONAL_VERIFY"
+    }
+  ],
+  "traps": [
+    {
+      "trap": "Assuming the session is confidential the way therapy is.",
+      "safe_move": "A court-ordered evaluation is not confidential from the court; assume anything you say may appear in the report."
+    },
+    {
+      "trap": "Bringing a prepared script instead of answering naturally.",
+      "safe_move": "Evaluators are trained to notice rehearsed answers; be factual and consistent instead of scripted."
+    },
+    {
+      "trap": "Characterizing the other parent clinically.",
+      "safe_move": "Describe specific, dated conduct and its effect on the child; do not diagnose (GUARDRAILS.md S2)."
+    },
+    {
+      "trap": "Letting the child sense the evaluation is a contest to win.",
+      "safe_move": "Do not coach, debrief, or ask the child what was said (GUARDRAILS.md S8, absolute)."
+    }
+  ],
+  "do_not": [
+    "Never characterize the other parent with a clinical label as a pleaded claim (narcissist, alienator, PAS, coercive control) - GUARDRAILS.md S2.",
+    "Never use the child as a witness, messenger, interviewee, or source, and never record the child - GUARDRAILS.md S8, absolute.",
+    "Never assert that any recording you made is lawful - Michigan law is unsettled and the exposure is criminal.",
+    "Never sign or stipulate to anything on the spot without reading it fully first."
+  ],
+  "phrases": {
+    "openers": [
+      "Good morning/afternoon, Your Honor. My name is [Party], and I am representing myself.",
+      "I am here to address [narrow issue]. I have [N] exhibits and a short chronology."
+    ],
+    "closers": [
+      "That is the factual answer.",
+      "I don't have that information, but I can provide records if needed.",
+      "I'd like the record to reflect [narrow, factual point] and I reserve my right to address anything broader in the appropriate forum."
+    ]
+  },
+  "safety_gates": [
+    "route_issue first",
+    "immediate danger -> 911, do not proceed on this guide alone",
+    "PPO/DV/CPS contact live -> stop, safety resources, do not proceed on this guide alone",
+    "UCCJEA/interstate fact -> stop, MC 416 affidavit guidance",
+    "recording question in any form -> unsettled law, criminal exposure, attorney question only",
+    "child asked/expected to speak to anyone about the case -> stop"
+  ],
+  "exit_checklist": [
+    "Write down the date, who appeared, and what was decided or taken under advisement before leaving the building.",
+    "Write on any document handed to you the date you received it - that date can start a clock.",
+    "Calendar every deadline this event started, counted from the earliest possible trigger date.",
+    "Note whether anything was requested that you did not have time to answer fully, and follow up in writing.",
+    "PROVISIONAL - confirm the evaluator's report-admissibility path (stipulation, MRE, or order) with the assigned judge/referee before relying on any finding in it."
+  ],
+  "sources": [
+    {
+      "file": "content/custody-guide/sources/primary/mcl/mcl-722-27.md",
+      "section": "722.27(1)(d)"
+    },
+    {
+      "file": "skills/family-court-toolkit/references/custody-evaluation-summary/SKILL.md",
+      "section": "whole member"
+    }
+  ]
+}

@@ -1,0 +1,98 @@
+{
+  "id": "proposed-order",
+  "title": "Proposed Order",
+  "what_it_is": "The draft order that rides with a motion, stating the specific relief the court is asked to sign. In Genesee, a proposed order and (per local practice) a concurrence certificate typically accompany a motion - the relief must be specific enough to enforce, not left to 'reasonable' or 'as agreed' language.",
+  "who_reads_it": [
+    "The judge or referee who will sign (or decline to sign) it.",
+    "The opposing party, who reviews it for accuracy before any concurrence."
+  ],
+  "sequence": [
+    "Draft the order in specific, enforceable terms - who does what, by when, and how it is measured.",
+    "Include any content a governing statute makes mandatory (e.g., the Hague Convention paragraph in a parenting-time order, MCL 722.27a(10)).",
+    "Attempt Genesee concurrence: send the proposed order and ask for agreement by a stated date (PROVISIONAL, confirm current LCR 2.119 practice).",
+    "File the proposed order with the motion (MCR 2.119(A)(1)(c)); sign the concurrence certificate honestly, reflecting the actual outcome of that attempt."
+  ],
+  "prepare": [
+    "A checklist of every term: is it specific enough that a violation could be proved without argument?",
+    "Confirmation of any statutorily mandatory content for this type of order."
+  ],
+  "applicable_rules": [
+    {
+      "cite": "MCR 2.119(A)(1)(c)",
+      "summary": "A motion must state the relief or order sought.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 2.119(A)(1)(c)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    },
+    {
+      "cite": "MCL 722.27a(9)",
+      "summary": "A parenting-time order may contain reasonable terms and conditions that facilitate the orderly and meaningful exercise of parenting time.",
+      "source": "content/custody-guide/sources/primary/mcl/mcl-722-27a.md",
+      "section": "722.27a(9)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    }
+  ],
+  "deadlines": [
+    {
+      "label": "Filed with the motion it accompanies",
+      "rule_preset": "motion_response",
+      "cite": "MCR 2.119(C)(1)",
+      "status": "PROVISIONAL_VERIFY"
+    }
+  ],
+  "traps": [
+    {
+      "trap": "A term that says 'reasonable,' 'as agreed,' or 'as the parties arrange.'",
+      "safe_move": "Unenforceable - the FOC may decline to act on a violation of a non-specific term (MCL 552.641(2)(c)). Write a term that can be broken and proved broken."
+    },
+    {
+      "trap": "Omitting mandatory statutory content for the type of order.",
+      "safe_move": "Check the governing statute; a parenting-time order has its own mandatory paragraph (MCL 722.27a(10))."
+    },
+    {
+      "trap": "Signing a concurrence certificate that doesn't reflect what actually happened.",
+      "safe_move": "The certificate carries the full MCR 1.109(E) certification weight - sign it honestly."
+    }
+  ],
+  "do_not": [
+    "Never characterize the other parent with a clinical label as a pleaded claim (narcissist, alienator, PAS, coercive control) - GUARDRAILS.md S2.",
+    "Never use the child as a witness, messenger, interviewee, or source, and never record the child - GUARDRAILS.md S8, absolute.",
+    "Never assert that any recording you made is lawful - Michigan law is unsettled and the exposure is criminal.",
+    "Never sign or stipulate to anything on the spot without reading it fully first.",
+    "Do not label the proposed order 'filing-ready' without your own final line-by-line read."
+  ],
+  "phrases": {
+    "openers": [
+      "Good morning/afternoon, Your Honor. My name is [Party], and I am representing myself.",
+      "I am here to address [narrow issue]. I have [N] exhibits and a short chronology."
+    ],
+    "closers": [
+      "That is the factual answer.",
+      "I don't have that information, but I can provide records if needed.",
+      "I'd like the record to reflect [narrow, factual point] and I reserve my right to address anything broader in the appropriate forum."
+    ]
+  },
+  "safety_gates": [
+    "route_issue first",
+    "immediate danger -> 911, do not proceed on this guide alone",
+    "PPO/DV/CPS contact live -> stop, safety resources, do not proceed on this guide alone",
+    "UCCJEA/interstate fact -> stop, MC 416 affidavit guidance",
+    "recording question in any form -> unsettled law, criminal exposure, attorney question only",
+    "child asked/expected to speak to anyone about the case -> stop"
+  ],
+  "exit_checklist": [
+    "Every term is specific enough to enforce.",
+    "Mandatory statutory content is present.",
+    "The concurrence attempt (if made) is documented with a date."
+  ],
+  "sources": [
+    {
+      "file": "content/custody-guide/draft/M12-pleadings-motions-service.md",
+      "section": "12.6, 12.8"
+    },
+    {
+      "file": "content/toolkit/templates/proposed-order.md",
+      "section": "whole file"
+    }
+  ]
+}

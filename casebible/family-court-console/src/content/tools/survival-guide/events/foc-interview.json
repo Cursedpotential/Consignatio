@@ -1,0 +1,115 @@
+{
+  "id": "foc-interview",
+  "title": "Friend of the Court Conciliation / Investigation Interview",
+  "what_it_is": "A meeting with a Friend of the Court investigator as part of a custody, parenting-time, or support investigation the court has ordered. The FOC is not your lawyer or the other party's lawyer. The investigator must meet with a party who requests it (MCL 552.505(1)(g)), and the resulting written report is based on the MCL 722.21-722.31 factors.",
+  "who_is_in_the_room": [
+    "The FOC investigator/caseworker - neutral, reports to the court, not an advocate for either party.",
+    "You, typically alone (interviews are usually one party at a time)."
+  ],
+  "sequence": [
+    "The court orders an investigation (proper cause or change of circumstances required if custody was already established, MCL 552.505(1)(g)).",
+    "Each party receives the FOC informational pamphlet explaining rights, including the right to meet with the investigator before a recommendation issues (MCL 552.505(1)(c)).",
+    "If requested, the investigation includes a meeting with each party; the investigation may include outside reports/evaluations if requested.",
+    "The FOC issues a written report and recommendation to the parties and the court, based on the statutory best-interest factors."
+  ],
+  "prepare": [
+    "A short, factual chronology - dates, what happened, how you know. Not a narrative of grievances.",
+    "Documentation, not accusations: school/medical records you can lawfully provide, your own calendar of parenting time actually exercised.",
+    "A clear, one-paragraph statement of what schedule or order you are asking for and why it serves the child."
+  ],
+  "applicable_rules": [
+    {
+      "cite": "MCL 552.505(1)(g)",
+      "summary": "The FOC investigates and makes a written report and recommendation on custody/parenting time if ordered; if requested by a party, the investigation must include a meeting with that party; the report is based on the child custody act factors (MCL 722.21-722.31).",
+      "source": "content/custody-guide/sources/primary/mcl/mcl-552-505.md",
+      "section": "552.505(1)(g)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    },
+    {
+      "cite": "MCL 552.505(1)(c)",
+      "summary": "Each party must receive an informational pamphlet, including notice of the right to meet with the investigator before a recommendation issues.",
+      "source": "content/custody-guide/sources/primary/mcl/mcl-552-505.md",
+      "section": "552.505(1)(c)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    },
+    {
+      "cite": "MRE 1101(b)(9)",
+      "summary": "The rules of evidence do not apply to the court's consideration of an FOC report or recommendation - but the report itself is not admissible as evidence unless both parties agree (Duperon v Duperon, 175 Mich App 77).",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "cross-ref M15/M16",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    }
+  ],
+  "deadlines": [
+    {
+      "label": "Investigation report and recommendation issued (no fixed statutory day-count located)",
+      "rule_preset": null,
+      "cite": "MCL 552.505(1)(g)",
+      "status": "PROVISIONAL_VERIFY"
+    }
+  ],
+  "traps": [
+    {
+      "trap": "Treating the interview as informal and off the record.",
+      "safe_move": "It informs a written report the court will read. Speak as if it will be quoted, because it may be."
+    },
+    {
+      "trap": "Characterizing the other parent instead of describing conduct.",
+      "safe_move": "Describe dated behavior and its effect on the child; never a clinical label (GUARDRAILS.md S2)."
+    },
+    {
+      "trap": "Volunteering the child's statements.",
+      "safe_move": "The child is not a source. Do not repeat what the child said as if it were your evidence (GUARDRAILS.md S8)."
+    },
+    {
+      "trap": "Assuming the FOC report will decide the case.",
+      "safe_move": "It informs, it does not prove - Duperon v Duperon holds it is not admissible as evidence absent agreement, and findings must rest on hearing evidence."
+    }
+  ],
+  "do_not": [
+    "Never characterize the other parent with a clinical label as a pleaded claim (narcissist, alienator, PAS, coercive control) - GUARDRAILS.md S2.",
+    "Never use the child as a witness, messenger, interviewee, or source, and never record the child - GUARDRAILS.md S8, absolute.",
+    "Never assert that any recording you made is lawful - Michigan law is unsettled and the exposure is criminal.",
+    "Never sign or stipulate to anything on the spot without reading it fully first."
+  ],
+  "phrases": {
+    "openers": [
+      "Good morning/afternoon, Your Honor. My name is [Party], and I am representing myself.",
+      "I am here to address [narrow issue]. I have [N] exhibits and a short chronology."
+    ],
+    "closers": [
+      "That is the factual answer.",
+      "I don't have that information, but I can provide records if needed.",
+      "I'd like the record to reflect [narrow, factual point] and I reserve my right to address anything broader in the appropriate forum."
+    ]
+  },
+  "safety_gates": [
+    "route_issue first",
+    "immediate danger -> 911, do not proceed on this guide alone",
+    "PPO/DV/CPS contact live -> stop, safety resources, do not proceed on this guide alone",
+    "UCCJEA/interstate fact -> stop, MC 416 affidavit guidance",
+    "recording question in any form -> unsettled law, criminal exposure, attorney question only",
+    "child asked/expected to speak to anyone about the case -> stop"
+  ],
+  "exit_checklist": [
+    "Write down the date, who appeared, and what was decided or taken under advisement before leaving the building.",
+    "Write on any document handed to you the date you received it - that date can start a clock.",
+    "Calendar every deadline this event started, counted from the earliest possible trigger date.",
+    "Note whether anything was requested that you did not have time to answer fully, and follow up in writing.",
+    "PROVISIONAL - confirm with the FOC office what documents it wants and by when."
+  ],
+  "sources": [
+    {
+      "file": "content/custody-guide/sources/primary/mcl/mcl-552-505.md",
+      "section": "552.505(1)(c),(g)"
+    },
+    {
+      "file": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 3.208(A)"
+    },
+    {
+      "file": "content/custody-guide/draft/P1-hearing-prep-referee.md",
+      "section": "A.5 (Duperon/Marshall v Beal box)"
+    }
+  ]
+}

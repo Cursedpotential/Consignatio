@@ -1,0 +1,111 @@
+{
+  "id": "response-to-motion",
+  "title": "Response to a Motion",
+  "what_it_is": "The document that answers a filed motion - admitting, denying, or stating lack of knowledge as to each numbered allegation, and stating your own position on the relief requested.",
+  "who_reads_it": [
+    "The judge or referee hearing the motion.",
+    "The moving party or their counsel, who is served a copy."
+  ],
+  "sequence": [
+    "Read the motion's numbered facts and respond to each - an explicit admission, denial, or statement of lack of knowledge (which has the effect of a denial, MCR 2.111(C); MCR 2.111(E)(1)).",
+    "State your own position on the requested relief, and any counter-relief as a separate motion or counterclaim if applicable.",
+    "File and serve within the time set by the notice of hearing or MCR 2.119(C), whichever the court applies.",
+    "File proof of service."
+  ],
+  "prepare": [
+    "The motion itself, read fact-by-fact.",
+    "Your own chronology to check each alleged date and event against.",
+    "Any exhibit that directly rebuts a specific allegation - not a general rebuttal narrative."
+  ],
+  "applicable_rules": [
+    {
+      "cite": "MCR 2.111(C)",
+      "summary": "A responsive pleading must state an explicit admission or denial of each allegation, plead no contest, or state a lack of knowledge.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 2.111(C)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    },
+    {
+      "cite": "MCR 2.111(E)(1)",
+      "summary": "An allegation not denied is deemed admitted, except as to damages.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 2.111(E)(1)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    },
+    {
+      "cite": "MCR 2.119(C)",
+      "summary": "Sets the response timing for a motion unless the court sets a different time.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 2.119(C)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    }
+  ],
+  "deadlines": [
+    {
+      "label": "File and serve the response",
+      "rule_preset": "motion_response",
+      "cite": "MCR 2.119(C)(1)",
+      "status": "PROVISIONAL_VERIFY"
+    },
+    {
+      "label": "Add for mail service",
+      "rule_preset": "mail_service_addon",
+      "cite": "MCR 2.107(C)(3)/MCR 1.108",
+      "status": "PROVISIONAL_VERIFY"
+    }
+  ],
+  "traps": [
+    {
+      "trap": "Ignoring an allegation instead of denying it.",
+      "safe_move": "Silence has the effect of a denial for most allegations (MCR 2.111(E)(1)) - but confirm; do not assume for every allegation type."
+    },
+    {
+      "trap": "Responding with argument instead of admit/deny.",
+      "safe_move": "Save argument for the brief; the response answers the facts first."
+    },
+    {
+      "trap": "Missing the response deadline because it was calculated from the wrong anchor date.",
+      "safe_move": "Confirm whether the court set a different time than the default MCR 2.119(C) timeline; run the date through calculate_planning_date."
+    }
+  ],
+  "do_not": [
+    "Never characterize the other parent with a clinical label as a pleaded claim (narcissist, alienator, PAS, coercive control) - GUARDRAILS.md S2.",
+    "Never use the child as a witness, messenger, interviewee, or source, and never record the child - GUARDRAILS.md S8, absolute.",
+    "Never assert that any recording you made is lawful - Michigan law is unsettled and the exposure is criminal.",
+    "Never sign or stipulate to anything on the spot without reading it fully first."
+  ],
+  "phrases": {
+    "openers": [
+      "Good morning/afternoon, Your Honor. My name is [Party], and I am representing myself.",
+      "I am here to address [narrow issue]. I have [N] exhibits and a short chronology."
+    ],
+    "closers": [
+      "That is the factual answer.",
+      "I don't have that information, but I can provide records if needed.",
+      "I'd like the record to reflect [narrow, factual point] and I reserve my right to address anything broader in the appropriate forum."
+    ]
+  },
+  "safety_gates": [
+    "route_issue first",
+    "immediate danger -> 911, do not proceed on this guide alone",
+    "PPO/DV/CPS contact live -> stop, safety resources, do not proceed on this guide alone",
+    "UCCJEA/interstate fact -> stop, MC 416 affidavit guidance",
+    "recording question in any form -> unsettled law, criminal exposure, attorney question only",
+    "child asked/expected to speak to anyone about the case -> stop"
+  ],
+  "exit_checklist": [
+    "Every numbered allegation has an explicit admit/deny/no-knowledge response.",
+    "Proof of service prepared.",
+    "Counter-relief filed separately if needed, not buried in the response."
+  ],
+  "sources": [
+    {
+      "file": "content/custody-guide/draft/M12-pleadings-motions-service.md",
+      "section": "12.2, 12.9"
+    },
+    {
+      "file": "content/toolkit/templates/response.md",
+      "section": "whole file"
+    }
+  ]
+}

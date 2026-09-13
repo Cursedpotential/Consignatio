@@ -1,0 +1,36 @@
+{
+  "_byline": "Claude Code · Sonnet 5 · 2026-09-07",
+  "_note": "EXAMPLE ONLY — three generic rows, no real names or case facts. Copy this file's shape to add real behavior-pattern reference data; case_reference load --from-plugin ingests every .json/.jsonl file in this directory. See README.md for the field contract.",
+  "entries": [
+    {
+      "kind": "behavior_pattern",
+      "key": "darvo",
+      "category": "manipulation",
+      "pattern": "\\b(you'?re|you are)\\s+(the\\s+)?(real\\s+)?(abuser|the\\s+problem)\\b",
+      "definition": "DARVO (Deny, Attack, Reverse Victim and Offender): denying the conduct occurred, attacking the person who raised it, then reversing victim/offender roles.",
+      "aliases": ["deny attack reverse", "reverse victim and offender"],
+      "severity": "high",
+      "factors": ["f", "k"]
+    },
+    {
+      "kind": "behavior_pattern",
+      "key": "triangulation",
+      "category": "manipulation",
+      "pattern": "\\btold\\s+(?:the\\s+)?(?:child|kids?)\\s+that\\s+you\\b",
+      "definition": "Triangulation: routing conflict or messages through a third party (often the child) instead of direct communication between parents.",
+      "aliases": [],
+      "severity": "medium",
+      "factors": ["j"]
+    },
+    {
+      "kind": "ontology_term",
+      "key": "hoovering",
+      "category": "manipulation",
+      "pattern": null,
+      "definition": "Hoovering: an attempt to draw a person back into contact after a period of distance or conflict, typically timed around a hearing or mediation date.",
+      "aliases": ["sucking back in"],
+      "severity": "low",
+      "factors": []
+    }
+  ]
+}

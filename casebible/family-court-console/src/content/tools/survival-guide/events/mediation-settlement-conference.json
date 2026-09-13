@@ -1,0 +1,114 @@
+{
+  "id": "mediation-settlement-conference",
+  "title": "Domestic Relations Mediation / Settlement Conference",
+  "what_it_is": "A nonbinding process in which a neutral mediator facilitates communication to promote settlement (MCR 3.216(A)(2)). All domestic relations cases are subject to mediation under this rule unless a statute or court rule says otherwise. If both parties request it and the mediator agrees, evaluative mediation (a written settlement recommendation) is available (MCR 3.216(A)(2), (C)(2)).",
+  "who_is_in_the_room": [
+    "The mediator - a neutral third party, not a judge, not an advocate for either side.",
+    "You and the other party, and counsel if either has one."
+  ],
+  "sequence": [
+    "The court refers a contested issue to mediation by written order, on stipulation, motion, or its own initiative (MCR 3.216(C)(1)).",
+    "A party who objects must file a written motion and notice of hearing within 14 days of receiving notice of the referral; the objection motion is heard within 14 days of filing (MCR 3.216(D)(1)-(2)).",
+    "Cases involving child abuse/neglect, domestic abuse (absent both attorneys present), inability to negotiate, or safety risk may be exempt (MCR 3.216(D)(3)).",
+    "The mediation session proceeds; if both parties requested evaluative mediation and the mediator agrees, a written settlement recommendation may issue at the end (MCR 3.216(A)(2)).",
+    "Any settlement reached is reduced to a written, signed agreement before it binds anyone."
+  ],
+  "prepare": [
+    "A short list of your non-negotiable terms versus terms you would trade, in writing, before the session.",
+    "A copy of any existing order and your proposed changes with reasons.",
+    "If you believe mediation is unsafe or inappropriate given DV/PPO/CPS facts, raise the MCR 3.216(D)(3) exemption in writing before the session, not during it."
+  ],
+  "applicable_rules": [
+    {
+      "cite": "MCR 3.216(A)(2)",
+      "summary": "Domestic relations mediation is nonbinding; a written settlement recommendation (evaluative mediation) requires both parties' request and the mediator's agreement.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 3.216(A)(2)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    },
+    {
+      "cite": "MCR 3.216(D)(3)",
+      "summary": "Cases may be exempt from mediation for child abuse/neglect, domestic abuse, inability to negotiate, safety risk, or other good cause.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 3.216(D)(3)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    },
+    {
+      "cite": "MCR 3.216(D)(1)",
+      "summary": "An objection to referral to mediation must be a written motion plus notice of hearing, filed within 14 days of receiving notice of the referral order.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 3.216(D)(1)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    }
+  ],
+  "deadlines": [
+    {
+      "label": "Motion to remove the case from mediation",
+      "rule_preset": null,
+      "cite": "MCR 3.216(D)(1)",
+      "status": "PROVISIONAL_VERIFY"
+    },
+    {
+      "label": "Hearing on a timely objection to mediation",
+      "rule_preset": null,
+      "cite": "MCR 3.216(D)(2)",
+      "status": "PROVISIONAL_VERIFY"
+    }
+  ],
+  "traps": [
+    {
+      "trap": "Agreeing to something verbally in the room without it being written and signed.",
+      "safe_move": "Nothing binds until reduced to a written, signed agreement - do not treat a verbal concession as final."
+    },
+    {
+      "trap": "Not raising a DV/safety exemption before the session.",
+      "safe_move": "MCR 3.216(D)(3) exemptions exist; raise them in writing, in advance, if applicable - do not wait until you are in the room with the other party."
+    },
+    {
+      "trap": "Treating mediation as a place to relitigate the whole history.",
+      "safe_move": "The mediator facilitates settlement, not fact-finding; stay on the terms actually in dispute."
+    },
+    {
+      "trap": "Assuming the mediator can be told things confidentially that will not shape the process.",
+      "safe_move": "Mediation records have their own confidentiality rule (MCR 2.412) but the mediator is still working toward settlement, not serving as your advisor - PROVISIONAL, confirm this mediator's specific confidentiality practice."
+    }
+  ],
+  "do_not": [
+    "Never characterize the other parent with a clinical label as a pleaded claim (narcissist, alienator, PAS, coercive control) - GUARDRAILS.md S2.",
+    "Never use the child as a witness, messenger, interviewee, or source, and never record the child - GUARDRAILS.md S8, absolute.",
+    "Never assert that any recording you made is lawful - Michigan law is unsettled and the exposure is criminal.",
+    "Never sign or stipulate to anything on the spot without reading it fully first."
+  ],
+  "phrases": {
+    "openers": [
+      "Good morning/afternoon, Your Honor. My name is [Party], and I am representing myself.",
+      "I am here to address [narrow issue]. I have [N] exhibits and a short chronology."
+    ],
+    "closers": [
+      "That is the factual answer.",
+      "I don't have that information, but I can provide records if needed.",
+      "I'd like the record to reflect [narrow, factual point] and I reserve my right to address anything broader in the appropriate forum."
+    ]
+  },
+  "safety_gates": [
+    "route_issue first",
+    "immediate danger -> 911, do not proceed on this guide alone",
+    "PPO/DV/CPS contact live -> stop, safety resources, do not proceed on this guide alone",
+    "UCCJEA/interstate fact -> stop, MC 416 affidavit guidance",
+    "recording question in any form -> unsettled law, criminal exposure, attorney question only",
+    "child asked/expected to speak to anyone about the case -> stop"
+  ],
+  "exit_checklist": [
+    "Write down the date, who appeared, and what was decided or taken under advisement before leaving the building.",
+    "Write on any document handed to you the date you received it - that date can start a clock.",
+    "Calendar every deadline this event started, counted from the earliest possible trigger date.",
+    "Note whether anything was requested that you did not have time to answer fully, and follow up in writing.",
+    "Get any agreement in writing and signed before leaving, or confirm the process for reducing it to a stipulated order."
+  ],
+  "sources": [
+    {
+      "file": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 3.216"
+    }
+  ]
+}

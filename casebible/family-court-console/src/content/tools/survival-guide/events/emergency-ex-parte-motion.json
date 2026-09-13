@@ -1,0 +1,140 @@
+{
+  "id": "emergency-ex-parte-motion",
+  "title": "Emergency Ex Parte Motion (Custody / Parenting Time)",
+  "what_it_is": "A request for immediate relief without advance notice to the other party, granted only where the court is satisfied by specific facts in an affidavit or verified pleading that irreparable injury will result from the delay required to give notice, or that notice itself will precipitate adverse action (MCR 3.207(B)(1)). An order that could alter the child's established custodial environment additionally requires a scheduled evidentiary hearing.",
+  "who_reads_it": [
+    "The judge who rules on it, typically without a hearing.",
+    "The Friend of the Court and the other party, who must be served within 3 days of the order being issued if granted."
+  ],
+  "sequence": [
+    "Draft a verified pleading or affidavit stating specific facts showing irreparable injury from delay, or that notice would precipitate adverse action (MCR 3.207(B)(1)).",
+    "If requesting a custody/parenting-time order or a change of custody/parenting time, include facts on the child's established custodial environment and on whether the requested order would change it, and (if it would) facts meeting the clear-and-convincing standard (MCR 3.207(B)(1)(a)).",
+    "File; the court rules, typically without a hearing given the emergency posture.",
+    "If granted, arrange service of a true copy on the FOC and the other party within 3 days (MCR 3.207(B)(2)).",
+    "If the order could alter the established custodial environment, the court must also schedule an evidentiary hearing within 21 days of entry, with notice included in the order (MCR 3.207(B)(1)(b)).",
+    "The other party may file a written objection or motion to rescind/modify within the time the order's own required notice states (commonly 14 days under MCR 3.207(B)(6) for a MCL 722.27a order)."
+  ],
+  "prepare": [
+    "Specific, dated facts - not general worry - showing why notice cannot be given first.",
+    "The established-custodial-environment facts required by MCR 3.207(B)(1)(a), stated precisely.",
+    "A plan to serve the FOC and the other party within 3 days if the order is granted."
+  ],
+  "applicable_rules": [
+    {
+      "cite": "MCR 3.207(B)(1)",
+      "summary": "An ex parte order requires specific facts in an affidavit or verified pleading showing irreparable injury from the delay of notice, or that notice would precipitate adverse action.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 3.207(B)(1)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    },
+    {
+      "cite": "MCR 3.207(B)(1)(a)",
+      "summary": "A verified pleading/affidavit requesting an ex parte custody or parenting-time order must include facts on the established custodial environment and on whether the order would change it.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 3.207(B)(1)(a)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    },
+    {
+      "cite": "MCR 3.207(B)(1)(b)",
+      "summary": "The court must not issue an order that could alter the established custodial environment without scheduling an evidentiary hearing within 21 days of entry.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 3.207(B)(1)(b)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    },
+    {
+      "cite": "MCR 3.207(B)(2)",
+      "summary": "The moving party must serve a true copy of the ex parte order on the FOC and the other party within 3 days of issuance.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 3.207(B)(2)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    }
+  ],
+  "deadlines": [
+    {
+      "label": "Serve the ex parte order on the FOC and other party",
+      "rule_preset": null,
+      "cite": "MCR 3.207(B)(2)",
+      "status": "PROVISIONAL_VERIFY"
+    },
+    {
+      "label": "Evidentiary hearing if the order could alter the established custodial environment",
+      "rule_preset": null,
+      "cite": "MCR 3.207(B)(1)(b)",
+      "status": "PROVISIONAL_VERIFY"
+    },
+    {
+      "label": "Other party's objection/motion to rescind or modify (order-stated window, commonly 14 days)",
+      "rule_preset": null,
+      "cite": "MCR 3.207(B)(6)",
+      "status": "PROVISIONAL_VERIFY"
+    }
+  ],
+  "traps": [
+    {
+      "trap": "Filing an emergency motion for a non-emergency scheduling dispute.",
+      "safe_move": "MCR 3.207(B)(1) requires specific facts of irreparable injury from delay or that notice would precipitate adverse action - a preference for a different schedule is not that."
+    },
+    {
+      "trap": "Omitting the established-custodial-environment facts.",
+      "safe_move": "MCR 3.207(B)(1)(a) makes these mandatory content for a custody/parenting-time ex parte request - their absence can be fatal to the motion."
+    },
+    {
+      "trap": "Assuming an emergency order is permanent.",
+      "safe_move": "It remains in effect only until modified or superseded, and any order that could change the established custodial environment triggers a mandatory 21-day evidentiary hearing (MCR 3.207(B)(1)(b))."
+    },
+    {
+      "trap": "Missing the 3-day service requirement.",
+      "safe_move": "Failure to timely serve the FOC and other party can undermine enforceability and fairness of the order - calendar it immediately upon entry."
+    }
+  ],
+  "do_not": [
+    "Never characterize the other parent with a clinical label as a pleaded claim (narcissist, alienator, PAS, coercive control) - GUARDRAILS.md S2.",
+    "Never use the child as a witness, messenger, interviewee, or source, and never record the child - GUARDRAILS.md S8, absolute.",
+    "Never assert that any recording you made is lawful - Michigan law is unsettled and the exposure is criminal.",
+    "Never sign or stipulate to anything on the spot without reading it fully first.",
+    "Do not use an emergency filing as a tactic to gain surprise advantage rather than address a genuine emergency - MCR 1.109(E) sanctions and MCL 600.2591 apply to frivolous filings."
+  ],
+  "phrases": {
+    "openers": [
+      "Good morning/afternoon, Your Honor. My name is [Party], and I am representing myself.",
+      "I am here to address [narrow issue]. I have [N] exhibits and a short chronology."
+    ],
+    "closers": [
+      "That is the factual answer.",
+      "I don't have that information, but I can provide records if needed.",
+      "I'd like the record to reflect [narrow, factual point] and I reserve my right to address anything broader in the appropriate forum."
+    ]
+  },
+  "safety_gates": [
+    "route_issue first",
+    "immediate danger -> 911, do not proceed on this guide alone",
+    "PPO/DV/CPS contact live -> stop, safety resources, do not proceed on this guide alone",
+    "UCCJEA/interstate fact -> stop, MC 416 affidavit guidance",
+    "recording question in any form -> unsettled law, criminal exposure, attorney question only",
+    "child asked/expected to speak to anyone about the case -> stop"
+  ],
+  "exit_checklist": [
+    "The affidavit states specific, dated facts of irreparable injury or notice-driven adverse action.",
+    "Established-custodial-environment facts are included if custody/parenting time is requested.",
+    "Service on the FOC and other party is calendared for within 3 days if granted.",
+    "The 21-day evidentiary hearing date is calendared if the order could alter the established custodial environment."
+  ],
+  "sources": [
+    {
+      "file": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 3.207(B)"
+    },
+    {
+      "file": "content/custody-guide/draft/M13-temporary-orders.md",
+      "section": "temporary orders context"
+    },
+    {
+      "file": "content/custody-guide/draft/M14-emergency-ex-parte-orders.md",
+      "section": "emergency ex parte context"
+    },
+    {
+      "file": "content/toolkit/checklists/safety-planning.md",
+      "section": "whole file"
+    }
+  ]
+}

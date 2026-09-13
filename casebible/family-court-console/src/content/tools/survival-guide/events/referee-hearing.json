@@ -1,0 +1,162 @@
+{
+  "id": "referee-hearing",
+  "title": "Domestic Relations Referee Hearing",
+  "what_it_is": "A real evidentiary proceeding before a lawyer the court assigns (a referee). The Michigan Rules of Evidence apply. The referee does not sign the order; the referee issues a recommendation for an order that a judge later approves or that a party may object to. For most pro se Genesee parents this is the trial, not a warm-up for one.",
+  "who_is_in_the_room": [
+    "The referee (a State Bar member, MCR 3.215(A)) - decides findings and recommends the order, does not sign it.",
+    "You and the other party (or their counsel).",
+    "A recording device/court reporter - MCR 3.215(D)(4) requires an electronic or stenographic record of all hearings.",
+    "Possibly a Friend of the Court representative."
+  ],
+  "sequence": [
+    "Notice of hearing arrives; it must clearly state the matter will be heard by a referee (MCR 3.215(C)(1)).",
+    "Hearing is held; the Michigan Rules of Evidence apply (MCR 3.215(D)(1)); testimony is live (MCR 3.215(D)(3)).",
+    "Ask the referee to state findings on the record on contested points (MCR 3.215(E)(1)(a)).",
+    "Within 21 days of the hearing, the referee issues findings and a recommendation for an order, with proof of service filed (MCR 3.215(E)(1)).",
+    "A party may serve a proposed recommended order within 7 days of the hearing; objections to its accuracy/completeness are due within 7 days of that service (MCR 3.215(E)(3)(d)).",
+    "If no written objection to the recommendation is filed within 21 days after service, the recommendation becomes the final order (MCR 3.215(E)(1)(c))."
+  ],
+  "prepare": [
+    "Three complete, identical, tabbed exhibit sets (referee, other side, you); originals available.",
+    "A proof plan: for each fact the court must find, the exhibit and the witness that establishes it.",
+    "A one-sentence statement of the relief you are asking for.",
+    "Your own testimony outline: dates, times, places, what you observed - no adjectives, no motive.",
+    "If you need a non-party witness or documents at the hearing, ask the clerk to issue a subpoena (MCR 2.506(B)(1)) - do this early.",
+    "Confirm current FOC 68/FOC 60 revisions before relying on them - PROVISIONAL, confirm with the clerk."
+  ],
+  "applicable_rules": [
+    {
+      "cite": "MCR 3.215(D)(1)",
+      "summary": "The Michigan Rules of Evidence apply to referee hearings.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 3.215(D)(1)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    },
+    {
+      "cite": "MCR 3.215(A)",
+      "summary": "A referee must be a State Bar member in good standing.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 3.215(A)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    },
+    {
+      "cite": "MCR 3.215(D)(4)",
+      "summary": "An electronic or stenographic record must be kept of all hearings.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 3.215(D)(4)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    },
+    {
+      "cite": "MCR 3.215(E)(1)(a)",
+      "summary": "The referee must find facts specially and state the law applied separately.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 3.215(E)(1)(a)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    },
+    {
+      "cite": "MCR 3.215(E)(1)(c)",
+      "summary": "No written objection within 21 days after service means the recommended order becomes the final order.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 3.215(E)(1)(c)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    }
+  ],
+  "deadlines": [
+    {
+      "label": "Objection + notice of hearing (recommendation)",
+      "rule_preset": "referee_objection",
+      "cite": "MCR 3.215(E)(4)",
+      "status": "PROVISIONAL_VERIFY"
+    },
+    {
+      "label": "Objection to a proposed recommended order's accuracy/completeness",
+      "rule_preset": null,
+      "cite": "MCR 3.215(E)(3)(d)",
+      "status": "PROVISIONAL_VERIFY"
+    },
+    {
+      "label": "Judicial (de novo) hearing, if objected",
+      "rule_preset": null,
+      "cite": "MCR 3.215(F)(1)",
+      "status": "PROVISIONAL_VERIFY"
+    }
+  ],
+  "traps": [
+    {
+      "trap": "\"Save your best evidence for the judge.\"",
+      "safe_move": "Do not. MCR 3.215(F)(2)(c) lets the judge bar new evidence you could have offered here and did not. Everything goes in at this hearing."
+    },
+    {
+      "trap": "A hallway request to sign the recommended order 'so it can be entered today.'",
+      "safe_move": "That signature waives the judicial hearing (MCR 3.215(E)(8)). Take it home and read it line by line first."
+    },
+    {
+      "trap": "Being asked to characterize the other parent (alienation, mental health, motive).",
+      "safe_move": "Answer only what happened, from personal knowledge. Never use a clinical label as a claim (GUARDRAILS.md S2)."
+    },
+    {
+      "trap": "A recommendation that leans on an unstipulated FOC report.",
+      "safe_move": "The report is not evidence unless both parties agree to admit it (Duperon v Duperon, 175 Mich App 77). Do not stipulate to it."
+    },
+    {
+      "trap": "Objecting to 'the entire recommendation' instead of naming findings.",
+      "safe_move": "A vague objection risks costs under MCR 3.215(F)(3) and can leave unobjected findings conclusive (MCR 3.215(F)(2)(a)-(b))."
+    }
+  ],
+  "do_not": [
+    "Never characterize the other parent with a clinical label as a pleaded claim (narcissist, alienator, PAS, coercive control) - GUARDRAILS.md S2.",
+    "Never use the child as a witness, messenger, interviewee, or source, and never record the child - GUARDRAILS.md S8, absolute.",
+    "Never assert that any recording you made is lawful - Michigan law is unsettled and the exposure is criminal.",
+    "Never sign or stipulate to anything on the spot without reading it fully first.",
+    "Do not litigate a prior hearing's outcome; that window has closed.",
+    "Do not bring up CPS, civil claims, or the full relationship history unless directly and narrowly asked."
+  ],
+  "phrases": {
+    "openers": [
+      "Good morning/afternoon, Your Honor. My name is [Party], and I am representing myself.",
+      "I am here to address [narrow issue]. I have [N] exhibits and a short chronology."
+    ],
+    "closers": [
+      "That is the factual answer.",
+      "I don't have that information, but I can provide records if needed.",
+      "I'd like the record to reflect [narrow, factual point] and I reserve my right to address anything broader in the appropriate forum."
+    ]
+  },
+  "safety_gates": [
+    "route_issue first",
+    "immediate danger -> 911, do not proceed on this guide alone",
+    "PPO/DV/CPS contact live -> stop, safety resources, do not proceed on this guide alone",
+    "UCCJEA/interstate fact -> stop, MC 416 affidavit guidance",
+    "recording question in any form -> unsettled law, criminal exposure, attorney question only",
+    "child asked/expected to speak to anyone about the case -> stop"
+  ],
+  "exit_checklist": [
+    "Write down the date, who appeared, and what was decided or taken under advisement before leaving the building.",
+    "Write on any document handed to you the date you received it - that date can start a clock.",
+    "Calendar every deadline this event started, counted from the earliest possible trigger date.",
+    "Note whether anything was requested that you did not have time to answer fully, and follow up in writing.",
+    "Confirm whether the recording equipment allows a contemporaneous copy, and what media to bring (MCR 3.215(D)(4)(a)) - PROVISIONAL, ask the referee's office."
+  ],
+  "sources": [
+    {
+      "file": "content/custody-guide/draft/M16-referee-hearing-objection-de-novo.md",
+      "section": "16.1-16.7"
+    },
+    {
+      "file": "content/custody-guide/draft/P1-hearing-prep-referee.md",
+      "section": "Part A-D"
+    },
+    {
+      "file": "skills/family-court-toolkit/references/referee-hearing-survival/SKILL.md",
+      "section": "SS1-4"
+    },
+    {
+      "file": "content/custody-guide/GUARDRAILS.md",
+      "section": "S2, S7, S8"
+    },
+    {
+      "file": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 3.215"
+    }
+  ]
+}

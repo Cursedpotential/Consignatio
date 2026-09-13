@@ -1,0 +1,127 @@
+{
+  "id": "motion",
+  "title": "Motion (General Domestic Relations Motion)",
+  "what_it_is": "The document that asks the court for a specific order. A motion states the grounds, the authority, and the relief sought, and must be signed (MCR 2.119(A)(1)). It travels with a notice of hearing, and a brief only when it presents an issue of law (MCR 2.119(A)(2)-(3)).",
+  "who_reads_it": [
+    "The judge or referee who will hear it.",
+    "The opposing party or their counsel, who is served a copy.",
+    "The Friend of the Court, if a child or support is involved (a marked FOC copy, MCR 3.203(G))."
+  ],
+  "sequence": [
+    "Draft the motion: numbered material facts, each tied to the legal element it proves (MCR 2.113(B)).",
+    "Draft a brief in support only if the motion presents an issue of law (MCR 2.119(A)(2)).",
+    "Draft the notice of hearing (may be combined with the motion, MCR 2.119(A)(3)).",
+    "Attach any affidavit needed to put facts not already of record before the court (MCR 2.119(B)).",
+    "Attach the proposed order (Genesee practice; PROVISIONAL, confirm current LCR 2.119 requirement).",
+    "Sign, file, and serve the party and their attorney (MCR 2.107(B)(1); MCR 3.203(I)), then file proof of service (MCR 2.107(D))."
+  ],
+  "prepare": [
+    "Confirm whether this is an initial-action pleading or a postjudgment motion in an existing case (MCR 3.204(A)(1); MCR 3.213) - filing the wrong one costs a fee and a hearing date.",
+    "Confirm the Genesee concurrence-certificate requirement before filing (PROVISIONAL).",
+    "Confirm the current fee or prepare a Fee Waiver Request (MCR 2.002; MCR 2.119(G))."
+  ],
+  "applicable_rules": [
+    {
+      "cite": "MCR 2.119(A)(1)",
+      "summary": "A motion must state the grounds, cite the authority, and state the relief or order sought, and be signed as MCR 1.109(D)(3) and (E) provide.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 2.119(A)(1)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    },
+    {
+      "cite": "MCR 2.119(A)(2)",
+      "summary": "A brief is required when the motion presents an issue of law; it must cite the authority relied on.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 2.119(A)(2)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    },
+    {
+      "cite": "MCR 2.113(B)",
+      "summary": "A pleading's allegations must be simple, concise, and direct, in numbered paragraphs.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 2.113(B)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    },
+    {
+      "cite": "MCR 1.109(E)",
+      "summary": "The signature on a motion certifies it is well grounded in fact and law and not filed to harass; violation carries sanctions.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 1.109(E)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    }
+  ],
+  "deadlines": [
+    {
+      "label": "Response due from the other side",
+      "rule_preset": "motion_response",
+      "cite": "MCR 2.119(C)(1)",
+      "status": "PROVISIONAL_VERIFY"
+    },
+    {
+      "label": "Add for mail service",
+      "rule_preset": "mail_service_addon",
+      "cite": "MCR 2.107(C)(3)/MCR 1.108",
+      "status": "PROVISIONAL_VERIFY"
+    }
+  ],
+  "traps": [
+    {
+      "trap": "Filing a new complaint when a motion in an existing case was required.",
+      "safe_move": "Costs a filing fee and a hearing date, and can land in front of a different judge (MCR 3.204(A)(1))."
+    },
+    {
+      "trap": "Vague relief that cannot be enforced.",
+      "safe_move": "The FOC may decline to enforce a term that is not specific (MCL 552.641(2)(c)). Write the term so it can be broken and proved broken."
+    },
+    {
+      "trap": "Omitting the required UCCJEA affidavit or case inventory.",
+      "safe_move": "MCR 3.206(A)(3), (B) require these in most custody/parenting-time filings - and any other-state/country fact is a stop-and-verify point (UCCJEA)."
+    },
+    {
+      "trap": "Putting a child's name, birthdate, or SSN in a public filing.",
+      "safe_move": "Redaction is the filer's sole responsibility (MCR 1.109(D)(10)(a)); the child's identifiers do not go beyond what the rule affirmatively requires (GUARDRAILS.md S11a)."
+    }
+  ],
+  "do_not": [
+    "Never characterize the other parent with a clinical label as a pleaded claim (narcissist, alienator, PAS, coercive control) - GUARDRAILS.md S2.",
+    "Never use the child as a witness, messenger, interviewee, or source, and never record the child - GUARDRAILS.md S8, absolute.",
+    "Never assert that any recording you made is lawful - Michigan law is unsettled and the exposure is criminal.",
+    "Never sign or stipulate to anything on the spot without reading it fully first.",
+    "Do not label the motion or its exhibits 'filing-ready' without your own final read-through."
+  ],
+  "phrases": {
+    "openers": [
+      "Good morning/afternoon, Your Honor. My name is [Party], and I am representing myself.",
+      "I am here to address [narrow issue]. I have [N] exhibits and a short chronology."
+    ],
+    "closers": [
+      "That is the factual answer.",
+      "I don't have that information, but I can provide records if needed.",
+      "I'd like the record to reflect [narrow, factual point] and I reserve my right to address anything broader in the appropriate forum."
+    ]
+  },
+  "safety_gates": [
+    "route_issue first",
+    "immediate danger -> 911, do not proceed on this guide alone",
+    "PPO/DV/CPS contact live -> stop, safety resources, do not proceed on this guide alone",
+    "UCCJEA/interstate fact -> stop, MC 416 affidavit guidance",
+    "recording question in any form -> unsettled law, criminal exposure, attorney question only",
+    "child asked/expected to speak to anyone about the case -> stop"
+  ],
+  "exit_checklist": [
+    "Every numbered fact maps to a legal element.",
+    "The proposed order's terms are specific enough to enforce (no 'reasonable,' 'as agreed').",
+    "Proof of service is prepared to file alongside or immediately after filing.",
+    "No child name, birthdate, or SSN beyond what the rule requires."
+  ],
+  "sources": [
+    {
+      "file": "content/custody-guide/draft/M12-pleadings-motions-service.md",
+      "section": "12.1-12.7"
+    },
+    {
+      "file": "content/toolkit/templates/motion.md",
+      "section": "whole file"
+    }
+  ]
+}

@@ -1,0 +1,136 @@
+{
+  "id": "de-novo-hearing",
+  "title": "Judicial (De Novo) Hearing on an Objection to a Referee Recommendation",
+  "what_it_is": "The judge's review of a referee's recommendation after a timely, specific objection. \"De novo\" does not mean a fresh trial: by statute the judge may decide entirely on the referee-hearing record (MCL 552.507(6)(a)), but must allow live evidence (MCR 3.215(F)(2)) and may bar new evidence you could have offered to the referee and did not (MCR 3.215(F)(2)(c)).",
+  "who_is_in_the_room": [
+    "The judge - reaches an independent decision, but on a record largely fixed at the referee hearing.",
+    "You and the other party (or counsel).",
+    "Possibly the referee's record/transcript, if either party gave the required 7-day notice to use it (MCR 3.215(D)(4)(c))."
+  ],
+  "sequence": [
+    "You filed a written objection naming specific findings, plus a notice of hearing, within 21 days of service (MCR 3.215(E)(4)).",
+    "If you intend to offer evidence from the referee record, give notice at least 7 days before the judicial hearing (MCR 3.215(D)(4)(c)); the offering party generally pays for the transcript.",
+    "The judicial hearing must be held within 21 days after the written objection is filed, unless extended for good cause (MCR 3.215(F)(1)).",
+    "The court may review the referee record, must allow live evidence, and may bar new evidence, treat unobjected findings as conclusive, or impose other reasonable restrictions (MCR 3.215(F)(2)(a)-(d)).",
+    "The judge reaches an independent decision and enters an order."
+  ],
+  "prepare": [
+    "Your finding-by-finding objection worksheet: the finding, why it is wrong (fact or law), and the record cite.",
+    "Only evidence you can show was NOT available at the referee hearing, if you want to introduce anything new - document that unavailability with a date.",
+    "The 7-day notice of intent to use the referee record, if applicable, already served.",
+    "A short statement of what you are asking the judge to do differently and why."
+  ],
+  "applicable_rules": [
+    {
+      "cite": "MCR 3.215(F)(2)",
+      "summary": "The court must allow live evidence; may bar new evidence not shown unavailable at the referee hearing, and may treat unobjected findings as conclusive.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 3.215(F)(2)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    },
+    {
+      "cite": "MCL 552.507(6)(a)",
+      "summary": "A de novo hearing can be a new decision based entirely on the record of a previous hearing.",
+      "source": "content/custody-guide/sources/primary/mcl/mcl-552-507.md",
+      "section": "552.507(6)(a)",
+      "disposition": "VERIFIED verbatim - legislature.mi.gov fetch recorded in verification_ledger.md; NOT yet archived in sources/primary/mcl/ (empty for this section) - VERIFY before quoting in a filing"
+    },
+    {
+      "cite": "MCR 3.215(F)(1)",
+      "summary": "The judicial hearing must be held within 21 days after the written objection is filed, absent good-cause extension.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 3.215(F)(1)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    },
+    {
+      "cite": "MCR 3.215(F)(3)",
+      "summary": "Costs and fees may be assessed for a frivolous or delay-motivated objection.",
+      "source": "content/custody-guide/sources/primary/michigan-court-rules_2026-07-31.md",
+      "section": "Rule 3.215(F)(3)",
+      "disposition": "VERIFIED verbatim - archived MCR/MCL"
+    }
+  ],
+  "deadlines": [
+    {
+      "label": "Objection + notice of hearing (starts this track)",
+      "rule_preset": "referee_objection",
+      "cite": "MCR 3.215(E)(4)",
+      "status": "PROVISIONAL_VERIFY"
+    },
+    {
+      "label": "Notice of intent to use the referee record",
+      "rule_preset": null,
+      "cite": "MCR 3.215(D)(4)(c)",
+      "status": "PROVISIONAL_VERIFY"
+    },
+    {
+      "label": "Judicial hearing held",
+      "rule_preset": null,
+      "cite": "MCR 3.215(F)(1)",
+      "status": "PROVISIONAL_VERIFY"
+    }
+  ],
+  "traps": [
+    {
+      "trap": "Believing \"de novo\" guarantees a fresh trial.",
+      "safe_move": "It does not. MCL 552.507(6)(a) allows a decision entirely on the referee record. Everything you wanted heard should already be in that record."
+    },
+    {
+      "trap": "Trying to introduce new evidence without showing why it was unavailable before.",
+      "safe_move": "MCR 3.215(F)(2)(c) lets the court exclude it. Document unavailability with a date, in advance."
+    },
+    {
+      "trap": "A vague, whole-recommendation objection.",
+      "safe_move": "Unobjected findings can be treated as conclusive (MCR 3.215(F)(2)(a)-(b)). Name each finding you dispute."
+    },
+    {
+      "trap": "Not budgeting for transcript cost/time.",
+      "safe_move": "MCR 3.215(D)(4)(c) requires the offering party to pay; ask about cost and lead time the day you decide to object, not the week of the hearing."
+    }
+  ],
+  "do_not": [
+    "Never characterize the other parent with a clinical label as a pleaded claim (narcissist, alienator, PAS, coercive control) - GUARDRAILS.md S2.",
+    "Never use the child as a witness, messenger, interviewee, or source, and never record the child - GUARDRAILS.md S8, absolute.",
+    "Never assert that any recording you made is lawful - Michigan law is unsettled and the exposure is criminal.",
+    "Never sign or stipulate to anything on the spot without reading it fully first."
+  ],
+  "phrases": {
+    "openers": [
+      "Good morning/afternoon, Your Honor. My name is [Party], and I am representing myself.",
+      "I am here to address [narrow issue]. I have [N] exhibits and a short chronology."
+    ],
+    "closers": [
+      "That is the factual answer.",
+      "I don't have that information, but I can provide records if needed.",
+      "I'd like the record to reflect [narrow, factual point] and I reserve my right to address anything broader in the appropriate forum."
+    ]
+  },
+  "safety_gates": [
+    "route_issue first",
+    "immediate danger -> 911, do not proceed on this guide alone",
+    "PPO/DV/CPS contact live -> stop, safety resources, do not proceed on this guide alone",
+    "UCCJEA/interstate fact -> stop, MC 416 affidavit guidance",
+    "recording question in any form -> unsettled law, criminal exposure, attorney question only",
+    "child asked/expected to speak to anyone about the case -> stop"
+  ],
+  "exit_checklist": [
+    "Write down the date, who appeared, and what was decided or taken under advisement before leaving the building.",
+    "Write on any document handed to you the date you received it - that date can start a clock.",
+    "Calendar every deadline this event started, counted from the earliest possible trigger date.",
+    "Note whether anything was requested that you did not have time to answer fully, and follow up in writing."
+  ],
+  "sources": [
+    {
+      "file": "content/custody-guide/draft/M16-referee-hearing-objection-de-novo.md",
+      "section": "16.5-16.7"
+    },
+    {
+      "file": "content/custody-guide/draft/P1-hearing-prep-referee.md",
+      "section": "C.6-C.7"
+    },
+    {
+      "file": "content/custody-guide/GUARDRAILS.md",
+      "section": "S3.1, S4"
+    }
+  ]
+}
