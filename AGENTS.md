@@ -1,5 +1,11 @@
 # Consignatio — agent contract
 
+<!-- Updated by: Codex | Date: 2026-09-12 | Rev: 1 | Platform: Codex / win32 | Changes: record three-system boundary | Context: explicit owner clarification -->
+
+**Owner decision — 2026-09-12:** CCC means project-local CocoIndex Code indexes only. Intake is the multifaceted CocoIndex-based filesystem workstation, using Weaviate for advanced search and SurrealDB for relationships, with multimodal tools/libraries (OCR, STT, video transcription/processing, advanced SLM extraction/classification). Docstore is CocoIndex + SurrealDB for project documentation. Keep their apps, tracking state, locks, configuration and target ownership isolated; shared technology is not a shared runtime. This defines scope, not proof every feature is implemented.
+
+See [CCC / Intake / Docstore boundaries](../SYSTEM-BOUNDARIES.md) for indexing eligibility, duplicate provenance and the human-agent organizing workflow.
+
 `E:\AI_Workspace\Projects\Propria\Consignatio` is an independent product repository inside the
 `E:\AI_Workspace` repository router. Product code, documentation, tests, and
 ordinary commits belong to this child repository, never to the parent router.

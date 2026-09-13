@@ -1,9 +1,23 @@
 # Case Bible Corpus Backend — Master TODO
 
+## Owner scope checkpoint — 2026-09-12
+
+- [x] Record CCC / Intake / Docstore as three isolated systems (documentation decision).
+- [ ] Verify Intake indexes readable unique content before organization/evidence selection and retains every duplicate occurrence's provenance.
+- [ ] Verify metadata-only visibility for unsupported/empty/broken/unhydrated entries without incidental hydration.
+- [ ] Verify selection-aware find/group/compare/decide/move and downstream include/exclude decisions against real files with the human.
+- [ ] Track multimodal OCR/STT/video/SLM and multi-vector capabilities separately by actual implementation and live verification status; this scope ruling does not mark them delivered.
+
+<!-- Updated by: Codex | Date: 2026-09-12 | Rev: 3 | Platform: Codex / win32 | Changes: preserve boundaries and record bounded live graph proof | Context: continuation verified real metadata and populated restore -->
+
+**Owner decision — 2026-09-12:** CCC means project-local CocoIndex Code indexes only. Intake is the multifaceted CocoIndex-based filesystem workstation, using Weaviate for advanced search and SurrealDB for relationships, with multimodal tools/libraries (OCR, STT, video transcription/processing, advanced SLM extraction/classification). Docstore is CocoIndex + SurrealDB for project documentation. Keep their apps, tracking state, locks, configuration and target ownership isolated; shared technology is not a shared runtime. This defines scope, not proof every feature is implemented.
+
+See [CCC / Intake / Docstore boundaries](../../../../SYSTEM-BOUNDARIES.md) for indexing eligibility, duplicate provenance and the human-agent organizing workflow.
+
 ## Active delivery update — 2026-09-11
 
 - [x] Real one-note CocoIndex/NIM/Weaviate/HTTP proof; unchanged repeat skips
-  transformation. Runtime teardown bug fixed, 23 scoped tests pass. See
+  transformation. Runtime teardown bug fixed, 42 expanded scoped tests pass. See
   `LIVE-PROOF-2026-09-11.md`. Native interactive search remains pending.
 
 **Owner priority correction:** Xplorer-based live filesystem organization is phase
@@ -36,7 +50,8 @@ Completed source slices are not a substitute for that acceptance:
   selection-to-chat desktop interaction is still unverified.
 - [x] CocoIndex v1 custom Weaviate target, unchanged skip, idempotent writes and
   derived-object retirement without DELETE; tests include the real engine with a
-  recording sink. Live Weaviate persistence is still unverified.
+  recording sink. Synthetic live persistence and unchanged replay are verified;
+  real service-interruption/recovery and retirement remain unverified live.
 - [x] Same-source OS locking, explicit V:/Y: alias registry and honest run-status
   receipts; registry is not automatically activated and no mount index launched.
 - [x] Integrated frontend verification: 35 tests across six focused files, and
@@ -51,8 +66,8 @@ Completed source slices are not a substitute for that acceptance:
   hidden polling verified by component/hook tests. Native UI proof pending.
 - [x] Keyed per-pane selection/preview; focus preserves each group and active pane
   supplies chat context. Nine scoped tests pass; native interaction proof pending.
-- [ ] Owner selects physical Weaviate service (8081 or 8082); then provision only
-  a dedicated Intake test collection and execute `docs/SYNTHETIC-LIVE-PROOF.md`.
+- [x] Owner selected 8082; old 8081 retired. Dedicated synthetic collection and
+  one-note live HTTP search proof passed. See `LIVE-PROOF-2026-09-11.md`.
 - [x] Intake-only opt-in resizable Preview + chat view, with short-window fallback;
   22 sidebar/context tests pass. Native UI proof pending, not a docking rewrite.
 - [x] Disable inherited upstream updater checks/install in Intake frontend;
@@ -219,14 +234,18 @@ The historical scope paths below do not supersede this location.
 
 ## Phase 6 — SurrealDB provenance, temporal, and graph projection
 
-- [ ] **CBX-P6-001 — HOLD: deployment choice** — Record Surreal endpoint, credentials, namespace/database isolation, version, migration, backup, and access policy.
+- [x] **CBX-P6-001** — Dedicated third deployment, scoped runtime credential, private HTTPS, schema, version and automated backups verified. See [deployment receipt](SURREAL-INTAKE-DEPLOYMENT-2026-09-12.md) and [runtime proof](SURREAL-RUNTIME-PROGRESS-2026-09-12.md). Schema-only restore proven; data-scale recovery remains open.
 - [ ] **CBX-P6-002** — Define nodes for occurrence, content, representation, unit, artifact, assertion, entity/event/person candidates, run, review, and projection. **Path:** `projections/surreal.py`.
 - [ ] **CBX-P6-003** — Define typed edges for membership, containment, origin, derivation, corroboration, alternate representation, similarity candidate, mention, participant, timing, and human decision.
 - [ ] **CBX-P6-004** — Keep imported values, machine proposals, and human overlays separate; expose effective views without destructive merge.
 - [ ] **CBX-P6-005** — Bind query parameters; do not interpolate identifiers or user values into SurrealQL.
 - [ ] **CBX-P6-006** — Create indexes after measured query plans; no speculative blanket indexing.
 - [ ] **CBX-P6-007** — Implement idempotent lake-manifest projection and checkpoint reconciliation.
+  - Latest continuation: migration occurrence-content-map adapter implemented and live-proven on migration-builder synthetic output; every occurrence retained and verified SHA-256 only. Exact replay issued zero writes. No completed real migration generation was present locally, so cross-system count/ID reconciliation remains open. See [contract](R2-B2-OCCURRENCE-GRAPH-CONTRACT-V1.md).
+  - Latest 2026-09-12: 25-row historical PG catalog applied to live graph; replay issued zero writes and preserved all original row values. Populated restore matched all 33 tables. Full-corpus/lake/live-census reconciliation remains open. See [live proof](LIVE-GRAPH-PROOF-2026-09-12.md).
+  - 2026-09-12: explicit inventory/fingerprint manifest adapter implemented and fixture-tested (81 backend tests pass); preserves separate occurrences and exact content identity, supports replay and partial resume. Not a published lake connector; no real corpus load/reconciliation yet. See [input contract](INVENTORY-GRAPH-MANIFEST-V1.md).
 - [ ] **CBX-P6-008** — Add graph expansion API for sessions, units, corroborating evidence, derived artifacts, entities, and timelines.
+  - 2026-09-12: bounded read-only node neighborhood and readiness endpoints implemented; authenticated HTTPS verified. Full corpus-backed expansion/UI and rebuild reconciliation remain open.
 - [ ] **CBX-P6-009 — GATE** — Rebuild from lake; verify cardinalities, forbidden cross-instance edges, provenance paths, and temporal query plans.
 
 ## Phase 7 — PDF and Docling
@@ -312,7 +331,7 @@ The historical scope paths below do not supersede this location.
 ## Decisions that require owner or measured evidence
 
 - [ ] **CBX-H-001 — HOLD** — Select Weaviate deployment/tenancy/backup profile after current infrastructure inventory.
-- [ ] **CBX-H-002 — HOLD** — Select SurrealDB deployment/namespace/migration profile after current infrastructure inventory.
+- [x] **CBX-H-002** — Selected and deployed independent surreal-intake on ovh-files, consignatio/intake, migration 0001. See [deployment receipt](SURREAL-INTAKE-DEPLOYMENT-2026-09-12.md).
 - [ ] **CBX-H-003 — HOLD** — Select text embedding and summarization NIM model revisions after live probe and golden-set receipt.
 - [ ] **CBX-H-004 — HOLD** — Select multimodal and ColPali-class provider after corpus-specific quality/cost/storage benchmark.
 - [ ] **CBX-H-005 — HOLD** — Select Docling production profile—CPU, separate GPU worker, or remote service—after measured throughput/cost.

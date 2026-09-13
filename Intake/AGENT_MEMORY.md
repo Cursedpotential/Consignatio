@@ -1,5 +1,11 @@
 # Intake — progressive context router
 
+<!-- Updated by: Codex | Date: 2026-09-12 | Rev: 1 | Platform: Codex / win32 | Changes: record three-system boundary | Context: explicit owner clarification -->
+
+**Owner decision — 2026-09-12:** CCC means project-local CocoIndex Code indexes only. Intake is the multifaceted CocoIndex-based filesystem workstation, using Weaviate for advanced search and SurrealDB for relationships, with multimodal tools/libraries (OCR, STT, video transcription/processing, advanced SLM extraction/classification). Docstore is CocoIndex + SurrealDB for project documentation. Keep their apps, tracking state, locks, configuration and target ownership isolated; shared technology is not a shared runtime. This defines scope, not proof every feature is implemented.
+
+See [CCC / Intake / Docstore boundaries](../../SYSTEM-BOUNDARIES.md) for indexing eligibility, duplicate provenance and the human-agent organizing workflow.
+
 | Task | Read |
 |---|---|
 | Resume after 2026-09-11 model/usage handoff | `docs/HANDOFF-2026-09-11-INTAKE-NATIVE-AND-INDEX.md` — native desktop running; Weaviate8082 settled, old8081 retired; exact next live proof |

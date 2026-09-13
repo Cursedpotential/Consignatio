@@ -1,6 +1,21 @@
 # Intake — application contract
 
+<!-- Updated by: Codex | Date: 2026-09-12 | Rev: 1 | Platform: Codex / win32 | Changes: record three-system boundary | Context: explicit owner clarification -->
+
+**Owner decision — 2026-09-12:** CCC means project-local CocoIndex Code indexes only. Intake is the multifaceted CocoIndex-based filesystem workstation, using Weaviate for advanced search and SurrealDB for relationships, with multimodal tools/libraries (OCR, STT, video transcription/processing, advanced SLM extraction/classification). Docstore is CocoIndex + SurrealDB for project documentation. Keep their apps, tracking state, locks, configuration and target ownership isolated; shared technology is not a shared runtime. This defines scope, not proof every feature is implemented.
+
+See [CCC / Intake / Docstore boundaries](../../SYSTEM-BOUNDARIES.md) for indexing eligibility, duplicate provenance and the human-agent organizing workflow.
+
 Inherits `../AGENTS.md`. Read `AGENT_MEMORY.md` for task-specific context.
+
+The organizing workflow is find → group → compare → decide → move, with a
+selection-aware agent beside the human. Index readable unique content before
+classification or evidence acceptance. Retain metadata/status for unknown,
+unsupported, broken, empty and unhydrated entries without incidental hydration.
+Exact copies may share content processing, but preserve every occurrence and its
+provenance. Different formats, independent exports/devices and corroborating
+copies stay distinguishable. Downstream exclusion does not require removal from
+the organizing index. Deduplication never grants deletion authority.
 
 - One React application and one Tauri host; backend stays in `backend/`.
 - `src/app/` composes features. `src/features/` owns UI workflows. `src/domain/`
