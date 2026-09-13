@@ -6,7 +6,7 @@ versioned; inventory rows are never discarded because a later snapshot repeats
 the same object.
 """
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 
 SCHEMA_SQL = r"""
 PRAGMA foreign_keys = ON;
@@ -182,6 +182,95 @@ CREATE TABLE IF NOT EXISTS candidate_representative (
     selection_is_quality_judgment INTEGER NOT NULL DEFAULT 0
         CHECK (selection_is_quality_judgment = 0),
     selected_at TEXT NOT NULL
+);
+
+-- Provenance-bearing metadata recovered from PostgreSQL catalogs, provider
+-- inventories, sidecars, or extraction tools. Inventory path/modtime/MIME
+-- observations remain in ``occurrence`` and are merged with these assertions
+-- during resolution rather than copied into this table.
+CREATE TABLE IF NOT EXISTS metadata_assertion (
+    metadata_assertion_id TEXT PRIMARY KEY,
+    occurrence_id TEXT NOT NULL REFERENCES occurrence(occurrence_id),
+    field_name TEXT NOT NULL,
+    value_json TEXT NOT NULL,
+    assertion_class TEXT NOT NULL CHECK (
+        assertion_class IN (
+            'embedded', 'external_sidecar', 'provider', 'catalog', 'human'
+        )
+    ),
+    source_system TEXT NOT NULL,
+    source_table TEXT NOT NULL,
+    source_key TEXT NOT NULL,
+    source_path TEXT,
+    confidence REAL NOT NULL CHECK (confidence >= 0.0 AND confidence <= 1.0),
+    trust_score INTEGER NOT NULL CHECK (trust_score >= 0 AND trust_score <= 100),
+    observed_at TEXT,
+    asserted_at TEXT NOT NULL,
+    rule_version TEXT NOT NULL,
+    detail_json TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS metadata_assertion_occurrence_idx
+ON metadata_assertion(occurrence_id, field_name);
+
+CREATE INDEX IF NOT EXISTS metadata_assertion_source_idx
+ON metadata_assertion(source_system, source_table, source_key);
+
+CREATE TABLE IF NOT EXISTS metadata_import_partition (
+    partition_id TEXT PRIMARY KEY,
+    source_path TEXT NOT NULL,
+    source_sha256 TEXT NOT NULL UNIQUE,
+    imported_at TEXT NOT NULL,
+    row_count INTEGER NOT NULL CHECK (row_count >= 0),
+    assertion_count INTEGER NOT NULL CHECK (assertion_count >= 0)
+);
+
+-- Resolution rows are immutable snapshots. A stable hash of the complete
+-- resolution makes regeneration idempotent; the current view selects the most
+-- recently asserted snapshot without rewriting prior decisions.
+CREATE TABLE IF NOT EXISTS content_metadata_resolution (
+    resolution_id TEXT PRIMARY KEY,
+    content_id TEXT NOT NULL REFERENCES content_identity(content_id),
+    primary_occurrence_id TEXT NOT NULL REFERENCES occurrence(occurrence_id),
+    canonical_filename TEXT NOT NULL,
+    canonical_filename_assertion_id TEXT,
+    oldest_trustworthy_timestamp TEXT,
+    oldest_timestamp_assertion_id TEXT,
+    resolution_state TEXT NOT NULL CHECK (
+        resolution_state IN ('resolved', 'review_required', 'blocked_embedded_conflict')
+    ),
+    rule_version TEXT NOT NULL,
+    reasons_json TEXT NOT NULL,
+    input_set_sha256 TEXT NOT NULL CHECK (length(input_set_sha256) = 64),
+    resolved_at TEXT NOT NULL,
+    UNIQUE(content_id, input_set_sha256, rule_version)
+);
+
+CREATE INDEX IF NOT EXISTS content_metadata_resolution_content_idx
+ON content_metadata_resolution(content_id, resolved_at, resolution_id);
+
+CREATE TABLE IF NOT EXISTS metadata_field_resolution (
+    field_resolution_id TEXT PRIMARY KEY,
+    resolution_id TEXT NOT NULL
+        REFERENCES content_metadata_resolution(resolution_id),
+    field_name TEXT NOT NULL,
+    selected_assertion_id TEXT,
+    selected_value_json TEXT,
+    resolution_state TEXT NOT NULL CHECK (
+        resolution_state IN ('resolved', 'review_required', 'blocked_embedded_conflict')
+    ),
+    alternatives_json TEXT NOT NULL,
+    reasons_json TEXT NOT NULL,
+    UNIQUE(resolution_id, field_name)
+);
+
+CREATE VIEW IF NOT EXISTS current_content_metadata_resolution AS
+SELECT r.*
+FROM content_metadata_resolution r
+WHERE r.rowid = (
+    SELECT MAX(newer.rowid)
+    FROM content_metadata_resolution newer
+    WHERE newer.content_id = r.content_id
 );
 
 CREATE TABLE IF NOT EXISTS assertion (
