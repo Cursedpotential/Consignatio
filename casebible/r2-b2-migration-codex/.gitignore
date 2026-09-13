@@ -1,0 +1,8 @@
+__pycache__/
+*.py[cod]
+.tmp/
+.venv/
+runtime/
+operator-controls/
+pg18-survivor-copy-*/
+to_be_deleted/
