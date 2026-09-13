@@ -28,17 +28,28 @@ Safety boundaries used throughout:
 
 ## Validation record
 
-- `17b578f` preserves the repository and Intake routing/documentation group.
-- `89ccb2b` preserves the Intake Surreal graph/runtime group. The backend suite passed
+- `f2106df` preserves the repository and Intake routing/documentation group.
+- `393d369` preserves the Intake Surreal graph/runtime group. The backend suite passed
   all 107 tests after formatting the changed Python files; Ruff checks passed for
   every changed Python source and test in that group.
-- `cce9e52` preserves the Case Bible atomic grouping schema, staged-path SQL,
+- `008129c` preserves the Case Bible atomic grouping schema, staged-path SQL,
   detection SQL, and handoff. Static review found no credential pattern. The SQL
   `DROP` uses are limited to replacing two constraints and dropping temporary
   tables on transaction completion; the scripts contain no persistent-data deletion.
 - A high-confidence credential scan across all publishable changed files found no
-  private key, common provider token, or credential-bearing URL pattern.
+  private key, common provider token, or credential-bearing URL pattern introduced
+  by the preservation commits.
+- The final range scan found live-looking values for `NVIDIA_API_KEY` and
+  `INTAKE_WEAVIATE_API_KEY` in tracked `Intake/backend/.env.example`. Both values
+  were already identical in `origin/main`; neither value was printed. The tracked
+  example now contains Credential Manager placeholders. Both exposed credentials
+  require owner-controlled rotation because removing them from the current file does
+  not remove them from existing remote Git history. This reconciliation does not
+  rewrite remote history or rotate credentials.
 - `repair-tool-kit/COMPACT-SUMMARY-2026-09-12.md` and root `version` remain present
   locally and are ignored. The latter is a 12,288-byte DuckDB runtime database.
 
-Upstream reconciliation and push proof remain pending.
+The preservation branch rebased cleanly onto `origin/main` at `1db6e9d`. Both
+R2/B2 commits, `fc58c1c` and `1db6e9d`, are verified ancestors of the reconciled
+branch. The branch is four commits ahead of `origin/main` before this final receipt
+update. Push proof remains pending.
