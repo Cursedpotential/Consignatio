@@ -24,7 +24,8 @@ CREATE TABLE IF NOT EXISTS inventory.atomic_unit_candidate (
     unit_type           text NOT NULL CHECK (unit_type IN (
                             'google_takeout','facebook_dyi','facebook_deconstruction',
                             'chat_export','code_repository','ios_backup',
-                            'archive_file','opaque_nested_root','other_package')),
+                            'archive_file','opaque_nested_root',
+                            'orphaned_export_fragment','other_package')),
     detection_basis     text NOT NULL,
     boundary_confidence text NOT NULL CHECK (boundary_confidence IN ('high','medium','review')),
     marker_count        bigint NOT NULL DEFAULT 1,
@@ -35,7 +36,8 @@ CREATE TABLE IF NOT EXISTS inventory.atomic_unit_candidate (
     handling_mode       text NOT NULL DEFAULT 'normal_dedup'
                          CHECK (handling_mode IN (
                              'normal_dedup','preserve_whole',
-                             'archive_provenance','defer_dissection')),
+                             'archive_provenance','defer_dissection',
+                             'controlled_consolidation','investigate_orphan')),
     attrs               jsonb NOT NULL DEFAULT '{}',
     created_at          timestamptz NOT NULL DEFAULT now(),
     UNIQUE (run_id, store, container, root_path, unit_type)
@@ -45,6 +47,38 @@ CREATE INDEX IF NOT EXISTS atomic_candidate_run_idx
     ON inventory.atomic_unit_candidate(run_id, unit_type);
 CREATE INDEX IF NOT EXISTS atomic_candidate_root_idx
     ON inventory.atomic_unit_candidate(store, container, root_path);
+CREATE INDEX IF NOT EXISTS atomic_candidate_run_root_idx
+    ON inventory.atomic_unit_candidate(
+        run_id, store, container, coalesce(account, ''), root_path);
+
+CREATE TABLE IF NOT EXISTS inventory.atomic_path_index (
+    store               text NOT NULL CHECK (store IN ('r2','onedrive','gdrive','local')),
+    account_key         text NOT NULL DEFAULT '',
+    container           text NOT NULL,
+    path                text NOT NULL,
+    source_variant_key  text NOT NULL,
+    name                text NOT NULL,
+    byte_size           bigint,
+    md5                 text,
+    sha1                text,
+    sha256              text,
+    quickxor            text,
+    mtime_text          text,
+    source_row_count    bigint NOT NULL DEFAULT 1,
+    source_refs         jsonb NOT NULL DEFAULT '[]',
+    path_parts          text[] GENERATED ALWAYS AS (
+                            string_to_array(replace(path, E'\\', '/'), '/')) STORED,
+    indexed_at          timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (store, account_key, container, path, source_variant_key)
+);
+
+CREATE INDEX IF NOT EXISTS atomic_path_index_path_idx
+    ON inventory.atomic_path_index(store, account_key, container, path);
+CREATE INDEX IF NOT EXISTS atomic_path_index_name_idx
+    ON inventory.atomic_path_index(lower(name));
+
+COMMENT ON TABLE inventory.atomic_path_index IS
+  'Normalized provider locations relevant to atomic detection. Distinct metadata/hash variants at the same path remain separate; duplicate OneDrive scan rows are counted, not discarded.';
 
 CREATE TABLE IF NOT EXISTS inventory.atomic_copy (
     id                    uuid PRIMARY KEY DEFAULT uuidv7(),
@@ -94,6 +128,86 @@ CREATE INDEX IF NOT EXISTS atomic_member_md5_idx
 CREATE INDEX IF NOT EXISTS atomic_member_sha256_idx
     ON inventory.atomic_member(sha256) WHERE sha256 IS NOT NULL;
 
+CREATE TABLE IF NOT EXISTS inventory.takeout_subject_account (
+    id                  uuid PRIMARY KEY DEFAULT uuidv7(),
+    account_handle      text NOT NULL UNIQUE,
+    account_domain      text,
+    evidence_priority   text NOT NULL DEFAULT 'normal'
+                         CHECK (evidence_priority IN ('normal','high','critical')),
+    account_state       text NOT NULL DEFAULT 'discovered'
+                         CHECK (account_state IN (
+                             'owner_supplied','discovered','confirmed','unknown')),
+    supplied_at         timestamptz,
+    notes               text,
+    created_at          timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS inventory.atomic_identity_evidence (
+    id                  uuid PRIMARY KEY DEFAULT uuidv7(),
+    candidate_id        uuid NOT NULL REFERENCES inventory.atomic_unit_candidate(id),
+    subject_account_id  uuid REFERENCES inventory.takeout_subject_account(id),
+    observed_identifier text NOT NULL,
+    evidence_kind       text NOT NULL CHECK (evidence_kind IN (
+                            'owner_account_list','folder_hint','internal_filename',
+                            'internal_content','archive_filename','manifest_overlap')),
+    source_path         text NOT NULL,
+    evidence_hash       text,
+    confidence          text NOT NULL CHECK (confidence IN ('hint','medium','strong')),
+    review_state        text NOT NULL DEFAULT 'unreviewed'
+                         CHECK (review_state IN (
+                             'unreviewed','corroborated','confirmed','rejected')),
+    attrs               jsonb NOT NULL DEFAULT '{}',
+    created_at          timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (candidate_id, evidence_kind, source_path, observed_identifier)
+);
+
+CREATE INDEX IF NOT EXISTS atomic_identity_candidate_idx
+    ON inventory.atomic_identity_evidence(candidate_id);
+CREATE INDEX IF NOT EXISTS atomic_identity_identifier_idx
+    ON inventory.atomic_identity_evidence(lower(observed_identifier));
+
+CREATE TABLE IF NOT EXISTS inventory.takeout_archive_part (
+    id                    uuid PRIMARY KEY DEFAULT uuidv7(),
+    run_id                uuid NOT NULL REFERENCES inventory.atomic_detection_run(id),
+    archive_candidate_id  uuid NOT NULL UNIQUE REFERENCES inventory.atomic_unit_candidate(id),
+    subject_account_id    uuid REFERENCES inventory.takeout_subject_account(id),
+    subject_state         text NOT NULL DEFAULT 'unknown'
+                           CHECK (subject_state IN ('unknown','hinted','corroborated','confirmed')),
+    source_series_key     text,
+    export_timestamp_text text,
+    export_batch_ordinal  integer,
+    part_number           integer,
+    observed_set_state    text NOT NULL DEFAULT 'not_evaluated'
+                           CHECK (observed_set_state IN (
+                               'not_evaluated','observed_contiguous_from_one',
+                               'observed_gapped','observed_partial')),
+    originality_state     text NOT NULL CHECK (originality_state IN (
+                               'strong_original_name','possible_original_name',
+                               'takeout_context')),
+    archive_filename      text NOT NULL,
+    parse_basis           text NOT NULL,
+    attrs                 jsonb NOT NULL DEFAULT '{}',
+    created_at            timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS takeout_archive_series_idx
+    ON inventory.takeout_archive_part(run_id, source_series_key, part_number);
+
+CREATE TABLE IF NOT EXISTS inventory.atomic_candidate_relation (
+    from_candidate_id   uuid NOT NULL REFERENCES inventory.atomic_unit_candidate(id),
+    to_candidate_id     uuid NOT NULL REFERENCES inventory.atomic_unit_candidate(id),
+    relation_type       text NOT NULL CHECK (relation_type IN (
+                            'possible_extraction_of','confirmed_extraction_of',
+                            'same_export_event','supplements','contains')),
+    confidence          text NOT NULL CHECK (confidence IN ('hint','medium','strong')),
+    evidence_basis      text NOT NULL,
+    review_state        text NOT NULL DEFAULT 'unreviewed'
+                         CHECK (review_state IN ('unreviewed','confirmed','rejected')),
+    attrs               jsonb NOT NULL DEFAULT '{}',
+    created_at          timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (from_candidate_id, to_candidate_id, relation_type)
+);
+
 CREATE TABLE IF NOT EXISTS inventory.atomic_group (
     id                    uuid PRIMARY KEY DEFAULT uuidv7(),
     run_id                uuid NOT NULL REFERENCES inventory.atomic_detection_run(id),
@@ -127,6 +241,23 @@ COMMENT ON TABLE inventory.atomic_member IS
   'Members remain attached to their package so ordinary file dedup cannot shred atomic exports or repositories.';
 COMMENT ON TABLE inventory.atomic_group IS
   'Logical package copies. One complete base may be supplemented by missing members from another copy; every source remains recorded.';
+COMMENT ON TABLE inventory.atomic_identity_evidence IS
+  'Account identity observations remain separate from package rows. Folder names are hints; internal content or corroborated evidence is required for confirmation.';
+COMMENT ON TABLE inventory.takeout_archive_part IS
+  'Original-looking Google Takeout archives represented per export event and part. Unknown accounts and missing part numbers remain explicit.';
+COMMENT ON TABLE inventory.atomic_candidate_relation IS
+  'Proposed archive/extraction and reconstruction relationships. Filename similarity alone never confirms a relationship.';
+
+INSERT INTO inventory.takeout_subject_account(
+    account_handle, account_state, evidence_priority, supplied_at, notes)
+VALUES
+    ('matt.salemnet', 'owner_supplied', 'critical', '2026-09-12', 'Owner corrected the exact handle and identified it as the largest and one of the two most important Takeout accounts.'),
+    ('matt.salem85', 'owner_supplied', 'normal', '2026-09-12', 'Owner supplied as a Takeout account handle.'),
+    ('caminstaller', 'owner_supplied', 'normal', '2026-09-12', 'Owner supplied as a Takeout account handle.'),
+    ('salemnma', 'owner_supplied', 'normal', '2026-09-12', 'Owner supplied as a Takeout account handle.'),
+    ('katrina95xo', 'owner_supplied', 'normal', '2026-09-12', 'Owner supplied as a Takeout account handle.'),
+    ('katrinasalem95', 'owner_supplied', 'normal', '2026-09-12', 'Owner supplied as a Takeout account handle.')
+ON CONFLICT (account_handle) DO NOTHING;
 
 -- Upgrade an already-created v1 table without removing any rows.
 ALTER TABLE inventory.atomic_unit_candidate
@@ -140,12 +271,13 @@ BEGIN
         ADD CONSTRAINT atomic_unit_candidate_unit_type_check CHECK (unit_type IN (
             'google_takeout','facebook_dyi','facebook_deconstruction',
             'chat_export','code_repository','ios_backup','archive_file',
-            'opaque_nested_root','other_package'));
+            'opaque_nested_root','orphaned_export_fragment','other_package'));
 
     ALTER TABLE inventory.atomic_unit_candidate
         DROP CONSTRAINT IF EXISTS atomic_unit_candidate_handling_mode_check;
     ALTER TABLE inventory.atomic_unit_candidate
         ADD CONSTRAINT atomic_unit_candidate_handling_mode_check CHECK (handling_mode IN (
-            'normal_dedup','preserve_whole','archive_provenance','defer_dissection'));
+            'normal_dedup','preserve_whole','archive_provenance','defer_dissection',
+            'controlled_consolidation','investigate_orphan'));
 END
 $upgrade$;

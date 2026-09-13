@@ -386,3 +386,121 @@ problem.** Do NOT design new evidence tables — they exist.
 4. B2 as second cloud — confirm, then Object Lock (Governance + Legal Hold).
 5. `casebible-pg18` is registered in Coolify as BOTH a service and a database. Check for a
    third `casebible*` volume before removing the exited service record.
+
+---
+
+## 9. ATOMIC GROUPING / TAKEOUT PROVENANCE RECEIPT — 2026-09-12
+
+> _Byline: Codex · GPT-5 · 2026-09-12._
+
+### Current location and product boundary
+
+- The old `E:\AI_Workspace\casebible` route no longer exists. The live repository is
+  `E:\AI_Workspace\Projects\Propria\Consignatio`; this legacy corpus lane is its
+  `casebible\` subdirectory.
+- Intake is the fully interactive, integrated human-and-AI chat/explorer workspace for the
+  Case Bible organization system. The catalog/grouping SQL may continue in this adjacent legacy
+  corpus lane; Intake can later present and operate on the review state without becoming a second
+  source of truth.
+
+### Owner-approved atomic-boundary classifications
+
+1. Individually named Facebook export directories are atomic package candidates even when
+   `start_here.html` or `index.html` is absent.
+2. Messy Facebook parent directories (`FB DATA`, `FB Exports`, `Katrina FB Data`, `Facebook Data`,
+   bare `facebook`, timestamped `meta-*`, and loose `messages (N)` trees) are
+   **controlled-consolidation containers**. Protect the parent boundary while cleaning,
+   reconstructing and deduplicating its contents; do not migrate the entire internal duplication
+   unchanged.
+3. Individually named Takeout directories (numbered, copied, timestamped and account-style names)
+   are atomic package candidates.
+4. Takeout collection parents (`Takeout Data`, `Takeout Data1`, `Google Takeout`,
+   `google_takeout`, `Google Takeout Files`, including malformed names) are
+   **controlled-consolidation containers**, not final canonical copies.
+5. `facebookuser_<id>`, `facebook_payments`, `facebook_accounts_center`,
+   `apps_and_websites_off_of_facebook`, and `FB_IMG_*` are ordinary members when contained by an
+   approved Facebook unit. If found outside any approved unit, flag them as
+   `orphaned_export_fragment` for owner investigation; do not promote them automatically.
+6. Individual Facebook message threads are not migrated by default. Only the approximately twelve
+   conversations later selected by the owner become standalone migration candidates.
+
+### Takeout account and reconstruction rules
+
+- Owner-supplied subject-account handles, kept distinct exactly as written:
+  `matt.salemnet`, `matt.salem85`, `caminstaller`, `salemnma`, `katrina95xo`,
+  `katrinasalem95`, plus explicit unknown/additional-account states.
+- `matt.salemnet` is the largest known partition and one of the two most important evidence
+  accounts. It is stored with `evidence_priority=critical`. The other top-two account is not yet
+  identified; do not infer it.
+- Do not confuse the storage-provider account with the subject account inside a Takeout.
+- Folder names are hints only. Extracted Takeout identity should be supported by internal identity
+  artifacts or content such as Google Account profile/subscriber/change-history records, repeated
+  account-named files, Calendar/contact artifacts, or corroborating internal values.
+- Model Takeout as: subject account -> export event -> original archive set -> archive part ->
+  extracted/recombined trees. Do not merge accounts, export timestamps, archive batches or part
+  numbers merely because names or contents overlap.
+- Recovery is union-preserving: select a verified-good base tree, supplement genuinely missing
+  members from other recovered copies, and retain per-member source provenance. Never let a
+  zero-byte, truncated or corrupt recovery copy become canonical.
+- Archive-to-extracted-tree relationships remain `possible_extraction_of` until hashes, manifests,
+  or strong member comparisons prove them.
+
+### Read-only archive census
+
+| Store | ZIP/TGZ archives | In Takeout context | Takeout-named | Standard multipart names |
+|---|---:|---:|---:|---:|
+| Google Drive | 957 | 617 | 612 | 375 |
+| OneDrive | 2,079 | 778 | 533 | 63 |
+| R2 | 7,963 | 779 | 547 | 94 |
+
+Observed standard multipart names reach at least part `678`. Many timestamp/batch series are
+gapped or begin above part `001`; observed maxima are not proof of expected totals. Preserve each
+part independently until completeness is established.
+
+### Account-hint observations (paths, not export counts)
+
+- `matt.salemnet`: R2 63,291 path hits / 46 archive hits; OneDrive 82,967 / 46; GDrive 476 / 0.
+- `caminstaller`: R2 349; OneDrive 207; GDrive 115.
+- `salemnma`: R2 13; OneDrive 310; GDrive 139.
+- `katrina95xo`: R2 31; OneDrive 39; GDrive 6.
+- `katrinasalem95`: R2 183; OneDrive 316; GDrive 33.
+- `matt.salem85`: no path-name hit. It remains a known account awaiting internal-content evidence.
+
+These counts are observations from manifest paths and can be heavily duplicated. They do not
+assign an export to an account.
+
+### Applied PostgreSQL schema
+
+`schema_atomic_units.sql` was applied transactionally to Case Bible PG18 `:5434`. It now includes:
+
+- `inventory.atomic_path_index`
+- `inventory.atomic_detection_run`
+- `inventory.atomic_unit_candidate`
+- `inventory.atomic_copy`, `inventory.atomic_member`, `inventory.atomic_group`
+- `inventory.takeout_subject_account`
+- `inventory.atomic_identity_evidence`
+- `inventory.takeout_archive_part`
+- `inventory.atomic_candidate_relation`
+
+The six supplied account handles were inserted. `matt.salemnet` is verified present as critical;
+the mistaken `ma.salemnet` value was corrected before schema application and was never inserted.
+
+### Execution state — exact boundary
+
+- Two monolithic `atomic-boundary-v2` detection attempts were cancelled after approximately
+  sixteen minutes each because their containment/account-evidence scans were operationally too
+  expensive. Both ran inside single transactions and rolled back completely.
+- Verified live after cancellation: `atomic_detection_run=0`, `atomic_unit_candidate=0`,
+  `takeout_archive_part=0`, and `atomic_identity_evidence=0`. There is no partial detection result.
+- The durable normalized path index was then started provider-by-provider:
+  - R2 committed: **592,822 indexed path/metadata variants** representing 592,822 source rows.
+  - Google Drive committed: **46,837 variants** representing 46,839 source rows.
+  - OneDrive was still running when the owner directed the agent to record findings only. The
+    exact PostgreSQL backend was cancelled; that OneDrive statement rolled back.
+- `stage_atomic_paths.sql` is idempotent. It preserves same-path/different-size-or-hash variants and
+  counts duplicate OneDrive scan rows rather than silently discarding their provenance.
+- `detect_atomic_units_v2.sql` contains the approved rules but should **not be rerun monolithically**.
+  Refactor it into store/rule-scoped phases that consume `inventory.atomic_path_index`, each with a
+  timed receipt and independent transaction.
+- No source object was opened, copied, moved or deleted. No canonical copy was selected. B2 remains
+  untouched and no B2 transfer plan was created.
