@@ -18,6 +18,7 @@ dependencies = [
     "python-docx>=1.2.0",
     "python-dotenv>=1.1.0",
     "striprtf>=0.0.29",
+    "surrealdb==2.0.0",
     "textual>=6.1.0",
     "typer>=0.16.0",
     "tzdata>=2025.2",

@@ -23,6 +23,139 @@ from .snapshots import build_active_snapshot, newest_snapshot
 app = typer.Typer(no_args_is_help=True, help="Isolated Case Bible corpus + NIM + Parquet tools")
 
 
+@app.command("graph-status")
+def graph_status() -> None:
+    """Check dedicated graph authentication and schema without reading source files."""
+    from .projections.runtime import connect_graph
+
+    async def check() -> dict:
+        async with await connect_graph() as graph:
+            version = await graph.verify_health_and_schema()
+            return {
+                "status": "ready",
+                "namespace": "consignatio",
+                "database": "intake",
+                "version": version,
+            }
+
+    try:
+        typer.echo(json.dumps(asyncio.run(check())))
+    except Exception:
+        typer.echo(
+            "Intake graph unavailable; verify backend configuration and credentials", err=True
+        )
+        raise typer.Exit(1) from None
+
+
+@app.command("graph-project-inventory")
+def graph_project_inventory(
+    manifest: Path,
+    apply: Annotated[
+        bool, typer.Option(help="Write validated observations to Intake graph")
+    ] = False,
+) -> None:
+    """Validate existing artifact manifest; graph writes require explicit --apply."""
+    from .projections.inventory_manifest import load_inventory_projection, project_inventory
+    from .projections.runtime import connect_graph
+
+    try:
+        plan = load_inventory_projection(manifest)
+        if not apply:
+            typer.echo(
+                json.dumps(
+                    {
+                        "status": "validated",
+                        "snapshot_key": plan.snapshot_key,
+                        "occurrences": len(plan.rows),
+                        "unique_contents": len(plan.content),
+                    }
+                )
+            )
+            return
+
+        async def project() -> dict:
+            async with await connect_graph() as graph:
+                return await project_inventory(graph, plan)
+
+        typer.echo(json.dumps(asyncio.run(project())))
+    except Exception:
+        typer.echo(
+            "Inventory projection failed; input validation or graph operation failed", err=True
+        )
+        raise typer.Exit(1) from None
+
+
+@app.command("graph-project-catalog")
+def graph_project_catalog(
+    manifest: Path,
+    apply: Annotated[
+        bool, typer.Option(help="Write validated historical metadata to Intake graph")
+    ] = False,
+) -> None:
+    """Validate a historical catalog batch; --apply never copies source objects."""
+    from .projections.legacy_catalog import load_legacy_catalog, project_legacy_catalog
+    from .projections.runtime import connect_graph
+
+    try:
+        plan = load_legacy_catalog(manifest)
+        if not apply:
+            typer.echo(
+                json.dumps(
+                    {
+                        "status": "validated",
+                        "snapshot_key": plan.snapshot_key,
+                        "occurrences": len(plan.rows),
+                        "contents": 0,
+                    }
+                )
+            )
+            return
+
+        async def project() -> dict:
+            async with await connect_graph() as graph:
+                return await project_legacy_catalog(graph, plan)
+
+        typer.echo(json.dumps(asyncio.run(project())))
+    except Exception:
+        typer.echo("Historical catalog projection failed; verify input and graph", err=True)
+        raise typer.Exit(1) from None
+
+
+@app.command("graph-project-migration")
+def graph_project_migration(
+    manifest: Path,
+    apply: Annotated[
+        bool, typer.Option(help="Write a validated occurrence map to Intake graph")
+    ] = False,
+) -> None:
+    """Validate a migration occurrence map; never controls or executes transfer."""
+    from .projections.migration_manifest import load_migration_projection, project_migration
+    from .projections.runtime import connect_graph
+
+    try:
+        plan = load_migration_projection(manifest)
+        if not apply:
+            typer.echo(
+                json.dumps(
+                    {
+                        "status": "validated",
+                        "snapshot_key": plan.snapshot_key,
+                        "occurrences": len(plan.rows),
+                    }
+                )
+            )
+            return
+
+        async def project() -> dict:
+            async with await connect_graph() as graph:
+                return await project_migration(graph, plan)
+
+        typer.echo(json.dumps(asyncio.run(project())))
+    except Exception:
+        typer.echo("Migration projection failed; verify input and graph", err=True)
+        raise typer.Exit(1) from None
+
+
 def _settings(
     source: Path | None = None,
     output: Path | None = None,

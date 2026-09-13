@@ -1,0 +1,12 @@
+[Unit]
+Description=Daily Consignatio Intake SurrealDB export schedule
+
+[Timer]
+OnCalendar=*-*-* 03:15:00 America/New_York
+RandomizedDelaySec=45min
+Persistent=true
+AccuracySec=1min
+Unit=consignatio-surreal-intake-backup.service
+
+[Install]
+WantedBy=timers.target

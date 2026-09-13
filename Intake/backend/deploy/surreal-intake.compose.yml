@@ -1,0 +1,36 @@
+services:
+  surreal-intake:
+    image: "surrealdb/surrealdb:v3.2.4"
+    restart: unless-stopped
+    user: root
+    command:
+      - start
+      - --bind
+      - 0.0.0.0:8000
+      - --log
+      - info
+      - rocksdb:/data/intake.db
+    environment:
+      # The provisioner generates these values in memory and stores them only
+      # in this Coolify service. Coolify 4.1.2 does not populate them merely
+      # because the magic-variable names appear in an API-created service.
+      SURREAL_USER: "${SERVICE_USER_SURREAL_INTAKE}"
+      SURREAL_PASS: "${SERVICE_PASSWORD_64_SURREAL_INTAKE}"
+    ports:
+      # Tailnet interface only. Never publish this database on 0.0.0.0.
+      - "100.91.190.107:8473:8000"
+    volumes:
+      - "/data/consignatio/volumes/surreal-intake:/data"
+    mem_limit: 2g
+    cpus: 1.5
+    healthcheck:
+      test:
+        - CMD
+        - /surreal
+        - is-ready
+        - --endpoint
+        - http://127.0.0.1:8000
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
