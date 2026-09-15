@@ -29,8 +29,13 @@ below is superseded and belongs to phase two.
 - Keep normal collision resolution, correct operation results, cancellation,
   and recoverable handling. These must not become arbitrary corpus-size or
   selected-candidate limits on the live filesystem browser.
-- Permanent deletion remains prohibited by the owner's workspace instructions.
-  This does not prohibit authorized moves, copies, renames or organization.
+- ~~Permanent deletion remains prohibited by the owner's workspace instructions.
+  This does not prohibit authorized moves, copies, renames or organization.~~
+  **Corrected 2026-09-14 09:28 EDT (recorded by Claude Code · Opus 5):** this line had drifted from the owner's
+  long-standing, repeatedly stated rule. Intake is a *sorting application*, *before the evidence space*. The owner must be able to edit everything, including **delete**, move, rename, copy and group. The
+  in-workspace agent performs those operations **when the owner explicitly asks**. Dedupe or similarity never
+  deletes on its own; only an explicit owner action does. Build and verification agents still use disposable
+  test files and never alter the owner's real files.
 
 Immediate acceptance test: launch native Xplorer, browse a chosen real folder,
 multi-select, move to a chosen destination, verify refresh/results, and repeat
