@@ -12,12 +12,12 @@ from .filesystem_search import (
     WeaviateFilesystemSearcher,
     WeaviateSearchConfig,
 )
-from .models import SearchRequest, SearchResponse
+from .models import LakeQueryRequest, SearchRequest, SearchResponse
 from .nim import NimClient, NimError
 from .projections.runtime import connect_graph
 from .projections.surreal import GraphRecordRef
 from .run_status import latest_run_status
-from .search import SemanticSearcher, list_documents
+from .search import DuckDbQueryError, SemanticSearcher, list_documents, lookup_document, run_lake_query
 from .secrets import get_secret
 from .snapshots import newest_snapshot
 
@@ -44,6 +44,26 @@ def create_api(settings: Settings | None = None) -> FastAPI:
     @api.get("/documents")
     def documents(limit: int = 100) -> list[dict[str, object]]:
         return list_documents(config, limit=min(max(limit, 1), 1000))
+
+    # Byline: Claude Code · Sonnet 5 · 2026-09-14 -- native metadata panel backing
+    # endpoint: real catalog/fingerprint row for one selected file, never a guess.
+    @api.get("/filesystem/lookup")
+    def filesystem_lookup(path: str) -> dict[str, object]:
+        if not path or len(path) > 4096:
+            raise HTTPException(status_code=422, detail="Invalid path")
+        try:
+            return lookup_document(config, path)
+        except (OSError, ValueError):
+            raise HTTPException(status_code=503, detail="Lookup unavailable") from None
+
+    # Byline: Claude Code · Sonnet 5 · 2026-09-14 -- DuckDB SQL method for the
+    # search surface, bounded to this backend's own `documents`/`chunks` views.
+    @api.post("/filesystem/duckdb")
+    def filesystem_duckdb(request: LakeQueryRequest) -> dict[str, object]:
+        try:
+            return run_lake_query(config, request.sql, limit=request.limit)
+        except DuckDbQueryError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from None
 
     @api.get("/filesystem/graph/status")
     async def graph_status() -> dict:
