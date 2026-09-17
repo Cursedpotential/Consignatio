@@ -1,0 +1,79 @@
+# Byline: Claude Code · Opus 5 (1M) · 2026-09-17
+#
+# spacedrive-gate, repointed IN PLACE from the locally-wrapped frozen 2024
+# GHCR binary (image `spacedrive-gate:local`) to an image built from
+# spacedriveapp/spacedrive `main` HEAD by
+# Cursedpotential/probata .github/workflows/spacedrive-server.yml.
+#
+# Owner order 2026-09-16 22:24 (relayed via the parent session): replace the
+# gate in place rather than standing up a second `spacedrive-main` stack --
+# same compose directory, same SD_AUTH, same /media/openlist mount, same
+# port, same Tailscale service. The previous file is kept beside this one as
+# docker-compose.yml.bak-2026-09-17-pre-current-source so the swap reverses
+# by moving it back and `docker compose up -d`.
+#
+# WHY the port stays 127.0.0.1:8090 -> 8080: the host's tailscaled already
+# serves `svc:spacedrive-gate` as `/ proxy http://127.0.0.1:8090`
+# (verified live 2026-09-17). Keeping 8090 means
+# https://spacedrive-gate.tilapia-skilift.ts.net keeps working with zero
+# Tailscale changes -- no register/advertise/approve cycle, no second
+# service.
+#
+# WHY the healthcheck changed: upstream's own runtime stage
+# (apps/server/Dockerfile, second `FROM debian:trixie-slim`) installs only
+# libssl3, ca-certificates, the ffmpeg libs and libheif1. It does NOT
+# install curl or wget, and its /bin/sh is dash (no /dev/tcp). The old
+# `curl -sf -u "$SD_AUTH" .../health` healthcheck would therefore fail
+# forever and hold the container permanently `unhealthy` even while the
+# server was serving fine -- a false signal, which is exactly what wasted
+# hours on the frozen build. Health is verified from the HOST instead
+# (docs/ops/spacedrive-gate-swap-2026-09-17-step3-verify.sh). Adding curl to
+# the runtime stage in the workflow is queued as the proper fix so an
+# in-container healthcheck can come back.
+
+services:
+  spacedrive-gate:
+    # Pinned by digest-bearing tag; `main-<short sha>` is immutable for a
+    # given upstream commit, unlike `:latest`. The upstream commit is also
+    # readable off the image itself via
+    # `docker image inspect ... --format '{{index .Config.Labels "org.opencontainers.image.revision"}}'`.
+    image: ghcr.io/cursedpotential/spacedrive-server:main-6dfeccf
+    container_name: spacedrive-gate
+    restart: unless-stopped
+    env_file:
+      - /data/probata/secrets/spacedrive-gate/sd_auth
+    environment:
+      TZ: UTC
+      DATA_DIR: /data
+      # Upstream's sd-server reads SD_AUTH directly (clap `env = "SD_AUTH"`,
+      # format `user:pass`), so the existing secrets file is used unchanged
+      # and no credential is written into this file.
+      #
+      # PUID/PGID are intentionally NOT set any more: they were consumed by
+      # the frozen image's entrypoint.sh, which this image does not have.
+      # Upstream's runtime stage creates `spacedrive` (uid 1000) and runs
+      # `USER spacedrive:spacedrive`, which matches the existing volume's
+      # ownership, so no chown pass is needed or wanted.
+      RUST_LOG: info,sd_core=info,sd_server=info
+    ports:
+      - "127.0.0.1:8090:8080"
+      - "127.0.0.1:7373:7373/tcp"
+      - "127.0.0.1:7373:7373/udp"
+    volumes:
+      # Same named volume as the frozen build. Backed up to a dated tarball
+      # before the swap (step1); if main-HEAD's schema refuses the 2024
+      # library, the old library is MOVED ASIDE inside the volume, never
+      # deleted.
+      - spacedrive_gate_state:/data
+      - /data/probata/exchange/spacedrive-gate/sample:/sample:${SPACEDRIVE_MOUNT_MODE:-ro}
+      # The whole point: browse B2 and every other OpenList-backed remote
+      # through the host's OpenList WebDAV rclone mount, read-write per the
+      # owner's 2026-09-15 22:01 directive.
+      - /srv/openlist:/media/openlist:rw
+    mem_limit: 8g
+    memswap_limit: 8g
+
+volumes:
+  spacedrive_gate_state:
+    name: spacedrive_gate_state
+    external: true
