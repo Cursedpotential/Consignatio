@@ -1,0 +1,70 @@
+auth loaded from /data/probata/secrets/spacedrive-gate/sd_auth: user='msalem', secret length=11 (value not printed)
+
+========================================================================
+=== 1. /health (behind the same basic-auth layer as everything else)
+========================================================================
+HTTP 200 :: 'OK'
+without credentials -> 401 (401 expected: auth is enforced)
+
+========================================================================
+=== 2. web client served from the embedded bundle
+========================================================================
+HTTP 200, 1015 bytes, markers found: ['<!doctype html', '<!DOCTYPE html', '<div id="root"', 'spacedrive', '/assets/', '<script']
+first 300 bytes: <!DOCTYPE html> <html lang="en"> 	<head> 		<meta charset="UTF-8" /> 		<meta name="viewport" content="width=device-width, initial-scale=1.0" /> 		<title>Spacedrive</title> 		<script> 			if (typeof crypto.randomUUID !== "function") { 				crypto.randomUUID = function () { 					return "10000000-1000-400
+
+========================================================================
+=== 3. libraries.list -> library_id
+========================================================================
+HTTP 200 :: {"JsonOk":[{"id":"82a926c6-44f2-4719-8548-5a130201a4c3","name":"My Library","path":"/data/libraries/My Library.sdlibrary","stats":null}]}
+-> library_id=82a926c6-44f2-4719-8548-5a130201a4c3  name='My Library'
+
+========================================================================
+=== 4. devices.list -> device_slug (SdPath::Physical requires it)
+========================================================================
+HTTP 200 :: {"JsonOk":[{"boot_disk_capacity_bytes":null,"boot_disk_type":null,"capabilities":{"indexing":true,"p2p":true,"volume_detection":true},"connection_method":null,"cpu_architecture":"x86_64","cpu_cores_logical":8,"cpu_cores_physical":8,"cpu_frequency_mhz":2399,"cpu_model":"Intel Core Processor (Haswell, no TSX)","created_at":"2026-09-17T02:51:48.470251918Z","form_factor":"Other","gpu_models":null,"hardware_model":"OpenStack Nova","id":"2781a030-467d-4f42-bc08-0563d6f26f18","is_connected":false,"is_current":true,"is_online":true,"is_paired":false,"last_seen_at":"2026-09-17T02:52:47.261385091Z","manufacturer":"OpenStack Foundation","memory_total_bytes":24598163456,"name":"a3cb8334ac95","network_addresses":[],"os":"Linux","os_version":"13","slug":"a3cb8334ac95","swap_total_bytes":8589930496,"sync
+-> device_slug='a3cb8334ac95' (name='a3cb8334ac95')
+
+========================================================================
+=== 5. locations.list BEFORE -- prove nothing covers /media/openlist/b2/salem-data
+========================================================================
+raw: {"JsonOk":{"locations":[]}}
+locations count before: 0
+locations covering /media/openlist/b2/salem-data before: NONE  <-- required
+
+========================================================================
+=== 6. files.directory_listing on /media/openlist/b2/salem-data (NO Location) -- the whole point
+========================================================================
+payload: {"path": {"Physical": {"device_slug": "a3cb8334ac95", "path": "/media/openlist/b2/salem-data"}}, "limit": 200, "include_hidden": false, "sort_by": "name", "folders_first": true}
+  attempt 1: HTTP 200 entries=0 in_progress=['/media/openlist/b2/salem-data'] indexed=[]
+  attempt 2: HTTP 200 entries=4 in_progress=[] indexed=[{'child_count': 4, 'path': '/media/openlist/b2/salem-data'}]
+HTTP 200
+total_count=4 has_more=False returned=4
+--- REAL ENTRIES ---
+   FILE  'consignatio'  kind=Directory size=
+   FILE  'db_backups'  kind=Directory size=
+   FILE  'infra-backups'  kind=Directory size=
+   FILE  'Gemini - chat 1 - active - AI Law Firm Session Handover'  kind=File size=55639
+
+========================================================================
+=== 7. locations.list AFTER -- prove the listing created NO Location
+========================================================================
+locations count after: 0
+locations covering /media/openlist/b2/salem-data after: NONE  <-- required
+location count unchanged: True
+
+========================================================================
+=== 8. core.ephemeral_status -- which index actually served that listing
+========================================================================
+HTTP 200 :: {"JsonOk":{"index_stats":{"age_seconds":255.182540575,"content_kinds":4,"idle_seconds":4.010008319,"interned_strings":9,"memory_breakdown":{"arena":57440,"cache":294,"content_kinds_entries":32,"content_kinds_overhead":7,"entry_uuids_entries":80,"entry_uuids_overhead":7,"path_index_entries":531,"path_index_overhead":14,"registry":528},"memory_bytes":59478,"path_index_count":9,"total_entries":9,"total_file_bytes":0,"unique_names":9,"uuid_count":4},"indexed_paths":[{"child_count":4,"path":"/media/openlist/b2/salem-data"}],"indexed_paths_count":1,"indexing_in_progress_count":0,"paths_in_progress":[]}}
+
+========================================================================
+=== 9. VERDICT
+========================================================================
+health 200 .................... True
+web client served ............. True
+real entries returned ......... True (4 shown)
+no Location covers the path ... True
+
+EPHEMERAL NO-INDEX BROWSING PROVEN: True
+
+json summary: {"health": 200, "health_noauth": 401, "web": [200, 1015, ["<!doctype html", "<!DOCTYPE html", "<div id=\"root\"", "spacedrive", "/assets/", "<script"]], "library_id": "82a926c6-44f2-4719-8548-5a130201a4c3", "device_slug": "a3cb8334ac95", "locations_before": 0, "covering_before": [], "entries": ["consignatio", "db_backups", "infra-backups", "Gemini - chat 1 - active - AI Law Firm Session Handover"], "total_count": 4, "locations_after": 0, "covering_after": [], "ephemeral_status_http": 200}

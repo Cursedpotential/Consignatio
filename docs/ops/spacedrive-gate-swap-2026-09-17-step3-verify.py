@@ -79,7 +79,19 @@ def http(path, data=None, timeout=120, raw=False):
 
 
 def rpc(method, payload, library_id=None, timeout=300):
-    body = json.dumps({"Query": {"method": method,
+    """Send a Query. The wire name is NOT the bare procedure name.
+
+    core/src/infra/wire/registry.rs registers every query under
+    `query_method!(name)` == concat!("query:", name) and every action under
+    `action_method!(name)` == concat!("action:", name, ".input"), and
+    core/src/infra/daemon/rpc.rs looks the incoming `method` up in those maps
+    verbatim. Sending the bare "libraries.list" therefore returns
+    {"Error":{"OperationFailed":"Unknown method: libraries.list"}} -- which is
+    a naming mismatch, NOT a missing procedure. packages/ts-client/src/client.ts
+    does the same thing (it requires wireMethod to start with "query:"/"action:").
+    """
+    wire = method if method.startswith("query:") else f"query:{method}"
+    body = json.dumps({"Query": {"method": wire,
                                  "library_id": library_id,
                                  "payload": payload}}).encode()
     code, text = http("/rpc", data=body, timeout=timeout)
@@ -141,7 +153,28 @@ if isinstance(ok, list) and ok:
                 print(f"-> library_id={library_id}  name={lib.get('name')!r}")
                 break
 if not library_id:
-    print("!! no library yet -- a fresh /data has no library until one is created.")
+    # Expected whenever main-HEAD declines to open the frozen build's 2024
+    # library (different schema entirely -- the CQRS rewrite) and the old
+    # `libraries/` dir has been moved aside. A library is a container for the
+    # index, and ephemeral browsing needs one to hang the query off, so create
+    # one. This is not "test data becoming canonical": the ephemeral index is
+    # by definition not persisted as a Location, and the real 2024 library is
+    # preserved in the step1 backup.
+    print("no library present -> creating one via the libraries.create action")
+    body = json.dumps({"Action": {"method": "action:libraries.create.input",
+                                  "library_id": None,
+                                  "payload": {"name": "Propria", "path": None}}}).encode()
+    code, text = http("/rpc", data=body, timeout=300)
+    print(f"libraries.create HTTP {code} :: {text[:800]}")
+    code, text, ok = rpc("libraries.list", {"include_stats": False})
+    print(f"libraries.list again HTTP {code} :: {text[:600]}")
+    if isinstance(ok, list):
+        for lib in ok:
+            if isinstance(lib, dict):
+                library_id = lib.get("id") or lib.get("uuid") or lib.get("library_id")
+                if library_id:
+                    print(f"-> library_id={library_id}")
+                    break
 results["library_id"] = library_id
 
 # --------------------------------------------------------------- 4. devices
@@ -177,13 +210,23 @@ section(5, f"locations.list BEFORE -- prove nothing covers {TARGET}")
 def locations():
     if not library_id:
         return None, "no library"
-    c, t, o = rpc("locations.list", {}, library_id=library_id)
+    # LocationsListQueryInput is a UNIT struct, so serde wants `null`, not `{}`
+    # ("invalid type: map, expected unit struct LocationsListQueryInput").
+    c, t, o = rpc("locations.list", None, library_id=library_id)
     return o, t
 
 before, before_raw = locations()
 print(f"raw: {str(before_raw)[:900]}")
+def as_location_list(o):
+    """locations.list replies {"locations":[...]}, not a bare array."""
+    if isinstance(o, dict):
+        return o.get("locations") or []
+    return o if isinstance(o, list) else None
+
+
 def covering(locs):
     hits = []
+    locs = as_location_list(locs)
     if isinstance(locs, list):
         for loc in locs:
             if isinstance(loc, dict):
@@ -191,9 +234,9 @@ def covering(locs):
                 if p and (TARGET.startswith(p) or p.startswith(TARGET)):
                     hits.append(p)
     return hits
-print(f"locations count before: {len(before) if isinstance(before, list) else 'n/a'}")
+print(f"locations count before: {len(as_location_list(before)) if as_location_list(before) is not None else 'n/a'}")
 print(f"locations covering {TARGET} before: {covering(before) or 'NONE  <-- required'}")
-results["locations_before"] = len(before) if isinstance(before, list) else None
+results["locations_before"] = len(as_location_list(before)) if as_location_list(before) is not None else None
 results["covering_before"] = covering(before)
 
 # ------------------------------------------------- 6. the ephemeral listing
@@ -208,8 +251,28 @@ if library_id and device_slug:
         "folders_first": True,
     }
     print("payload:", json.dumps(payload))
-    code, text, listing = rpc("files.directory_listing", payload,
-                              library_id=library_id, timeout=600)
+    # Ephemeral indexing is ASYNCHRONOUS. directory_listing checks the
+    # ephemeral cache first and, on a miss, kicks off an on-demand index and
+    # returns what it has -- which on the very first call for a cold path is
+    # total_count=0 while core.ephemeral_status reports the path under
+    # `paths_in_progress`. That is the feature working, not failing, so poll
+    # until the path leaves `paths_in_progress` and entries appear rather than
+    # reading the first empty reply as a negative result.
+    import time
+    listing, code, text = None, None, ""
+    for attempt in range(1, 31):
+        code, text, listing = rpc("files.directory_listing", payload,
+                                  library_id=library_id, timeout=600)
+        got = len((listing or {}).get("files") or []) if isinstance(listing, dict) else 0
+        _, _, eph = rpc("core.ephemeral_status",
+                        {"path_filter": None, "detailed": False}, timeout=60)
+        in_prog = (eph or {}).get("paths_in_progress") if isinstance(eph, dict) else None
+        done = (eph or {}).get("indexed_paths") if isinstance(eph, dict) else None
+        print(f"  attempt {attempt}: HTTP {code} entries={got} "
+              f"in_progress={in_prog} indexed={done}")
+        if got > 0:
+            break
+        time.sleep(4)
     print(f"HTTP {code}")
     if listing is None:
         print(f"raw reply (first 2000): {text[:2000]}")
@@ -237,11 +300,12 @@ else:
 # -------------------------------------------- 7. locations AFTER the listing
 section(7, "locations.list AFTER -- prove the listing created NO Location")
 after, after_raw = locations()
-print(f"locations count after: {len(after) if isinstance(after, list) else 'n/a'}")
+print(f"locations count after: {len(as_location_list(after)) if as_location_list(after) is not None else 'n/a'}")
 print(f"locations covering {TARGET} after: {covering(after) or 'NONE  <-- required'}")
-same = (len(before) if isinstance(before, list) else -1) == (len(after) if isinstance(after, list) else -2)
+lb, la = as_location_list(before), as_location_list(after)
+same = lb is not None and la is not None and len(lb) == len(la)
 print(f"location count unchanged: {same}")
-results["locations_after"] = len(after) if isinstance(after, list) else None
+results["locations_after"] = len(as_location_list(after)) if as_location_list(after) is not None else None
 results["covering_after"] = covering(after)
 
 # ---------------------------------------------- 8. ephemeral cache evidence

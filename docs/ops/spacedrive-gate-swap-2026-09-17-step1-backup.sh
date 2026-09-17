@@ -67,7 +67,7 @@ echo
 echo "=== 5. Back up the library DB files separately (fast restore path) ==="
 # Belt and braces: the sqlite library DBs are the only irreplaceable part
 # (the index can be rebuilt; a hand-made library config cannot).
-find "$MP" -maxdepth 4 -name '*.db' -o -maxdepth 4 -name '*.sqlite*' 2>/dev/null | while read -r f; do
+find "$MP" -maxdepth 4 \( -name '*.db' -o -name '*.db.bak-*' -o -name '*.sqlite*' -o -name '*.sdlibrary' -o -name '*.sdconfig' \) 2>/dev/null | while read -r f; do
   rel="${f#"$MP"/}"
   dest="$BK/dbs/$(dirname "$rel")"
   mkdir -p "$dest"
