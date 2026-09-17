@@ -11,7 +11,7 @@
 create table if not exists raw_duck.intake_fs_ops_20260917 (
   op_id          bigserial primary key,
   at             timestamptz not null default now(),
-  op             text not null check (op in ('rename', 'move', 'copy', 'delete', 'mkdir', 'relocate')),
+  op             text not null check (op in ('rename', 'move', 'copy', 'delete', 'mkdir', 'relocate', 'import')),
   kind           text not null check (kind in ('file', 'dir')),
   from_rel       text,          -- catalog path (no scheme) before the op
   to_rel         text,          -- catalog path after the op; null when the entry left the catalog tree
@@ -21,5 +21,11 @@ create table if not exists raw_duck.intake_fs_ops_20260917 (
   actor          text not null default 'intake-engine',
   detail         jsonb not null default '{}'::jsonb
 );
+
+-- 2026-09-17 10:15 EDT (Claude Code · Opus 5): 'import' = a B2 file copied/moved INTO catalog:// (owner must-have
+-- "B2 <-> catalog:// copy/move between panes"); the object lands under intake-catalog-added/<catalog path> on B2.
+alter table raw_duck.intake_fs_ops_20260917 drop constraint if exists intake_fs_ops_20260917_op_check;
+alter table raw_duck.intake_fs_ops_20260917 add constraint intake_fs_ops_20260917_op_check
+  check (op in ('rename', 'move', 'copy', 'delete', 'mkdir', 'relocate', 'import'));
 
 select count(*) as ops from raw_duck.intake_fs_ops_20260917;
