@@ -1,0 +1,12 @@
+-- Byline: Claude Code · Opus 5 (1M context) · 2026-09-18
+-- Work list for the DuckDB ELT run (owner 2026-09-18 21:05 "you way overthought it"): the chat candidates
+-- that the afternoon run did NOT already load, as a TSV the runner reads. Catalog = file facts only.
+--   in : raw_duck.chat_candidates_20260918 minus every vault_key in raw_duck.chat_event_provenance_20260918
+--   out: stdout (tab separated, header) — redirect it to /data/probata/volumes/timeline-mvp/elt_worklist.tsv
+-- Order is a HINT ONLY — every file's type is confirmed by reading it (owner: folder names mean nothing):
+--   1. keys that name her (her exports first), then 2. SMS/calls XML, Google Voice HTML, Messenger HTML,
+--   iMessage HTML/TXT, mbox, smallest first inside each.
+-- AI chats (ai_chat_file / ai_conversations_json / gemini_activity) are NOT here: they belong to the
+-- ai-chats-narratives agent (owner glossary 21:08 — "chats" = with AI, "message transcripts" = people).
+-- Run: docker exec -i fgz1n7useplhk0t91uk7k1aw psql -U postgres -d casebible -v ON_ERROR_STOP=1 -f <this>
+\copy (select c.format_guess, c.vault_key, c.sha1, c.size, coalesce(c.catalog_rel_example, '') as catalog_rel_example from raw_duck.chat_candidates_20260918 c where c.format_guess in ('sms_backup_xml','calls_backup_xml','google_voice_html','fb_messenger_html','imessage_html','imessage_txt','mbox') and not exists (select 1 from raw_duck.chat_event_provenance_20260918 p where p.vault_key = c.vault_key) order by (case when c.vault_key ~* 'katrina|kinzel' then 0 else 1 end), (case c.format_guess when 'imessage_txt' then 1 when 'imessage_html' then 2 when 'mbox' then 3 when 'sms_backup_xml' then 4 when 'calls_backup_xml' then 5 when 'fb_messenger_html' then 6 when 'google_voice_html' then 7 else 8 end), c.size) to stdout with (format csv, delimiter E'\t', header true)
