@@ -1,0 +1,91 @@
+# Byline: Claude Code · Sonnet 5 · 2026-09-15 (rw flip)
+#
+# Spacedrive v2 headless server, evaluated as a candidate Intake file-manager
+# engine. This is a standalone gate/eval container, NOT a Coolify-managed app
+# (Coolify only renders docker-compose.yaml + .env into
+# /data/coolify/applications/<uuid>/ with no repo checkout; this stack is run
+# directly with `docker compose` from /data/probata/config/spacedrive-gate/).
+#
+# READ-WRITE (current, 2026-09-15 22:01 owner directive)
+# --------------------------------------------------------
+# Owner: "read only is pretty fucking useless." Intake is a SORTING
+# application -- the owner must be able to move/rename/copy/delete on B2
+# through the file manager, and the in-app agent does it on explicit
+# request. SPACEDRIVE_READ_ONLY=0 and SPACEDRIVE_MOUNT_MODE=rw in .env are
+# now the live setting, kept in lockstep (Compose cannot derive one from the
+# other). The /media/openlist bind below is now `:rw` too -- see the
+# SUPERSEDED note immediately below for why it was hardcoded `:ro` before
+# and why that no longer applies.
+#
+# End-to-end write proof (2026-09-15, Claude Code · Sonnet 5): with the host
+# rclone-openlist.service mount also flipped to read-write (its `admin`
+# OpenList account was additionally missing WebDAV-write permission bits --
+# fixed via OpenList's own user API, see Consignatio/docs/URGENT-TODO.md),
+# a disposable file was created/renamed/deleted through /media/openlist and
+# confirmed present/renamed/gone in real B2 via a direct rclone b2: remote.
+#
+# SUPERSEDED 2026-09-14/15 notes (struck, kept for history per doc-drift
+# policy -- do not delete, do not treat as current):
+#   ~~SPACEDRIVE_READ_ONLY=1 (default, required for this gate run) -> the
+#   evidence sample is bind mounted read-only and no write-capable
+#   credential is placed in the container.~~
+#   ~~There is currently NO strictly read-only-capable B2 application key in
+#   this environment... mint a new B2 key scoped to listBuckets+listFiles+
+#   readFiles only before setting SPACEDRIVE_READ_ONLY=0~~ -- superseded:
+#   owner wants full read-write, not a read-only-scoped key.
+#   ~~2026-09-15 addition: /media/openlist bind mount added, ALWAYS
+#   read-only (hardcoded `:ro`, not tied to SPACEDRIVE_MOUNT_MODE)... Never
+#   flip this one to rw -- there is still no read-only-scoped B2 key, and
+#   this is the only path that keeps B2 writes structurally impossible from
+#   this container.~~ -- superseded 2026-09-15 22:01: owner explicitly
+#   ordered this flipped to rw; B2 writes through this path are now the
+#   intended behavior, not a risk to structurally prevent.
+#
+# Corpus/original-source protection is now enforced at the workflow level
+# (organizing index, review status, explicit-request gating in the app),
+# not by removing write capability from the mount.
+
+services:
+  spacedrive-gate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: spacedrive-gate:local
+    container_name: spacedrive-gate
+    restart: unless-stopped
+    env_file:
+      - /data/probata/secrets/spacedrive-gate/sd_auth
+    environment:
+      TZ: UTC
+      PUID: "1000"
+      PGID: "1000"
+      DATA_DIR: /data
+      SPACEDRIVE_READ_ONLY: ${SPACEDRIVE_READ_ONLY:-1}
+    ports:
+      - "127.0.0.1:8090:8080"
+      - "127.0.0.1:7373:7373/tcp"
+      - "127.0.0.1:7373:7373/udp"
+    volumes:
+      - spacedrive_gate_state:/data
+      # Mounted OUTSIDE /data on purpose: entrypoint.sh runs a blanket
+      # `chown -R $PUID:$PGID /data` on every start (upstream behavior, under
+      # `set -eu`), which aborts the container if any path under /data is
+      # read-only. Verified live 2026-09-14 -- crash-looped with "Read-only
+      # file system" until the sample mount moved to /sample.
+      - /data/probata/exchange/spacedrive-gate/sample:/sample:${SPACEDRIVE_MOUNT_MODE:-ro}
+      # B2 (and every other OpenList-backed remote) browsing via the host's
+      # OpenList WebDAV rclone mount. Read-write as of 2026-09-15 22:01
+      # (owner directive) -- see header note above.
+      - /srv/openlist:/media/openlist:rw
+    mem_limit: 3g
+    memswap_limit: 3g
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf -u \"$$SD_AUTH\" http://127.0.0.1:8080/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  spacedrive_gate_state:
+    name: spacedrive_gate_state
