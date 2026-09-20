@@ -1,0 +1,564 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Buildkit v3 comparison</title>
+<style>body{font:16px/1.6 system-ui;max-width:1100px;margin:40px auto;padding:0 24px;background:#111820;color:#e0e7ed}h1,h2{color:#8cdbca}a{color:#8cccf4}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#1c2731;padding:16px}summary{cursor:pointer;padding:10px;font-weight:bold}code{overflow-wrap:anywhere}</style>
+<h1>Buildkit v3 · comparison receipt</h1><p>2026-09-11 · Read/diff/extract only. No implementation changes or new phase execution.</p>
+<p>Extracted all 12 archive entries (111,009 uncompressed bytes) without overwrites into <code>reference/buildkit-v3/</code>. Every extracted file's SHA-256 matched its ZIP entry. Archive entries were checked for path escape, duplicate destinations and symlinks before extraction. Source archives and Phase 0 code remain unchanged.</p>
+<h2>Material changes</h2><ul>
+<li>New OPEN-DECISIONS.md: installation root, module root, derivation granularity, reference locations, installation permission, governance precedence, corpus scale. Its assertions about external files/machine inventory are supplied claims, not fresh live verification.</li>
+<li>Correction: E:\case_apps was not approved. The owner explicitly located this A/B project under E:\AI_Workspace\Projects\Propria\Consignatio. The isolated worktree is now repair-tool-kit-codex; module source is repair-tool-kit/ and controlled state is runtime-codex/ beneath that module.</li>
+<li>Phase 0 expands: normal shortcut AND cmd /c start checks; child-process console suppression once children exist; pinned Windows Poppler 33-glyph bake-off with exact binary version/path. The previous Phase 0 receipt covers v2 only. New Poppler/cmd-start checks have not run; reference file location and Poppler installation still need addressing before claiming v3 Phase 0.</li>
+<li>Offset contract now declares source_file versus decoded_stream plus enclosing-object coordinates. PDF object ranges should not be mistaken for a one-to-one mapping of decoded bytes to compressed bytes.</li>
+<li>Phase 3 uses a frozen known-bad mutool fixture instead of installing mutool for forced escalation.</li>
+<li>Sequence is XML → 5b ZIP → 5c JSON → 5d HTML/text → 6 packaging. Much of the PROMPTS diff is moved content, not new functionality.</li>
+<li>TOOL-CATALOG returns (compared with original kit because absent in v2); tesseract moves to Phase 6c and ftfy is listed as a detector rather than primary repair.</li>
+<li>RULES.md and CLAUDE.md are unchanged.</li></ul>
+<h2>Still absent or inconsistent</h2><ul>
+<li>V3 omits DIAGRAMS.html and INTEGRATION.md previously present in v2, and BUILD_GUIDE.md present in the original kit. No scaffold or reference fixtures are supplied.</li>
+<li>The new PHASES Windows Poppler check is not repeated in the Phase 0 PROMPTS block.</li>
+<li>The earlier blanket Meta JSON escape replacement remains unchanged; it still needs the targeted correction documented at kickoff.</li>
+<li>After reordering, the HTML/text prompt still refers to the Phase 5b table shape although 5b now means ZIP. Review cross-references before that phase.</li>
+<li>OPEN-DECISIONS instructs removal of resolved entries; no such edits were performed. Extracted source documents remain faithful copies.</li></ul>
+<h2>Detailed line changes</h2><p>Plus lines are v3 line numbers; minus lines are baseline line numbers. Moved blocks appear as removals/additions. Expand a document to inspect.</p>
+<details><summary>CLAUDE.md</summary><pre>Unchanged from v2.</pre></details>
+<details><summary>FINDINGS.md</summary><pre>Baseline: v2
++28: **Scope caveat:** run in a Linux sandbox on 2026-09-11, not with the Windows
++29: binaries casekit will ship. Phase 0 re-runs it against the pinned poppler.
++30: The finding is about *poppler the implementation*; confirm it holds for *the
++31: poppler binary in the install root*.
++32: </pre></details>
+<details><summary>GOTCHAS.md</summary><pre>Baseline: v2
++511: ## Contract gotchas
++512: 
++513: ### S-16. `offset` has no defined coordinate space **[observed — kit defect]**
++514: 
++515: `SPLIT.md` gives elements an `offset`, and R11 requires `derived_from` offsets
++516: that trace back to bytes in the original file. For a PDF content-stream element
++517: the offset is into the **decompressed stream**, which has no byte position in
++518: the original at all. Two different coordinate spaces, one field name.
++519: 
++520: Get this wrong and every Phase 4 derivation block is untraceable — the claim
++521: "traces to bytes in the original" becomes false without anything erroring.
++522: 
++523: *Avoid:* the contract carries the space explicitly, and this is
++524: `SPLIT.md` sync point #1 — settle it before a second engine exists:
++525: 
++526: ```json
++527: "offset_space": "source_file" | "decoded_stream",
++528: "offset": 182044,
++529: "length": 611,
++530: "container": { "object": 12, "source_offset": 31236, "source_length": 4894 }
++531: ```
++532: 
++533: Where `offset_space` is `decoded_stream`, `container` gives the enclosing
++534: object's real position in the original, so the chain to source bytes is
++535: `original → object → stream offset` rather than a single number that silently
++536: means two things.
++537: 
++538: ---
++539: 
++550: **And the children, which is the part that bites.** `-H windowsgui` hides the
++551: *parent* only. A Go parent spawning `pdftotext.exe`, `qpdf.exe` or a worker
++552: interpreter flashes a console **per child**. Across a corpus with worker pools
++553: that is a flash storm. Every `exec.Cmd` needs
++554: `SysProcAttr: &amp;syscall.SysProcAttr{HideWindow: true}` / `CREATE_NO_WINDOW`.
++555: Stdlib only — no new dependency.
++556: 
++578: *Avoid:* keep the venv shallow — `&lt;INSTALL_ROOT&gt;\engines\python\.venv` (root is OD-1).
+-542: *Avoid:* keep the venv shallow — `D:\case_apps\engines\python\.venv`.</pre></details>
+<details><summary>KICKOFF.md</summary><pre>Baseline: v2
++62:   OPEN-DECISIONS.md open items — resolve these WITH ME before Phase 0
++73:   Install root: UNRESOLVED — see OPEN-DECISIONS.md OD-1 (D: vs E:)
+-72:   Install root D:\case_apps
++83: OPEN-DECISIONS.md lists seven unresolved items. Three of them (OD-1 install
++84: root, OD-2 module root, OD-5 install permission) block Phase 0. Raise them,
++85: don't guess at them.
++86: </pre></details>
+<details><summary>OPEN-DECISIONS.md</summary><pre>New document:
+# Open decisions
+
+**Unresolved. Resolve in-session with Claude Code or Codex, then update the
+files listed and delete the entry from here.**
+
+Everything else in this kit is internally consistent as of 2026-09-11. These
+are the points where the kit either contradicts itself, contradicts another
+governing document, or was never decided.
+
+---
+
+## OD-1 · Install root — D: or E:
+
+**Conflict.** `STACK.md` and `TOOL-CATALOG.md` say `D:\case_apps`, attributed
+to Matt, 2026-09-11. The Consignatio `AGENTS.md` storage rule of the same date
+designates **E:** as the development drive and says not to substitute D:
+without owner direction.
+
+Scope is larger than an install path — it governs the whole vendored
+toolchain: poppler, qpdf, duckdb, the frozen `uv` venv, optional tesseract.
+Order 1–2 GB. Also sets the package output root and the venv depth (B-4).
+
+Free space: D: 192 GB · E: 85 GB.
+
+**Files to update once decided:** `STACK.md`, `TOOL-CATALOG.md`, `KICKOFF.md`,
+`PROMPTS.md` (Phase 0), `scaffold/internal/config/config.go`, `CLAUDE.md`.
+
+## OD-2 · Go module root
+
+casekit is a module inside Consignatio's Case Bible lane, not a standalone
+product. `CLAUDE.md` assumes the repo root is the module root. Where does
+`go.mod` actually live?
+
+**Files to update:** `CLAUDE.md`, `PROMPTS.md` (Phase 0), `scaffold/go.mod`.
+
+## OD-3 · Derivation-block granularity — R11 vs R2
+
+`RULES.md` R11 mandates a six-field `derivation` block plus `remediation` and
+`status` on every derived value. `RULES.md` R2 says don't gold-plate.
+
+Two sub-questions, both Matt's to answer:
+
+1. Does a `text_run` read straight out of `pdftotext` need a derivation block?
+   (Plain reading of R11: no — it was *read*, not *derived*.)
+2. Is the unit per-element or per-run?
+
+Answer changes Phase 4 output size by roughly an order of magnitude.
+
+**Files to update:** `scaffold/docs/DERIVATION.md`, `PROMPTS.md` (Phase 4),
+`PHASES.md` (Phase 4).
+
+## OD-4 · Reference file locations
+
+Four files carry every exit criterion in Phases 2–5 and are not in the kit:
+
+- `_18102689630__1___1_.pdf` — 36,025 B, sha256 `f18e250e5aca784f…`
+- `Copy_of_sms-20221104021809.xml` — 3,852,198 B, sha256 `55515f2a490c9a0a…`
+- `sms.xsd` — synctech vendor schema
+- `Fields in XML backup files.md` — synctech vendor field docs
+
+All four to `docs/reference/`. Without them nothing validates.
+
+## OD-5 · Install permission
+
+Phase 0 needs: DuckDB `webbed` community extension (writes to
+`~/.duckdb`), a full poppler distribution (the only `pdftotext` on the machine
+is an incidental Git-for-Windows v4.00 with no `pdfimages`/`pdfdetach`), and
+qpdf 11.9.x. All vendored under the OD-1 root.
+
+## OD-6 · Governance precedence
+
+The global `CLAUDE.md` carries rules that collide with this kit — a mandatory
+`docs/planning/&lt;date&gt;-TODO.md` updated every turn, and mandatory skill
+invocation per turn. Kit `RULES.md` R0/R4 say no file creation without approval
+and no process accretion.
+
+Which governs inside this project? Neither agent should guess.
+
+## OD-7 · Corpus scale gate
+
+`FINDINGS.md` is written against a 3.85 MB XML. The real exports in
+`…\Messages with Katrina` are **832 MB** — 216× larger — plus 2.77 GB and
+1.52 GB zips, ~6.8 GiB total. `xml_extract_attributes` already OOM'd at
+3.1 GiB on the *small* one (S-3).
+
+Phase 5's exit criterion is a valid unit test and is **not** representative of
+the target. A scale gate belongs somewhere in Phases 5/5b. Also: `V:` is a
+network/cloud mount — listing is free, reading 6.8 GB is not.
+
+Two files, `sms-11-08-2022 14-44-57.xml` and `sms-11-08-2022 14-46-06.xml`, are
+byte-size-identical and 90 seconds apart. Likely the first real duplicate-source
+case.
+
+---
+
+# Fixed in this revision — do not re-raise
+
+| Was | Now |
+|---|---|
+| STACK rejected mutool; Phase 3 required running it | mutool is a **frozen test fixture**, not a shipped engine. Phase 3 escalation is proven against its recorded known-bad output. Not required to be installed. |
+| Phase 0 exit criterion required a shell verb (Phase 7) | Phase 0 tests console flash via `.lnk` and `cmd /c start`. No registry verb in Phase 0. |
+| A-6 covered only the parent process | A-6 now covers child processes — every `exec.Cmd` needs `SysProcAttr{HideWindow:true}`. Stdlib, no new dependency. |
+| `offset` had no coordinate space; broke R11 traceability for PDF | New **S-16**. Contract carries `offset_space` (`source_file` \| `decoded_stream`) plus a `container` block. Named as SPLIT sync point #1. |
+| ZIP sequenced after JSON, contradicting PHASES' own reasoning | Reordered: 5 → **5b ZIP** → **5c JSON** → 5d HTML/text. Both `PHASES.md` and `PROMPTS.md` physically reordered. |
+| TOOL-CATALOG said tesseract was Phase 10 | Corrected to **Phase 6c**, inside the usable product. |
+| poppler bake-off presented as settled | Marked **[sandbox-verified]** in `STACK.md` and `FINDINGS.md`. Phase 0 re-runs it against the pinned Windows binary and records version + path. |
+</pre></details>
+<details><summary>PHASES.md</summary><pre>Baseline: v2
++11: both `casekit.exe` and `casekitw.exe`; launching `casekitw.exe` via a
++12: `.lnk` shortcut and via `cmd /c start` produces **no visible console flash**
++13: (a registry verb is Phase 7 and is NOT required here); and once any external
++14: binary is invoked, its child process shows no console either; `duckdb` loads the
+-11: both `casekit.exe` and `casekitw.exe`; running `casekitw.exe` from a shell verb
+-12: on a test `.pdf` produces **no visible console flash**; `duckdb` loads the
++16: Also: **re-run the 33-glyph bake-off against the pinned Windows poppler** that
++17: will live under the install root, and record its version and full path. The
++18: central empirical claim in `FINDINGS.md` was verified in a Linux sandbox, not
++19: with the binary that will ship. One command; converts it from
++20: sandbox-verified to target-verified.
++21: **Gotchas:** A-6 (parent *and* child processes)
+-14: **Gotchas:** A-6
++44: check passes. Escalation is proven against a **frozen golden fixture** of
++45: known-bad output — mutool's recorded result for this file, `I` (U+0049) for
++46: every ZapfDingbats glyph, 0 non-ASCII — which must FAIL `symbol_glyph_count`
++47: and trigger automatic escalation to the next engine in rank. The fixture is a
++48: test artifact; mutool is **not** a shipped engine and need not be installed. The routing
+-37: check passes. Given a forced run with mutool, the `symbol_glyph_count` check
+-38: **fails** and the run escalates to the next engine automatically. The routing
++75: ## Phase 5b — ZIP containers (unwrap, recurse, repair)
++76: **Goal:** Treat archives as containers first and repair targets second. Most
++77: evidence arrives zipped — Meta exports, phone backups, discovery productions —
++78: so unwrapping and routing the contents is the common case.
++79: **Exit criterion:** Given a zip containing a mix of PDF, XML and JSON, casekit
++80: extracts members to a scratch dir, profiles and routes **each member
++81: independently**, and produces one package whose manifest lists every member
++82: with its own extraction. Recursion depth and total-expansion limits are
++83: enforced and configurable. A member whose name escapes the extraction root is
++84: refused, not written. A zip whose central directory omits entries present in
++85: the local headers still yields those entries via the second channel, and the
++86: discrepancy is recorded as a finding rather than silently resolved.
++87: **Gotchas:** S-10, S-11, S-12, A-11, A-12, A-13, B-6
++88: 
++89: ## Phase 5c — JSON extraction (Facebook / Instagram / generic)
+-65: ## Phase 5b — JSON extraction (Facebook / Instagram / generic)
+-103: ## Phase 5c — ZIP containers (unwrap, recurse, repair)
+-104: **Goal:** Treat archives as containers first and repair targets second. Most
+-105: evidence arrives zipped — Meta exports, phone backups, discovery productions —
+-106: so unwrapping and routing the contents is the common case.
+-107: **Exit criterion:** Given a zip containing a mix of PDF, XML and JSON, casekit
+-108: extracts members to a scratch dir, profiles and routes **each member
+-109: independently**, and produces one package whose manifest lists every member
+-110: with its own extraction. Recursion depth and total-expansion limits are
+-111: enforced and configurable. A member whose name escapes the extraction root is
+-112: refused, not written. A zip whose central directory omits entries present in
+-113: the local headers still yields those entries via the second channel, and the
+-114: discrepancy is recorded as a finding rather than silently resolved.
+-115: **Gotchas:** S-10, S-11, S-12, A-11, A-12, A-13, B-6
+-116: 
++247: Screenshots (OCR), call logs, DOCX/OOXML (which are zips — Phase 5b does the
+-237: Screenshots (OCR), call logs, DOCX/OOXML (which are zips — Phase 5c does the</pre></details>
+<details><summary>PROMPTS.md</summary><pre>Baseline: v2
++23:   internal/config/config.go  - TOML config load, install root from OPEN-DECISIONS OD-1 (UNRESOLVED - ask, do not guess)
+-23:   internal/config/config.go  - TOML config load, install root D:\case_apps
++33: EXIT CRITERION: `go build ./...` succeeds; both binaries produced; launching
++34: casekitw.exe --version via a .lnk shortcut AND via `cmd /c start` produces no
++35: visible console window (a registry verb is Phase 7 — do NOT create one here);
++36: any child process spawned shows no console either (GOTCHAS A-6 — needs
++37: SysProcAttr HideWindow on every exec.Cmd, stdlib, no new dependency);
+-33: EXIT CRITERION: `go build ./...` succeeds; both binaries produced; running
+-34: casekitw.exe --version from a shortcut produces no visible console window;
++120: EXIT CRITERION: routing the reference PDF selects poppler and passes.
++121: Escalation is proven against a FROZEN GOLDEN FIXTURE of mutool's known-bad
++122: output for this file (every ZapfDingbats glyph as "I" U+0049, 0 non-ASCII),
++123: which must FAIL symbol_glyph_count and auto-escalate. mutool is a test fixture,
++124: NOT a shipped engine - do not install it and do not add it to the registry.
+-117: EXIT CRITERION: routing the reference PDF selects poppler and passes. Forcing
+-118: `--engine mutool` on the same file FAILS symbol_glyph_count and auto-escalates.
++127:              go test ./internal/route -run TestEscalation
+-121:              casekit extract --engine mutool docs/reference/*.pdf
++220: ## Phase 5b
+-214: ## Phase 6
++223: Read RULES.md, then GOTCHAS.md S-10, S-11, S-12, A-11, A-12, A-13, B-6.
++224: 
++225: Implement ZIP container handling in internal/container/zip.go.
++226: 
++227: ZIP is a CONTAINER, not a leaf format. The common case is Meta exports, phone
++228: backups and discovery productions arriving zipped. Unwrap and route the
++229: contents. Repair is the fallback, not the default.
++230: 
++231: This makes the pipeline RECURSIVE. Build the recursion deliberately:
++232: 
++233:   zip -&gt; extract members to scratch -&gt; profile EACH member -&gt; route EACH member
++234:       -&gt; a member may itself be a zip -&gt; recurse (bounded)
++235: 
++236: TWO CHANNELS, same pattern as the PDF path:
++237:   1. Go archive/zip - central directory, fast, correct for healthy archives.
++238:   2. Local-header scan - search for PK\x03\x04 signatures directly.
++239:   Compare them. archive/zip NEVER scans local headers, so an entry present
++240:   locally but absent from the central directory is invisible to channel 1
++241:   (GOTCHAS S-12). A discrepancy between channels is a FINDING recorded in the
++242:   manifest with both counts - not an error, not silently reconciled.
++243: 
++244: HARD SAFETY, all configurable, all enforced before any write:
++245:   - Reject any member whose resolved destination leaves the extraction root.
++246:     Reject absolute paths. Reject "..". REFUSE, do not sanitize - a malicious
++247:     name is a finding (GOTCHAS S-10). Go's archive/zip does NOT check this.
++248:   - Cap total bytes written, per-member compression ratio, and recursion depth
++249:     (default 3). Track cumulative expansion across the WHOLE recursion, not per
++250:     archive (GOTCHAS S-11).
+-217: Read RULES.md - especially R6 (never destroy an original) and R9 (recovered vs
+-218: reconstructed are never interchangeable).
++252: Extract by INDEX, not by name - duplicate names are legal and overwriting
++253: silently loses data. Content-address every member to blobs/&lt;sha256&gt;, keep the
++254: declared name as metadata (GOTCHAS A-12).
+-220: Implement internal/pkg/ and internal/ledger/.
++256: Filename encoding: honour general-purpose flag bit 11 for UTF-8. When unset and
++257: bytes are non-ASCII, store raw bytes alongside a best-effort decode marked
++258: "estimated" (GOTCHAS A-11, RULES R7).
+-222: casekit package &lt;file&gt; produces:
+-223:   &lt;pkg-id&gt;/
+-224:     README.txt        plain-English: what this is, how to verify with stock tools
+-225:     original/&lt;name&gt;   byte-identical copy
+-226:     extracted/        extraction.json, text/, metadata/, structure/
+-227:     blobs/&lt;sha256&gt;
+-228:     reports/          profile.json, route.json, checks.json, casekit.log
+-229:     attachments/      SAME payloads under real filenames with the correct
+-230:                       extension from the DETECTED type, collision-suffixed.
+-231:                       A folder of 64-char hashes cannot be reviewed by a human;
+-232:                       this is the browsable view (GOTCHAS B-7).
+-233:     blobs/INDEX.md    hash -&gt; declared name, declared type, detected type,
+-234:                       size, owning message
+-235:     MANIFEST.json     every file INCLUDING attachments/: path, size, sha256, mtime
+-236:     SHA256SUMS        same data, sha256sum-compatible
++260: Repair ladder (engines/ziprepair/, escalate ONLY on failure - GOTCHAS A-13):
++261:   diagnose: unzip -t, zipdetails --scan   (writes nothing)
++262:   tier 1:   zip -FF in.zip --out out.zip
++263:   tier 2:   ziptail
++264:   tier 3:   bsdtar  (native tar.exe on Windows 10+, independent parser)
++265:   tier 4:   7z x -y (partial salvage)
++266:   tier 5:   carve PK\x03\x04 signatures
++267: Verify per-member with CRC + SHA-256, not exit codes. A repaired archive has a
++268: different archive hash by definition; the claim is "same members, same
++269: contents" - never "same file" (RULES R9).
+-238: Package id = sha256 of the zipped directory. Append one line to the ledger
+-239: (JSONL) with package id, source sha256, engine, checks, timestamp.
++271: EXIT CRITERION: a zip containing PDF + XML + JSON produces ONE package whose
++272: manifest lists every member with its own extraction; depth and expansion limits
++273: are enforced and configurable; a member named ../../evil.txt is REFUSED and
++274: recorded; a zip whose central directory omits a locally-present entry still
++275: yields that entry via channel 2, with the discrepancy in the manifest.
+-241: Verification must work with NO casekit binary present - `sha256sum -c
+-242: SHA256SUMS` alone must pass. README.txt states the exact commands.
++277: Verify with: casekit extract test/fixtures/mixed.zip &amp;&amp; \
++278:   jq '.members|length' out/*/MANIFEST.json
++279:   casekit extract test/fixtures/zipslip.zip   # must refuse, exit nonzero
++280:   casekit extract test/fixtures/nested-bomb.zip  # must abort at depth/ratio cap
+-244: EXIT CRITERION: package both reference files. All 8 blobs from the XML appear
+-245: in BOTH blobs/ (by hash) and attachments/ (by real filename, correct extension,
+-246: openable). blobs/INDEX.md lists all 8. For each, the source file's
+-247: sha256 is identical before and after. `sha256sum -c SHA256SUMS` passes inside
+-248: the package directory. The ledger has one new line per package.
++282: Build the three fixtures yourself as part of this phase.
+-250: Verify with: sha256sum docs/reference/* &gt; /tmp/before.txt
+-251:              casekit package docs/reference/*
+-252:              sha256sum -c /tmp/before.txt
+-253:              cd out/&lt;pkg-id&gt; &amp;&amp; sha256sum -c SHA256SUMS
++285: ## Phase 5c
+-256: ## Phase 5b
++366: ## Phase 5d
+-337: ## Phase 5c
++369: Read RULES.md, then GOTCHAS.md S-15, A-17, A-18, B-8, B-9, S-13, A-8.
++370: 
++371: Implement HTML and text conversation extraction in internal/extract/html.go and
++372: internal/extract/text.go, plus engines/htmlmsg/.
++373: 
++374: WHY THIS MATTERS MORE THAN IT LOOKS: the reference PDF transcript was produced
++375: by Stirling-PDF v1.1.1 FROM HTML. The emoji destruction documented in GOTCHAS
++376: S-5 happened during that conversion, not in the source. The HTML almost
++377: certainly still has the real characters. This phase routes around a data-loss
++378: problem instead of documenting it.
++379: 
++380: Output MUST use the same table shape as Phases 5 and 5b.
++381: 
++382: SOURCE PREFERENCE - implement as an explicit ordering, not a convention:
++383:     XML / JSON   structured export    strongest
++384:     HTML         marked-up export
++385:     text         flat export
++386:     PDF          rendered derivative  weakest
++387: Where two sources cover the same conversation, the upstream form supersedes.
++388: RECORD the supersession; never delete the downstream package (RULES R6).
+-340: Read RULES.md, then GOTCHAS.md S-10, S-11, S-12, A-11, A-12, A-13, B-6.
++390: HTML:
++391:   Parse as a DOM. NEVER regex, never tag-stripping.
++392:   Detect the exporter from its markup signature and record it.
++393:   Emoji appear in THREE forms and a naive extractor loses the third silently:
++394:     1. literal UTF-8 character
++395:     2. HTML entity  &amp;#128169;
++396:     3. &lt;img&gt; tag with the emoji in alt / title / aria-label
++397:   Handle all three, record emoji_source per occurrence (GOTCHAS A-17).
++398:   Images: inline data: base64 -&gt; generic blob pass in internal/blob/base64.go.
++399:   Relative src -&gt; resolve against sibling folder, else resolved:false with
++400:   declared_uri (GOTCHAS A-18, A-8). Type by magic bytes; the data: mimetype is
++401:   a claim (S-13).
++402:   Charset: BOM first, then detection, then the declaration - IN THAT ORDER.
++403:   Record which method won and mark it estimated (GOTCHAS B-8, RULES R11).
+-342: Implement ZIP container handling in internal/container/zip.go.
++405: TEXT:
++406:   Sender label, timestamp, body. Nothing else is there.
++407:   confidence_level "header_derived" - same weakness as PDF headers.
++408:   Populate not_established generously: no attachment bytes, no read status,
++409:   no codes, direction from a text label only (GOTCHAS B-9).
++410:   Same charset discipline as HTML.
+-344: ZIP is a CONTAINER, not a leaf format. The common case is Meta exports, phone
+-345: backups and discovery productions arriving zipped. Unwrap and route the
+-346: contents. Repair is the fallback, not the default.
++412: EXIT CRITERION: an HTML export parses via DOM into the Phase 5 table shape with
++413: the exporter detected; all three emoji forms recovered with emoji_source
++414: recorded; inline base64 images land in blobs/ and attachments/; unresolvable
++415: src values appear as resolved:false; the charset method used is recorded and
++416: marked estimated. A flat text export parses with header_derived confidence and
++417: a populated not_established. Where HTML and PDF cover one conversation, the
++418: HTML supersedes, the supersession is recorded, and the PDF package still exists.
+-348: This makes the pipeline RECURSIVE. Build the recursion deliberately:
++420: Verify with: casekit extract &lt;export.html&gt; &amp;&amp; \
++421:   jq '[.elements[]|select(.emoji_source)]|group_by(.emoji_source)|map({(.[0].emoji_source):length})' out/extraction.json
++422: ```
+-350:   zip -&gt; extract members to scratch -&gt; profile EACH member -&gt; route EACH member
+-351:       -&gt; a member may itself be a zip -&gt; recurse (bounded)
++424: ## Phase 6
+-353: TWO CHANNELS, same pattern as the PDF path:
+-354:   1. Go archive/zip - central directory, fast, correct for healthy archives.
+-355:   2. Local-header scan - search for PK\x03\x04 signatures directly.
+-356:   Compare them. archive/zip NEVER scans local headers, so an entry present
+-357:   locally but absent from the central directory is invisible to channel 1
+-358:   (GOTCHAS S-12). A discrepancy between channels is a FINDING recorded in the
+-359:   manifest with both counts - not an error, not silently reconciled.
++426: ```
++427: Read RULES.md - especially R6 (never destroy an original) and R9 (recovered vs
++428: reconstructed are never interchangeable).
+-361: HARD SAFETY, all configurable, all enforced before any write:
+-362:   - Reject any member whose resolved destination leaves the extraction root.
+-363:     Reject absolute paths. Reject "..". REFUSE, do not sanitize - a malicious
+-364:     name is a finding (GOTCHAS S-10). Go's archive/zip does NOT check this.
+-365:   - Cap total bytes written, per-member compression ratio, and recursion depth
+-366:     (default 3). Track cumulative expansion across the WHOLE recursion, not per
+-367:     archive (GOTCHAS S-11).
++430: Implement internal/pkg/ and internal/ledger/.
+-369: Extract by INDEX, not by name - duplicate names are legal and overwriting
+-370: silently loses data. Content-address every member to blobs/&lt;sha256&gt;, keep the
+-371: declared name as metadata (GOTCHAS A-12).
++432: casekit package &lt;file&gt; produces:
++433:   &lt;pkg-id&gt;/
++434:     README.txt        plain-English: what this is, how to verify with stock tools
++435:     original/&lt;name&gt;   byte-identical copy
++436:     extracted/        extraction.json, text/, metadata/, structure/
++437:     blobs/&lt;sha256&gt;
++438:     reports/          profile.json, route.json, checks.json, casekit.log
++439:     attachments/      SAME payloads under real filenames with the correct
++440:                       extension from the DETECTED type, collision-suffixed.
++441:                       A folder of 64-char hashes cannot be reviewed by a human;
++442:                       this is the browsable view (GOTCHAS B-7).
++443:     blobs/INDEX.md    hash -&gt; declared name, declared type, detected type,
++444:                       size, owning message
++445:     MANIFEST.json     every file INCLUDING attachments/: path, size, sha256, mtime
++446:     SHA256SUMS        same data, sha256sum-compatible
+-373: Filename encoding: honour general-purpose flag bit 11 for UTF-8. When unset and
+-374: bytes are non-ASCII, store raw bytes alongside a best-effort decode marked
+-375: "estimated" (GOTCHAS A-11, RULES R7).
++448: Package id = sha256 of the zipped directory. Append one line to the ledger
++449: (JSONL) with package id, source sha256, engine, checks, timestamp.
+-377: Repair ladder (engines/ziprepair/, escalate ONLY on failure - GOTCHAS A-13):
+-378:   diagnose: unzip -t, zipdetails --scan   (writes nothing)
+-379:   tier 1:   zip -FF in.zip --out out.zip
+-380:   tier 2:   ziptail
+-381:   tier 3:   bsdtar  (native tar.exe on Windows 10+, independent parser)
+-382:   tier 4:   7z x -y (partial salvage)
+-383:   tier 5:   carve PK\x03\x04 signatures
+-384: Verify per-member with CRC + SHA-256, not exit codes. A repaired archive has a
+-385: different archive hash by definition; the claim is "same members, same
+-386: contents" - never "same file" (RULES R9).
++451: Verification must work with NO casekit binary present - `sha256sum -c
++452: SHA256SUMS` alone must pass. README.txt states the exact commands.
+-388: EXIT CRITERION: a zip containing PDF + XML + JSON produces ONE package whose
+-389: manifest lists every member with its own extraction; depth and expansion limits
+-390: are enforced and configurable; a member named ../../evil.txt is REFUSED and
+-391: recorded; a zip whose central directory omits a locally-present entry still
+-392: yields that entry via channel 2, with the discrepancy in the manifest.
++454: EXIT CRITERION: package both reference files. All 8 blobs from the XML appear
++455: in BOTH blobs/ (by hash) and attachments/ (by real filename, correct extension,
++456: openable). blobs/INDEX.md lists all 8. For each, the source file's
++457: sha256 is identical before and after. `sha256sum -c SHA256SUMS` passes inside
++458: the package directory. The ledger has one new line per package.
+-394: Verify with: casekit extract test/fixtures/mixed.zip &amp;&amp; \
+-395:   jq '.members|length' out/*/MANIFEST.json
+-396:   casekit extract test/fixtures/zipslip.zip   # must refuse, exit nonzero
+-397:   casekit extract test/fixtures/nested-bomb.zip  # must abort at depth/ratio cap
++460: Verify with: sha256sum docs/reference/* &gt; /tmp/before.txt
++461:              casekit package docs/reference/*
++462:              sha256sum -c /tmp/before.txt
++463:              cd out/&lt;pkg-id&gt; &amp;&amp; sha256sum -c SHA256SUMS
+-399: Build the three fixtures yourself as part of this phase.
+-544: ## Phase 5d
+-546: ```
+-547: Read RULES.md, then GOTCHAS.md S-15, A-17, A-18, B-8, B-9, S-13, A-8.
+-548: 
+-549: Implement HTML and text conversation extraction in internal/extract/html.go and
+-550: internal/extract/text.go, plus engines/htmlmsg/.
+-551: 
+-552: WHY THIS MATTERS MORE THAN IT LOOKS: the reference PDF transcript was produced
+-553: by Stirling-PDF v1.1.1 FROM HTML. The emoji destruction documented in GOTCHAS
+-554: S-5 happened during that conversion, not in the source. The HTML almost
+-555: certainly still has the real characters. This phase routes around a data-loss
+-556: problem instead of documenting it.
+-557: 
+-558: Output MUST use the same table shape as Phases 5 and 5b.
+-559: 
+-560: SOURCE PREFERENCE - implement as an explicit ordering, not a convention:
+-561:     XML / JSON   structured export    strongest
+-562:     HTML         marked-up export
+-563:     text         flat export
+-564:     PDF          rendered derivative  weakest
+-565: Where two sources cover the same conversation, the upstream form supersedes.
+-566: RECORD the supersession; never delete the downstream package (RULES R6).
+-567: 
+-568: HTML:
+-569:   Parse as a DOM. NEVER regex, never tag-stripping.
+-570:   Detect the exporter from its markup signature and record it.
+-571:   Emoji appear in THREE forms and a naive extractor loses the third silently:
+-572:     1. literal UTF-8 character
+-573:     2. HTML entity  &amp;#128169;
+-574:     3. &lt;img&gt; tag with the emoji in alt / title / aria-label
+-575:   Handle all three, record emoji_source per occurrence (GOTCHAS A-17).
+-576:   Images: inline data: base64 -&gt; generic blob pass in internal/blob/base64.go.
+-577:   Relative src -&gt; resolve against sibling folder, else resolved:false with
+-578:   declared_uri (GOTCHAS A-18, A-8). Type by magic bytes; the data: mimetype is
+-579:   a claim (S-13).
+-580:   Charset: BOM first, then detection, then the declaration - IN THAT ORDER.
+-581:   Record which method won and mark it estimated (GOTCHAS B-8, RULES R11).
+-582: 
+-583: TEXT:
+-584:   Sender label, timestamp, body. Nothing else is there.
+-585:   confidence_level "header_derived" - same weakness as PDF headers.
+-586:   Populate not_established generously: no attachment bytes, no read status,
+-587:   no codes, direction from a text label only (GOTCHAS B-9).
+-588:   Same charset discipline as HTML.
+-589: 
+-590: EXIT CRITERION: an HTML export parses via DOM into the Phase 5 table shape with
+-591: the exporter detected; all three emoji forms recovered with emoji_source
+-592: recorded; inline base64 images land in blobs/ and attachments/; unresolvable
+-593: src values appear as resolved:false; the charset method used is recorded and
+-594: marked estimated. A flat text export parses with header_derived confidence and
+-595: a populated not_established. Where HTML and PDF cover one conversation, the
+-596: HTML supersedes, the supersession is recorded, and the PDF package still exists.
+-597: 
+-598: Verify with: casekit extract &lt;export.html&gt; &amp;&amp; \
+-599:   jq '[.elements[]|select(.emoji_source)]|group_by(.emoji_source)|map({(.[0].emoji_source):length})' out/extraction.json
+-600: ```
+-601: </pre></details>
+<details><summary>README.md</summary><pre>Baseline: v2
++10: | 0 | **`OPEN-DECISIONS.md`** | Seven unresolved items; three block Phase 0. Read with the kickoff. |</pre></details>
+<details><summary>RULES.md</summary><pre>Unchanged from v2.</pre></details>
+<details><summary>SPLIT.md</summary><pre>Baseline: v2
++41:       "offset_space": "decoded_stream",
++42:       "offset": 4102, "length": 611, "sha256": "…",
++43:       "container": { "object": 12, "source_offset": 31236, "source_length": 4894 },
+-41:       "offset": 182044, "length": 611, "sha256": "…",
++93: 1. Engine contract v1 must be frozen before more than one engine is written —
++94:    including `offset_space` (GOTCHAS S-16). An `offset` with no declared
++95:    coordinate space breaks R11 traceability for every PDF element.
+-91: 1. Engine contract v1 must be frozen before more than one engine is written.</pre></details>
+<details><summary>STACK.md</summary><pre>Baseline: v2
++20: | PDF text (primary) | **poppler** `pdftotext` | **[sandbox-verified]** | Decoded all 33 ZapfDingbats glyphs — but in a Linux sandbox, **not** with the Windows binary casekit will ship. Phase 0 re-runs the bake-off against the pinned binary. |
+-20: | PDF text (primary) | **poppler** `pdftotext` | **[verified]** | Correctly decoded all 33 ZapfDingbats glyphs; CLI-only, no runtime |
++26: | Install root | **UNRESOLVED — see OPEN-DECISIONS OD-1** (`D:\case_apps` vs `E:`) | — | STACK and the Consignatio AGENTS.md storage rule disagree |
+-26: | Install root | `D:\case_apps` | — | Matt's decision |
++34: - **mutool / MuPDF** — **rejected for text extraction; retained only as a
++35:   frozen test fixture** (its known-bad output drives the Phase 3 escalation
++36:   test). Not a shipped engine, not required to be installed. On the real
+-34: - **mutool / MuPDF** — **actively rejected for text extraction.** On the real</pre></details>
+<details><summary>TOOL-CATALOG.md</summary><pre>Baseline: original kit; absent in v2
++6: ## Vendored under `&lt;INSTALL_ROOT&gt;\engines\`  — root is **OD-1, unresolved**
+-6: ## Vendored under `D:\case_apps\engines\`
++12: | `mutool` | **not shipped.** Its known-bad output is frozen as a Phase 3 test fixture (GOTCHAS S-2). Install only if you want to regenerate that fixture. | mupdf releases | not required |
+-12: | `mutool` | raster/structure **only** — never glyph text (GOTCHAS S-2) | mupdf releases | optional |
++15: | `tesseract` + `eng` traineddata | OCR — **Phase 6c**, screenshot pile index. Inside the usable product; A-16 makes OCR content-match the PRIMARY corroboration signal. | tessdata_best | required at 6c |
+-15: | `tesseract` + `eng` traineddata | OCR, Phase 10 only | tessdata_best | deferred |
++17: ## Frozen Python venv — `&lt;INSTALL_ROOT&gt;\engines\python\.venv`
+-17: ## Frozen Python venv — `D:\case_apps\engines\python\.venv`
++26: | `ftfy` | mojibake **detector** after the byte-level fix — never the primary repair | pin at install |</pre></details></html>

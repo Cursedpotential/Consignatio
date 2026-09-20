@@ -1,0 +1,2 @@
+# Relative to this module's project directory; isolated from other A/B lanes.
+install_root = 'runtime-codex'

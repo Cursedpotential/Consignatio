@@ -24,7 +24,20 @@ RULE_SET = "casebible-path-observations"
 RULE_VERSION = "2026-09-13.v2"
 FINGERPRINT_ASSERTION_VERSION = "source-bound-sha256.v1"
 REPRESENTATIVE_RULE = "latest-snapshot-then-utf8-ordinal(bucket,path,row_number,occurrence_id).v2"
-METADATA_RESOLUTION_RULE = "exact-content-field-resolution.2026-09-13.v1"
+METADATA_RESOLUTION_RULE = "exact-content-field-resolution.2026-09-13.v2"
+METADATA_ASSERTION_CLASSES = {
+    "embedded", "external_sidecar", "provider", "catalog", "human",
+}
+DIAGNOSTIC_METADATA_FIELDS = {
+    "payload_eligible", "payload_health", "integrity_status", "byte_readable",
+    "hash_verified", "is_placeholder", "corruption_status", "repair_status",
+    "validation_status", "parse_status", "error", "errors", "warning", "warnings",
+}
+UNHEALTHY_METADATA_VALUES = {
+    "corrupt", "corrupted", "truncated", "unreadable", "failed", "failure",
+    "hash_mismatch", "mismatch", "placeholder", "missing", "unavailable",
+    "quarantined", "invalid", "damaged",
+}
 RECOVERY_WRAPPER_RE = re.compile(
     r"^(?:(?:recovered|recovery|restored|undeleted|salvaged|found|copy[ _-]+of)"
     r"[ _.-]+(?:\d+[ _.-]+)?)",
@@ -38,6 +51,7 @@ DATE_FIELDS = {
     "modtime", "mtime", "modified_at", "created_at", "birthtime", "btime",
     "date_taken", "datetime_original", "exif_datetime_original", "gps_timestamp",
     "media_created_at", "provider_created_at", "provider_modified_at",
+    "derived_date", "date_start", "date_end", "filename_date",
 }
 ALLOWED_TRANSITIONS = {
     "planned": {"queued", "copying", "skipped_existing_verified", "permanent_error"},
@@ -276,6 +290,8 @@ class MetadataImportResult:
     row_count: int
     assertion_count: int
     already_imported: bool
+    bound_record_count: int = 0
+    held_record_count: int = 0
 
 
 class ManifestBuilder:
@@ -300,6 +316,19 @@ class ManifestBuilder:
 
     def __exit__(self, *_: object) -> None:
         self.close()
+
+    @staticmethod
+    def _prepare_output_directory(output: Path) -> None:
+        """Create a new output boundary and refuse to overwrite any artifact."""
+        if output.exists():
+            try:
+                existing = next(output.iterdir())
+            except StopIteration:
+                return
+            raise FileExistsError(
+                f"immutable output directory is not empty: {output} (found {existing.name})"
+            )
+        output.mkdir(parents=True)
 
     def _transfer_item_accepts_bridge_authority(self) -> bool:
         definition = self.connection.execute(
@@ -380,12 +409,20 @@ class ManifestBuilder:
     def import_metadata_assertions(
         self, assertion_paths: Iterable[Path | str]
     ) -> list[MetadataImportResult]:
-        """Import provenance-bearing metadata assertions without reading source bytes.
+        """Stage metadata rows, bind only safe rows, then append field assertions.
 
-        Each NDJSON object must identify an occurrence directly, or identify one
-        unambiguous bucket/path (optionally constrained by size/SHA-256). Values
-        remain JSON so EXIF, provider, sidecar, catalog, and human assertions can
-        retain their native types and structures.
+        Every physical input row is retained in ``metadata_import_record``.
+        Path, size, MD5, QuickXor, recovery names, and provider match percentages
+        are candidate evidence only. They never create or merge content identity.
+        A locator-only row can bind when all of its candidates already resolve to
+        one SHA-256-verified content group. A trusted source SHA-256 may constrain
+        candidates only when ``identity_authority`` explicitly says
+        ``sha256_verified``. Ambiguous, unmatched, unverified, malformed, and
+        QuickXor-drift rows remain visible and unbound.
+
+        The original one-field NDJSON shape remains supported. Normalizers may
+        instead emit one record with an ``assertions`` list; record-level locator
+        and provenance values are inherited by every field assertion.
         """
         results: list[MetadataImportResult] = []
         for raw_path in assertion_paths:
@@ -397,10 +434,18 @@ class ManifestBuilder:
                 (partition_id,),
             ).fetchone()
             if existing is not None:
+                counts = self.connection.execute(
+                    """SELECT
+                           SUM(CASE WHEN disposition LIKE 'bound_%' THEN 1 ELSE 0 END),
+                           SUM(CASE WHEN disposition LIKE 'held_%' THEN 1 ELSE 0 END)
+                       FROM metadata_import_record WHERE partition_id = ?""",
+                    (partition_id,),
+                ).fetchone()
                 results.append(
                     MetadataImportResult(
                         partition_id, existing["source_path"], existing["row_count"],
                         existing["assertion_count"], True,
+                        int(counts[0] or 0), int(counts[1] or 0),
                     )
                 )
                 continue
@@ -409,70 +454,234 @@ class ManifestBuilder:
             assertion_count = 0
             imported_at = _utc_now()
             with self.connection, opener(path, "rt", encoding="utf-8-sig") as handle:
+                self.connection.execute(
+                    """INSERT INTO metadata_import_partition(
+                           partition_id, source_path, source_sha256, imported_at,
+                           row_count, assertion_count
+                       ) VALUES (?, ?, ?, ?, 0, 0)""",
+                    (partition_id, str(path), source_sha256, imported_at),
+                )
                 for line_number, raw_line in enumerate(handle, start=1):
-                    if not raw_line.strip():
-                        continue
                     row_count += 1
+                    raw_record = raw_line.rstrip("\r\n")
+                    raw_sha256 = _sha256_text(raw_record)
+                    import_record_id = _stable_id(
+                        "metadata-import", partition_id, line_number, raw_sha256
+                    )
+                    if not raw_record.strip():
+                        self._stage_metadata_import_record(
+                            import_record_id, partition_id, line_number, raw_sha256,
+                            raw_record, {}, "held_blank_record", imported_at,
+                        )
+                        continue
                     try:
-                        record = json.loads(raw_line)
+                        record = json.loads(raw_record)
                     except json.JSONDecodeError as exc:
-                        raise ValueError(
-                            f"invalid metadata NDJSON at {path}:{line_number}: {exc}"
-                        ) from exc
+                        self._stage_metadata_import_record(
+                            import_record_id, partition_id, line_number, raw_sha256,
+                            raw_record, {}, "held_malformed_json", imported_at,
+                            {"error": str(exc)},
+                        )
+                        continue
                     if not isinstance(record, dict):
-                        raise ValueError(
-                            f"metadata assertion must be an object at {path}:{line_number}"
+                        self._stage_metadata_import_record(
+                            import_record_id, partition_id, line_number, raw_sha256,
+                            raw_record, {}, "held_non_object", imported_at,
+                            {"type": type(record).__name__},
                         )
-                    occurrence_id = self._resolve_metadata_occurrence(record)
-                    field_name = str(record.get("field_name") or record.get("field") or "").strip().casefold()
-                    if not re.fullmatch(r"[a-z0-9_.:-]+", field_name):
-                        raise ValueError(f"invalid metadata field_name at {path}:{line_number}")
-                    if "value_json" in record:
-                        raw_value_json = record["value_json"]
-                        value = (
-                            json.loads(raw_value_json)
-                            if isinstance(raw_value_json, str)
-                            else raw_value_json
+                        continue
+                    disposition = "staged"
+                    detail: dict[str, object] = {
+                        "identity_rule": (
+                            "path/size/md5/quickxor/match_percent are candidate assertions only"
                         )
-                    elif "value" in record:
-                        value = record["value"]
+                    }
+                    sha256_hint = str(record.get("sha256") or "").strip().casefold()
+                    md5_hint = str(record.get("md5") or "").strip().casefold()
+                    authority = str(record.get("identity_authority") or "").strip().casefold()
+                    if authority in {"source_sha256_ledger", "sha256_verified"}:
+                        authority = "sha256_verified"
+                    if (sha256_hint and not SHA256_RE.fullmatch(sha256_hint)) or (
+                        md5_hint and not MD5_RE.fullmatch(md5_hint)
+                    ):
+                        disposition = "held_invalid_identity_hint"
+                    elif authority == "sha256_verified" and not sha256_hint:
+                        disposition = "held_invalid_identity_hint"
+                    elif not str(record.get("occurrence_id") or "").strip() and not str(
+                        record.get("source_path") or record.get("object_path") or ""
+                    ) and not str(record.get("source_filename") or record.get("filename") or ""):
+                        disposition = "held_invalid_record"
+                    self._stage_metadata_import_record(
+                        import_record_id, partition_id, line_number, raw_sha256,
+                        raw_record, record, disposition, imported_at, detail,
+                    )
+
+                # Candidate generation is set-oriented. Identity hints only
+                # constrain a locator when their authority is explicitly strong.
+                self.connection.execute(
+                    """INSERT OR IGNORE INTO metadata_import_candidate(
+                           import_record_id, occurrence_id, content_id,
+                           identity_status, match_basis, selected
+                       )
+                       SELECT r.import_record_id, o.occurrence_id, o.content_id,
+                              c.identity_status,
+                              CASE
+                                WHEN r.explicit_occurrence_id IS NOT NULL
+                                  THEN 'explicit_occurrence'
+                                WHEN r.identity_authority = 'sha256_verified'
+                                  THEN 'locator_plus_verified_sha256'
+                                ELSE 'locator_candidate_only'
+                              END,
+                              0
+                       FROM metadata_import_record r
+                       JOIN occurrence o
+                         ON (
+                           (r.explicit_occurrence_id IS NOT NULL
+                             AND o.occurrence_id = r.explicit_occurrence_id)
+                           OR
+                           (r.explicit_occurrence_id IS NULL
+                             AND (
+                               o.object_path = r.source_path
+                               OR (r.source_path IS NULL AND r.source_filename IS NOT NULL
+                                   AND (o.object_path = r.source_filename
+                                        OR o.object_path LIKE '%/' || r.source_filename))
+                             )
+                             AND (r.source_bucket IS NULL OR o.bucket = r.source_bucket)
+                             AND (r.byte_size IS NULL OR o.byte_size = r.byte_size)
+                             AND (r.md5_hint IS NULL OR o.md5_normalized = r.md5_hint))
+                         )
+                       LEFT JOIN content_identity c ON c.content_id = o.content_id
+                       WHERE r.partition_id = ? AND r.disposition = 'staged'
+                         AND (
+                           r.identity_authority != 'sha256_verified'
+                           OR (c.identity_status = 'sha256_verified'
+                               AND c.sha256 = r.sha256_hint)
+                         )""",
+                    (partition_id,),
+                )
+
+                # A changing QuickXor for the same provider locator is version
+                # drift evidence. Same size does not make those versions equal.
+                self.connection.execute(
+                    """UPDATE metadata_import_record AS target
+                       SET disposition = 'held_quickxor_drift',
+                           detail_json = json_set(
+                               detail_json, '$.hold_reason',
+                               'same locator and size has multiple QuickXor values'
+                           )
+                       WHERE target.partition_id = ?
+                         AND target.disposition = 'staged'
+                         AND target.quickxor_hint IS NOT NULL
+                         AND EXISTS (
+                           SELECT 1
+                           FROM metadata_import_record peer
+                           WHERE peer.partition_id = target.partition_id
+                             AND COALESCE(peer.source_system, '') = COALESCE(target.source_system, '')
+                             AND COALESCE(peer.source_account, '') = COALESCE(target.source_account, '')
+                             AND COALESCE(peer.source_tree, '') = COALESCE(target.source_tree, '')
+                             AND COALESCE(peer.source_path, '') = COALESCE(target.source_path, '')
+                             AND COALESCE(peer.byte_size, -1) = COALESCE(target.byte_size, -1)
+                             AND peer.quickxor_hint IS NOT NULL
+                             AND peer.quickxor_hint != target.quickxor_hint
+                         )""",
+                    (partition_id,),
+                )
+
+                aggregates = self.connection.execute(
+                    """SELECT r.import_record_id, r.explicit_occurrence_id,
+                              r.identity_authority,
+                              COUNT(c.occurrence_id) AS candidate_count,
+                              COUNT(DISTINCT c.content_id) AS content_count,
+                              SUM(CASE WHEN c.identity_status = 'sha256_verified'
+                                       THEN 0 ELSE 1 END) AS unverified_count
+                       FROM metadata_import_record r
+                       LEFT JOIN metadata_import_candidate c
+                         ON c.import_record_id = r.import_record_id
+                       WHERE r.partition_id = ? AND r.disposition = 'staged'
+                       GROUP BY r.import_record_id, r.explicit_occurrence_id,
+                                r.identity_authority
+                       ORDER BY r.import_record_id""",
+                    (partition_id,),
+                ).fetchall()
+                dispositions: list[tuple[str, str]] = []
+                for row in aggregates:
+                    if row["candidate_count"] == 0:
+                        disposition = "held_unmatched_occurrence"
+                    elif row["explicit_occurrence_id"]:
+                        disposition = "bound_explicit_occurrence"
+                    elif row["content_count"] > 1:
+                        disposition = "held_ambiguous_occurrence"
+                    elif row["unverified_count"]:
+                        disposition = "held_unverified_candidates"
+                    elif row["identity_authority"] == "sha256_verified":
+                        disposition = "bound_verified_sha256"
                     else:
-                        raise ValueError(f"missing metadata value at {path}:{line_number}")
-                    value_json = json.dumps(
-                        value, ensure_ascii=False, sort_keys=True, separators=(",", ":")
-                    )
-                    assertion_class = str(record.get("assertion_class") or "catalog").strip().casefold()
-                    if assertion_class not in {
-                        "embedded", "external_sidecar", "provider", "catalog", "human"
-                    }:
-                        raise ValueError(
-                            f"invalid assertion_class at {path}:{line_number}: {assertion_class}"
-                        )
-                    source_system = str(record.get("source_system") or "casebible-pg18").strip()
-                    source_table = str(record.get("source_table") or "").strip()
-                    source_key = str(record.get("source_key") or "").strip()
-                    if not source_system or not source_table or not source_key:
-                        raise ValueError(
-                            f"source_system, source_table, and source_key are required at {path}:{line_number}"
-                        )
-                    confidence = float(record.get("confidence", 0.8))
-                    trust_score = int(record.get("trust_score", 70))
-                    if not 0.0 <= confidence <= 1.0 or not 0 <= trust_score <= 100:
-                        raise ValueError(f"invalid confidence/trust_score at {path}:{line_number}")
-                    detail = record.get("detail", record.get("detail_json", {}))
-                    if isinstance(detail, str):
+                        disposition = "bound_unique_verified_content"
+                    dispositions.append((disposition, row["import_record_id"]))
+                self.connection.executemany(
+                    "UPDATE metadata_import_record SET disposition = ? WHERE import_record_id = ?",
+                    dispositions,
+                )
+                self.connection.execute(
+                    """UPDATE metadata_import_record AS target
+                       SET selected_occurrence_id = (
+                         SELECT c.occurrence_id
+                         FROM metadata_import_candidate c
+                         JOIN occurrence o USING (occurrence_id)
+                         JOIN inventory_batch b USING (inventory_id)
+                         WHERE c.import_record_id = target.import_record_id
+                         ORDER BY b.captured_at DESC, o.row_number DESC,
+                                  o.occurrence_id
+                         LIMIT 1
+                       )
+                       WHERE target.partition_id = ?
+                         AND target.disposition LIKE 'bound_%'""",
+                    (partition_id,),
+                )
+                self.connection.execute(
+                    """UPDATE metadata_import_candidate AS candidate
+                       SET selected = 1
+                       WHERE EXISTS (
+                         SELECT 1 FROM metadata_import_record record
+                         WHERE record.import_record_id = candidate.import_record_id
+                           AND record.selected_occurrence_id = candidate.occurrence_id
+                           AND record.partition_id = ?
+                       )""",
+                    (partition_id,),
+                )
+
+                bound_cursor = self.connection.execute(
+                    """SELECT import_record_id, raw_record,
+                              selected_occurrence_id, asserted_at
+                       FROM metadata_import_record
+                       WHERE partition_id = ? AND disposition LIKE 'bound_%'
+                       ORDER BY line_number""",
+                    (partition_id,),
+                )
+                while batch := bound_cursor.fetchmany(5_000):
+                    assertion_rows: list[tuple[object, ...]] = []
+                    invalid_records: list[tuple[str]] = []
+                    for staged in batch:
+                        record = json.loads(staged["raw_record"])
                         try:
-                            detail = json.loads(detail)
-                        except json.JSONDecodeError:
-                            detail = {"raw": detail}
-                    asserted_at = str(record.get("asserted_at") or imported_at)
-                    assertion_id = _stable_id(
-                        "metadata", occurrence_id, field_name, value_json,
-                        assertion_class, source_system, source_table, source_key,
-                        str(record.get("source_path") or ""), confidence, trust_score,
-                        str(record.get("observed_at") or ""), METADATA_RESOLUTION_RULE,
-                    )
-                    inserted = self.connection.execute(
+                            normalized = self._normalized_metadata_assertions(
+                                record, staged["selected_occurrence_id"],
+                                staged["import_record_id"], staged["asserted_at"],
+                            )
+                        except (TypeError, ValueError, json.JSONDecodeError):
+                            invalid_records.append((staged["import_record_id"],))
+                            continue
+                        assertion_rows.extend(normalized)
+                    if invalid_records:
+                        self.connection.executemany(
+                            """UPDATE metadata_import_record
+                               SET disposition = 'held_invalid_record',
+                                   selected_occurrence_id = NULL
+                               WHERE import_record_id = ?""",
+                            invalid_records,
+                        )
+                    before = self.connection.total_changes
+                    self.connection.executemany(
                         """INSERT OR IGNORE INTO metadata_assertion(
                                metadata_assertion_id, occurrence_id, field_name,
                                value_json, assertion_class, source_system,
@@ -480,72 +689,162 @@ class ManifestBuilder:
                                trust_score, observed_at, asserted_at, rule_version,
                                detail_json
                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                        (
-                            assertion_id, occurrence_id, field_name, value_json,
-                            assertion_class, source_system, source_table, source_key,
-                            str(record.get("source_path") or "") or None,
-                            confidence, trust_score,
-                            str(record.get("observed_at") or "") or None,
-                            asserted_at, METADATA_RESOLUTION_RULE,
-                            json.dumps(detail, ensure_ascii=False, sort_keys=True, separators=(",", ":")),
-                        ),
+                        assertion_rows,
                     )
-                    assertion_count += max(inserted.rowcount, 0)
+                    assertion_count += self.connection.total_changes - before
                 self.connection.execute(
-                    """INSERT INTO metadata_import_partition(
-                           partition_id, source_path, source_sha256, imported_at,
-                           row_count, assertion_count
-                       ) VALUES (?, ?, ?, ?, ?, ?)""",
-                    (
-                        partition_id, str(path), source_sha256, imported_at,
-                        row_count, assertion_count,
-                    ),
+                    """UPDATE metadata_import_partition
+                       SET row_count = ?, assertion_count = ? WHERE partition_id = ?""",
+                    (row_count, assertion_count, partition_id),
                 )
+                counts = self.connection.execute(
+                    """SELECT
+                           SUM(CASE WHEN disposition LIKE 'bound_%' THEN 1 ELSE 0 END),
+                           SUM(CASE WHEN disposition LIKE 'held_%' THEN 1 ELSE 0 END)
+                       FROM metadata_import_record WHERE partition_id = ?""",
+                    (partition_id,),
+                ).fetchone()
             results.append(
                 MetadataImportResult(
-                    partition_id, str(path), row_count, assertion_count, False
+                    partition_id, str(path), row_count, assertion_count, False,
+                    int(counts[0] or 0), int(counts[1] or 0),
                 )
             )
         return results
 
-    def _resolve_metadata_occurrence(self, record: Mapping[str, object]) -> str:
-        explicit = str(record.get("occurrence_id") or "").strip()
-        if explicit:
-            exists = self.connection.execute(
-                "SELECT 1 FROM occurrence WHERE occurrence_id = ?", (explicit,)
-            ).fetchone()
-            if exists is None:
-                raise ValueError(f"unknown metadata occurrence_id: {explicit}")
-            return explicit
-        bucket = str(record.get("source_bucket") or record.get("bucket") or "").strip()
-        path = str(record.get("source_path") or record.get("object_path") or "")
-        if not bucket or not path:
-            raise ValueError("metadata assertion requires occurrence_id or source_bucket/source_path")
-        clauses = ["o.bucket = ?", "o.object_path = ?"]
-        parameters: list[object] = [bucket, path]
-        if record.get("byte_size") is not None:
-            clauses.append("o.byte_size = ?")
-            parameters.append(int(record["byte_size"]))
-        sha256 = str(record.get("sha256") or "").strip().casefold()
-        if sha256:
-            if not SHA256_RE.fullmatch(sha256):
-                raise ValueError("metadata assertion sha256 must be 64 hexadecimal characters")
-            clauses.append("c.sha256 = ?")
-            parameters.append(sha256)
-        rows = self.connection.execute(
-            f"""SELECT o.occurrence_id, o.content_id, b.captured_at
-                FROM occurrence o
-                JOIN inventory_batch b USING (inventory_id)
-                JOIN content_identity c USING (content_id)
-                WHERE {' AND '.join(clauses)}
-                ORDER BY b.captured_at DESC, o.row_number DESC, o.occurrence_id""",
-            parameters,
-        ).fetchall()
-        if not rows:
-            raise ValueError(f"metadata source locator not found: {bucket}/{path}")
-        if len({row["content_id"] for row in rows}) != 1:
-            raise ValueError(f"metadata source locator is content-drift ambiguous: {bucket}/{path}")
-        return str(rows[0]["occurrence_id"])
+    def _stage_metadata_import_record(
+        self,
+        import_record_id: str,
+        partition_id: str,
+        line_number: int,
+        raw_sha256: str,
+        raw_record: str,
+        record: Mapping[str, object],
+        disposition: str,
+        asserted_at: str,
+        detail: Mapping[str, object] | None = None,
+    ) -> None:
+        def text_value(*names: str) -> str | None:
+            for name in names:
+                value = record.get(name)
+                if value not in (None, ""):
+                    return str(value).strip() or None
+            return None
+
+        byte_size: int | None = None
+        raw_size = record.get("byte_size", record.get("size"))
+        if raw_size not in (None, ""):
+            try:
+                byte_size = int(raw_size)  # type: ignore[arg-type]
+            except (TypeError, ValueError):
+                disposition = "held_invalid_record"
+        match_percent: float | None = None
+        raw_match = record.get("match_percent", record.get("match%"))
+        if raw_match not in (None, ""):
+            try:
+                match_percent = float(raw_match)  # type: ignore[arg-type]
+            except (TypeError, ValueError):
+                disposition = "held_invalid_record"
+        authority = (text_value("identity_authority") or "").casefold()
+        if authority in {"source_sha256_ledger", "sha256_verified"}:
+            authority = "sha256_verified"
+        self.connection.execute(
+            """INSERT INTO metadata_import_record(
+                   import_record_id, partition_id, line_number, raw_sha256,
+                   raw_record, source_system, source_table, source_key,
+                   source_account, source_tree, snapshot_id, source_version,
+                   explicit_occurrence_id, source_bucket, source_path,
+                   source_filename, byte_size, sha256_hint, md5_hint, quickxor_hint,
+                   match_percent, identity_authority, disposition,
+                   selected_occurrence_id, detail_json, asserted_at
+               ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?)""",
+            (
+                import_record_id, partition_id, line_number, raw_sha256,
+                raw_record, text_value("source_system"), text_value("source_table"),
+                text_value("source_key"), text_value("source_account", "account"),
+                text_value("source_tree", "tree"), text_value("snapshot_id", "scan_file"),
+                text_value("source_version"), text_value("occurrence_id"),
+                text_value("source_bucket", "bucket"),
+                text_value("source_path", "object_path"),
+                text_value("source_filename", "filename"),
+                byte_size,
+                (text_value("sha256") or "").casefold() or None,
+                (text_value("md5") or "").casefold() or None,
+                text_value("quickxor", "quickxor_hint"), match_percent,
+                authority or "candidate_only", disposition,
+                json.dumps(dict(detail or {}), ensure_ascii=False, sort_keys=True,
+                           separators=(",", ":")), asserted_at,
+            ),
+        )
+
+    @staticmethod
+    def _normalized_metadata_assertions(
+        record: Mapping[str, object], occurrence_id: str,
+        import_record_id: str, imported_at: str,
+    ) -> list[tuple[object, ...]]:
+        raw_items = record.get("assertions")
+        if raw_items is None:
+            items: list[Mapping[str, object]] = [record]
+        elif isinstance(raw_items, list) and all(isinstance(item, dict) for item in raw_items):
+            items = raw_items  # type: ignore[assignment]
+        else:
+            raise ValueError("assertions must be a list of objects")
+        rows: list[tuple[object, ...]] = []
+        for index, item in enumerate(items):
+            field_name = str(item.get("field_name") or item.get("field") or "").strip().casefold()
+            if not re.fullmatch(r"[a-z0-9_.:-]+", field_name):
+                raise ValueError("invalid metadata field_name")
+            if "value_json" in item:
+                raw_value_json = item["value_json"]
+                value = json.loads(raw_value_json) if isinstance(raw_value_json, str) else raw_value_json
+            elif "value" in item:
+                value = item["value"]
+            else:
+                raise ValueError("missing metadata value")
+            value_json = json.dumps(value, ensure_ascii=False, sort_keys=True,
+                                    separators=(",", ":"))
+            assertion_class = str(
+                item.get("assertion_class") or record.get("assertion_class") or "catalog"
+            ).strip().casefold()
+            if assertion_class not in METADATA_ASSERTION_CLASSES:
+                raise ValueError("invalid assertion_class")
+            source_system = str(
+                item.get("source_system") or record.get("source_system") or "casebible-pg18"
+            ).strip()
+            source_table = str(item.get("source_table") or record.get("source_table") or "").strip()
+            source_key = str(item.get("source_key") or record.get("source_key") or "").strip()
+            if not source_system or not source_table or not source_key:
+                raise ValueError("source_system, source_table, and source_key are required")
+            confidence = float(item.get("confidence", record.get("confidence", 0.8)))
+            trust_score = int(item.get("trust_score", record.get("trust_score", 70)))
+            if not 0.0 <= confidence <= 1.0 or not 0 <= trust_score <= 100:
+                raise ValueError("invalid confidence/trust_score")
+            detail = item.get("detail", item.get("detail_json", record.get("detail", {})))
+            if isinstance(detail, str):
+                try:
+                    detail = json.loads(detail)
+                except json.JSONDecodeError:
+                    detail = {"raw": detail}
+            source_path = str(record.get("source_path") or record.get("object_path") or "") or None
+            observed_at = str(item.get("observed_at") or record.get("observed_at") or "") or None
+            asserted_at = str(item.get("asserted_at") or record.get("asserted_at") or imported_at)
+            assertion_id = _stable_id(
+                "metadata", import_record_id, index, occurrence_id, field_name,
+                value_json, assertion_class, source_system, source_table, source_key,
+                source_path or "", confidence, trust_score, observed_at or "",
+                METADATA_RESOLUTION_RULE,
+            )
+            rows.append(
+                (
+                    assertion_id, occurrence_id, field_name, value_json,
+                    assertion_class, source_system, source_table, source_key,
+                    source_path, confidence, trust_score, observed_at,
+                    asserted_at, METADATA_RESOLUTION_RULE,
+                    json.dumps(detail, ensure_ascii=False, sort_keys=True,
+                               separators=(",", ":")),
+                )
+            )
+        return rows
 
     @staticmethod
     def _md5_state(md5_raw: str, md5_valid: bool) -> str:
@@ -1377,6 +1676,19 @@ class ManifestBuilder:
                ORDER BY o.occurrence_id""",
             (content_id,),
         ).fetchall()
+        fingerprints_by_occurrence: dict[str, list[sqlite3.Row]] = {}
+        for fingerprint in self.connection.execute(
+            """SELECT f.fingerprint_assertion_id, f.occurrence_id,
+                      f.source_version, f.source_etag, f.verified_at
+               FROM strong_fingerprint_assertion f
+               JOIN occurrence o USING (occurrence_id)
+               WHERE o.content_id = ?
+               ORDER BY f.occurrence_id, f.fingerprint_assertion_id""",
+            (content_id,),
+        ):
+            fingerprints_by_occurrence.setdefault(
+                str(fingerprint["occurrence_id"]), []
+            ).append(fingerprint)
         for row in occurrences:
             synthetic = (
                 ("observed_filename", PurePosixPath(row["object_path"]).name, 55, 0.65),
@@ -1409,13 +1721,8 @@ class ManifestBuilder:
                         "detail_json": "{}",
                     }
                 )
-            for fingerprint in self.connection.execute(
-                """SELECT fingerprint_assertion_id, source_version, source_etag,
-                          verified_at
-                   FROM strong_fingerprint_assertion
-                   WHERE occurrence_id = ?
-                   ORDER BY fingerprint_assertion_id""",
-                (row["occurrence_id"],),
+            for fingerprint in fingerprints_by_occurrence.get(
+                str(row["occurrence_id"]), []
             ):
                 for field_name in ("source_version", "source_etag"):
                     value = fingerprint[field_name]
@@ -1550,7 +1857,10 @@ class ManifestBuilder:
                         str(row["field_name"])
                         for row in trusted
                         if str(row["field_name"])
-                        not in {"source_path", "observed_filename", "inventory_captured_at"}
+                        not in {
+                            "source_path", "observed_filename", "inventory_captured_at",
+                            *DIAGNOSTIC_METADATA_FIELDS,
+                        }
                         and (
                             str(row["field_name"]) not in DATE_FIELDS
                             or _normalized_timestamp(row["value"])
@@ -1567,11 +1877,37 @@ class ManifestBuilder:
                         + 3 * len(exif_fields)
                         + len(meaningful_fields)
                     )
-                    safe = int(
+                    path_eligible = (
                         _payload_source_hold_reason(str(occurrence["object_path"])) is None
                     )
+                    health_assertions = [
+                        row for row in trusted
+                        if str(row["field_name"]) in DIAGNOSTIC_METADATA_FIELDS
+                    ]
+                    health_failures: list[str] = []
+                    health_successes = 0
+                    for diagnostic in health_assertions:
+                        field_name = str(diagnostic["field_name"])
+                        value = diagnostic["value"]
+                        normalized_value = str(value).strip().casefold()
+                        is_negative_boolean = (
+                            field_name in {"payload_eligible", "byte_readable", "hash_verified"}
+                            and value is False
+                        ) or (field_name == "is_placeholder" and value is True)
+                        if is_negative_boolean or normalized_value in UNHEALTHY_METADATA_VALUES:
+                            health_failures.append(f"{field_name}={normalized_value}")
+                        elif (
+                            (field_name in {"payload_eligible", "byte_readable", "hash_verified"}
+                             and value is True)
+                            or normalized_value in {"healthy", "verified", "readable", "complete", "ok"}
+                        ):
+                            health_successes += 1
+                    health_eligible = not health_failures
+                    payload_eligible = path_eligible and health_eligible
+                    health_rank = 0 if health_successes else 1
                     score = (
-                        -safe,
+                        int(not payload_eligible),
+                        health_rank,
                         -metadata_coverage_score,
                         -len(valid_date_fields),
                         -len(exif_fields),
@@ -1580,9 +1916,22 @@ class ManifestBuilder:
                         earliest,
                         str(occurrence["occurrence_id"]),
                     )
-                    donor_scores.append((score, occurrence))
+                    occurrence_with_health = dict(occurrence)
+                    occurrence_with_health["payload_eligible"] = payload_eligible
+                    occurrence_with_health["health_eligible"] = health_eligible
+                    occurrence_with_health["health_failures"] = health_failures
+                    occurrence_with_health["health_assertion_count"] = len(health_assertions)
+                    donor_scores.append((score, occurrence_with_health))
                 donor_scores.sort(key=lambda item: item[0])
                 primary = donor_scores[0][1]
+                eligible_donor_count = sum(
+                    1 for _, occurrence in donor_scores
+                    if occurrence["payload_eligible"]
+                )
+                health_eligible_donor_count = sum(
+                    1 for _, occurrence in donor_scores
+                    if occurrence["health_eligible"]
+                )
 
                 name_fields = {
                     "original_filename", "native_filename", "filename",
@@ -1654,7 +2003,7 @@ class ManifestBuilder:
                 for row in observations:
                     fields.setdefault(str(row["field_name"]), []).append(row)
                 field_resolutions: list[dict[str, object]] = []
-                overall_review = canonical_name_review
+                overall_review = canonical_name_review or health_eligible_donor_count == 0
                 embedded_conflict = False
                 for field_name, candidates in sorted(fields.items()):
                     eligible: list[dict[str, object]] = []
@@ -1717,7 +2066,12 @@ class ManifestBuilder:
                     else "review_required" if overall_review else "resolved"
                 )
                 reasons = {
-                    "primary_donor": "addressable occurrence with the most valid date, EXIF, and other trustworthy metadata fields; oldest valid timestamp breaks remaining ties",
+                    "primary_donor": "payload eligibility and health are evaluated before metadata richness; diagnostic fields can reduce fitness but never increase metadata coverage",
+                    "primary_payload_eligible": bool(primary["payload_eligible"]),
+                    "eligible_payload_donor_count": eligible_donor_count,
+                    "health_eligible_donor_count": health_eligible_donor_count,
+                    "primary_health_failures": primary["health_failures"],
+                    "primary_health_assertion_count": primary["health_assertion_count"],
                     "canonical_filename": "selected independently from original/native/name observations; explicit recovery wrappers may be repaired while observed names remain assertions",
                     "canonical_filename_review_required": canonical_name_review,
                     "embedded_conflict": embedded_conflict,
@@ -1768,6 +2122,20 @@ class ManifestBuilder:
                 resolution_count += 1
         return resolution_count
 
+    def _current_content_holds(self) -> dict[str, str]:
+        """Return exact-content groups that cannot enter payload execution."""
+        holds: dict[str, str] = {}
+        for row in self.connection.execute(
+            """SELECT content_id, resolution_state, reasons_json
+               FROM current_content_metadata_resolution ORDER BY content_id"""
+        ):
+            reasons = _json_value(row["reasons_json"])
+            if row["resolution_state"] == "blocked_embedded_conflict":
+                holds[str(row["content_id"])] = "held_embedded_metadata_conflict"
+            elif isinstance(reasons, dict) and reasons.get("health_eligible_donor_count") == 0:
+                holds[str(row["content_id"])] = "held_no_healthy_payload_donor"
+        return holds
+
     def build_generation(
         self,
         output_dir: Path | str,
@@ -1777,7 +2145,7 @@ class ManifestBuilder:
         created_at: str | None = None,
     ) -> BuildResult:
         output = Path(output_dir)
-        output.mkdir(parents=True, exist_ok=True)
+        self._prepare_output_directory(output)
         has_bridge = self.connection.execute(
             "SELECT 1 FROM sha256_bridge_finalization LIMIT 1"
         ).fetchone()
@@ -1822,19 +2190,9 @@ class ManifestBuilder:
             generation_id = f"generation:{_sha256_text('|'.join((inventory_set_sha256, fingerprint_set_sha256, destination_remote, destination_prefix, RULE_VERSION)))}"
         created_at = created_at or _utc_now()
         self.resolve_metadata(resolved_at=created_at)
-        blocked = self.connection.execute(
-            """SELECT r.content_id FROM current_content_metadata_resolution r
-               JOIN occurrence o
-                 ON o.occurrence_id = r.primary_occurrence_id
-                AND o.content_id = r.content_id
-               WHERE r.resolution_state = 'blocked_embedded_conflict'
-               ORDER BY r.content_id LIMIT 1"""
-        ).fetchone()
-        if blocked is not None:
-            raise ValueError(
-                "embedded metadata assertions disagree inside an exact-content group; "
-                f"generation refused for {blocked['content_id']}"
-            )
+        content_holds = self._current_content_holds()
+        blocked_content_ids = set(content_holds)
+        held_resolution_count = len(content_holds)
         with self.connection:
             existing_generation = self.connection.execute(
                 "SELECT * FROM transfer_generation WHERE generation_id = ?",
@@ -1872,6 +2230,17 @@ class ManifestBuilder:
                     inventory_set_sha256, fingerprint_set_sha256,
                 ),
             )
+            self.connection.execute("DROP TABLE IF EXISTS temp.location_content_count")
+            self.connection.execute(
+                """CREATE TEMP TABLE location_content_count AS
+                   SELECT bucket, object_path,
+                          COUNT(DISTINCT content_id) AS location_content_count
+                   FROM occurrence GROUP BY bucket, object_path"""
+            )
+            self.connection.execute(
+                """CREATE INDEX location_content_count_idx
+                   ON location_content_count(bucket, object_path)"""
+            )
             inherited_content_ids = {
                 row["content_id"]
                 for row in self.connection.execute(
@@ -1889,14 +2258,18 @@ class ManifestBuilder:
             sha_representatives = {
                 row["content_id"]: row
                 for row in self.connection.execute(
-                    """SELECT o.*, b.captured_at
+                    """SELECT o.*, b.captured_at, location.location_content_count
                        FROM current_content_metadata_resolution r
                        JOIN occurrence o
                          ON o.occurrence_id = r.primary_occurrence_id
                         AND o.content_id = r.content_id
                        JOIN inventory_batch b USING (inventory_id)
                        JOIN content_identity c USING (content_id)
-                       WHERE c.identity_status = 'sha256_verified'"""
+                       JOIN location_content_count location
+                         ON location.bucket = o.bucket
+                        AND location.object_path = o.object_path
+                       WHERE c.identity_status = 'sha256_verified'
+                         AND r.resolution_state != 'blocked_embedded_conflict'"""
                 )
             }
             identity_cursor = self.connection.execute(
@@ -1908,6 +2281,10 @@ class ManifestBuilder:
             while identity_batch := identity_cursor.fetchmany(5_000):
                 for identity in identity_batch:
                     if identity["identity_status"] == "sha256_verified":
+                        if identity["content_id"] in blocked_content_ids:
+                            # This exact-content group is visible in metadata
+                            # hold output but cannot enter executable transfer rows.
+                            continue
                         representative = sha_representatives.get(identity["content_id"])
                         representatives = [representative] if representative is not None else []
                         dedupe_authority = (
@@ -1924,6 +2301,7 @@ class ManifestBuilder:
                         representatives = self.connection.execute(
                             """SELECT * FROM (
                                    SELECT o.*, b.captured_at,
+                                          location.location_content_count,
                                           ROW_NUMBER() OVER (
                                               PARTITION BY o.bucket, o.object_path
                                               ORDER BY b.captured_at DESC, o.row_number DESC,
@@ -1931,6 +2309,9 @@ class ManifestBuilder:
                                           ) AS location_rank
                                    FROM occurrence o
                                    JOIN inventory_batch b USING (inventory_id)
+                                   JOIN location_content_count location
+                                     ON location.bucket = o.bucket
+                                    AND location.object_path = o.object_path
                                    WHERE o.content_id = ?
                                ) ranked
                                WHERE location_rank = 1
@@ -1954,13 +2335,7 @@ class ManifestBuilder:
                             representative["bucket"], representative["object_path"]
                         )
                         destination_relpath = f"{destination_prefix.strip('/')}/{source_relpath}"
-                        location_content_count = self.connection.execute(
-                            """SELECT COUNT(DISTINCT content_id)
-                               FROM occurrence
-                               WHERE bucket = ? AND object_path = ?""",
-                            (representative["bucket"], representative["object_path"]),
-                        ).fetchone()[0]
-                        if location_content_count > 1:
+                        if representative["location_content_count"] > 1:
                             status = "held_source_location_drift"
                         else:
                             status = self._initial_status(
@@ -2021,7 +2396,7 @@ class ManifestBuilder:
                             ),
                         )
         # Release the large planning indexes before streaming output tables.
-        del sha_representatives, inherited_content_ids
+        del sha_representatives, inherited_content_ids, blocked_content_ids, content_holds
         files_count = self._write_outputs(generation_id, output)
         parquet_written = self._write_parquet(output / "parquet")
         counts = self.connection.execute(
@@ -2031,8 +2406,9 @@ class ManifestBuilder:
                     AND content_id IN (SELECT DISTINCT content_id FROM occurrence)) AS sha256_count,
                  (SELECT COUNT(*) FROM content_identity WHERE identity_status = 'md5_size_candidate'
                     AND content_id IN (SELECT DISTINCT content_id FROM occurrence)) AS candidate_count,
-                 (SELECT COUNT(*) FROM transfer_item WHERE generation_id = ? AND initial_status LIKE 'held_%') AS held_count""",
-            (generation_id,),
+                 ((SELECT COUNT(*) FROM transfer_item WHERE generation_id = ? AND initial_status LIKE 'held_%')
+                  + ?) AS held_count""",
+            (generation_id, held_resolution_count),
         ).fetchone()
         return BuildResult(
             generation_id=generation_id,
@@ -2148,7 +2524,7 @@ class ManifestBuilder:
         """Resolve exact-content metadata and export every competing assertion."""
         count = self.resolve_metadata(resolved_at=resolved_at)
         output = Path(output_dir)
-        output.mkdir(parents=True, exist_ok=True)
+        self._prepare_output_directory(output)
         self._write_metadata_resolution(output)
         return count
 
@@ -2239,6 +2615,82 @@ class ManifestBuilder:
                         + "\n"
                     )
 
+        hold_fields = (
+            "content_id", "resolution_id", "resolution_state", "hold_reason",
+            "primary_occurrence_id", "canonical_filename", "rule_version",
+            "reasons_json",
+        )
+        with (output / "metadata-holds.csv").open(
+            "w", encoding="utf-8", newline=""
+        ) as csv_handle, (output / "metadata-holds.jsonl").open(
+            "w", encoding="utf-8", newline="\n"
+        ) as jsonl_handle:
+            writer = csv.DictWriter(csv_handle, fieldnames=hold_fields, lineterminator="\n")
+            writer.writeheader()
+            for resolution in self.connection.execute(
+                """SELECT * FROM current_content_metadata_resolution
+                   WHERE resolution_state != 'resolved'
+                   ORDER BY content_id"""
+            ):
+                reasons = _json_value(resolution["reasons_json"])
+                if resolution["resolution_state"] == "blocked_embedded_conflict":
+                    hold_reason = "held_embedded_metadata_conflict"
+                elif isinstance(reasons, dict) and reasons.get("health_eligible_donor_count") == 0:
+                    hold_reason = "held_no_healthy_payload_donor"
+                else:
+                    hold_reason = "held_metadata_review_required"
+                row = {
+                    "content_id": resolution["content_id"],
+                    "resolution_id": resolution["resolution_id"],
+                    "resolution_state": resolution["resolution_state"],
+                    "hold_reason": hold_reason,
+                    "primary_occurrence_id": resolution["primary_occurrence_id"],
+                    "canonical_filename": resolution["canonical_filename"],
+                    "rule_version": resolution["rule_version"],
+                    "reasons_json": resolution["reasons_json"],
+                }
+                writer.writerow(row)
+                jsonl_handle.write(
+                    json.dumps(row, ensure_ascii=False, sort_keys=True,
+                               separators=(",", ":")) + "\n"
+                )
+
+        import_fields = (
+            "import_record_id", "partition_id", "line_number", "disposition",
+            "source_system", "source_table", "source_key", "source_account",
+            "source_tree", "snapshot_id", "source_version", "source_bucket",
+            "source_path", "source_filename", "byte_size", "sha256_hint",
+            "md5_hint", "quickxor_hint", "match_percent", "identity_authority",
+            "selected_occurrence_id", "candidate_occurrence_id",
+            "candidate_content_id", "candidate_identity_status", "match_basis",
+            "candidate_selected", "detail_json", "raw_sha256", "raw_record",
+        )
+        with (output / "metadata-import-review.csv").open(
+            "w", encoding="utf-8", newline=""
+        ) as csv_handle, (output / "metadata-import-review.jsonl").open(
+            "w", encoding="utf-8", newline="\n"
+        ) as jsonl_handle:
+            writer = csv.DictWriter(csv_handle, fieldnames=import_fields, lineterminator="\n")
+            writer.writeheader()
+            cursor = self.connection.execute(
+                """SELECT r.*, c.occurrence_id AS candidate_occurrence_id,
+                          c.content_id AS candidate_content_id,
+                          c.identity_status AS candidate_identity_status,
+                          c.match_basis, c.selected AS candidate_selected
+                   FROM metadata_import_record r
+                   LEFT JOIN metadata_import_candidate c USING (import_record_id)
+                   ORDER BY r.partition_id, r.line_number,
+                            c.occurrence_id"""
+            )
+            while batch := cursor.fetchmany(5_000):
+                for imported in batch:
+                    row = {field: imported[field] if field in imported.keys() else "" for field in import_fields}
+                    writer.writerow(row)
+                    jsonl_handle.write(
+                        json.dumps(row, ensure_ascii=False, sort_keys=True,
+                                   separators=(",", ":")) + "\n"
+                    )
+
     @staticmethod
     def _source_identity(
         bucket: str,
@@ -2311,6 +2763,8 @@ class ManifestBuilder:
                         b.captured_at, o.row_number, o.occurrence_id"""
 
         canonical_by_content: dict[str, dict[str, object]] = {}
+        content_holds = self._current_content_holds()
+        blocked_content_ids = set(content_holds)
         inherited_content_ids = {
             row["content_id"]
             for row in self.connection.execute(
@@ -2379,6 +2833,8 @@ class ManifestBuilder:
         ).fetchall()
         for identity in sha_identities:
             if identity["byte_size"] == 0:
+                continue
+            if identity["content_id"] in blocked_content_ids:
                 continue
             representative = resolved_representatives.get(identity["content_id"])
             if representative is None:
@@ -2455,7 +2911,9 @@ class ManifestBuilder:
                 continue
             drift = row["location_content_count"] > 1
             path_hold_reason = _payload_source_hold_reason(row["object_path"])
-            if drift:
+            if row["content_id"] in blocked_content_ids:
+                reason = content_holds[str(row["content_id"])]
+            elif drift:
                 reason = "held_source_location_drift"
             elif row["byte_size"] == 0:
                 reason = "held_zero_byte"
@@ -2538,7 +2996,18 @@ class ManifestBuilder:
                 canonical = canonical_by_content.get(row["content_id"])
                 drift = row["location_content_count"] > 1
                 direct_assertion = bool(row["has_direct_assertion"])
-                if canonical is not None and not drift:
+                if row["content_id"] in blocked_content_ids:
+                    algorithm = "sha256" if row["identity_status"] == "sha256_verified" else "unknown"
+                    digest = row["sha256"] if algorithm == "sha256" else ""
+                    payload_source_identity = self._source_identity(
+                        row["bucket"], row["object_path"], row["byte_size"],
+                        None, None, row["md5_normalized"],
+                    )
+                    destination_key = f"payloads/held/{payload_source_identity[:2]}/{payload_source_identity}"
+                    mapping_status = content_holds[str(row["content_id"])]
+                    assertion_basis = "direct" if direct_assertion else "inherited_md5_size_bridge"
+                    dedupe_authority = "none_conflict"
+                elif canonical is not None and not drift:
                     algorithm = "sha256"
                     digest = row["sha256"]
                     destination_key = canonical["destination_key"]
@@ -2628,6 +3097,7 @@ class ManifestBuilder:
             "sha256_bridge_finalization", "sha256_md5_size_bridge",
             "candidate_representative", "assertion",
             "metadata_assertion", "metadata_import_partition",
+            "metadata_import_record", "metadata_import_candidate",
             "content_metadata_resolution", "metadata_field_resolution",
             "transfer_generation", "transfer_item", "transfer_item_occurrence",
             "transfer_status_event",

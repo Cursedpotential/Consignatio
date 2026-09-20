@@ -135,3 +135,6 @@ docs/receipts/**/*.stdout
 /docs/receipts/corruption-hunt/quarantine/gdrive_move_64_files_from_raw.txt
 /docs/receipts/corruption-hunt/quarantine/gdrive_move_files_from_raw.txt
 /docs/receipts/vault-twins-2026-09-16/vault_dirnames_depth4.txt
+
+# Local operation runtime copied from best-copy worktree contract.
+/runtime/

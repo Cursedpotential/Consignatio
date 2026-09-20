@@ -272,9 +272,21 @@ class MetadataResolutionTests(unittest.TestCase):
     def test_embedded_metadata_conflict_blocks_auto_collapse(self) -> None:
         with TemporaryDirectory() as raw:
             root = Path(raw)
-            builder, rows = self._two_occurrence_builder(
-                root, "Photos/a.jpg", "Recovery/recovered_1_a.jpg"
+            inventory = root / "inventory-20260913T120000Z.csv.gz"
+            write_inventory(
+                inventory,
+                [
+                    ("raw", "Photos/a.jpg", 100, "a" * 32, "2021-01-01T00:00:00Z", "image/jpeg"),
+                    ("raw", "Recovery/recovered_1_a.jpg", 100, "a" * 32, "2021-01-02T00:00:00Z", "image/jpeg"),
+                    ("raw", "Photos/unrelated.jpg", 101, "b" * 32, "2021-01-03T00:00:00Z", "image/jpeg"),
+                ],
             )
+            builder = ManifestBuilder(root / "ledger.sqlite")
+            builder.ingest([inventory])
+            rows = builder.connection.execute("SELECT * FROM occurrence ORDER BY row_number").fetchall()
+            builder.record_sha256(rows[0]["occurrence_id"], "1" * 64, "streamed_byte_hash", "test", "2026-09-13T12:01:00Z")
+            builder.record_sha256(rows[1]["occurrence_id"], "1" * 64, "streamed_byte_hash", "test", "2026-09-13T12:02:00Z")
+            builder.record_sha256(rows[2]["occurrence_id"], "2" * 64, "streamed_byte_hash", "test", "2026-09-13T12:03:00Z")
             try:
                 metadata = root / "embedded-conflict.ndjson"
                 write_assertions(
@@ -290,8 +302,174 @@ class MetadataResolutionTests(unittest.TestCase):
                     "SELECT resolution_state FROM current_content_metadata_resolution"
                 ).fetchone()[0]
                 self.assertEqual(state, "blocked_embedded_conflict")
-                with self.assertRaisesRegex(ValueError, "embedded metadata assertions disagree"):
-                    builder.build_generation(root / "out", generation_id="must-hold")
+                builder.build_generation(root / "out", generation_id="per-group-hold")
+                with (root / "out" / "payload-mapping.csv").open(encoding="utf-8") as handle:
+                    payloads = list(csv.DictReader(handle))
+                self.assertTrue(any(row["disposition"] == "canonical" and row["source_path"] == "Photos/unrelated.jpg" for row in payloads))
+                self.assertTrue(any(row["hold_reason"] == "held_embedded_metadata_conflict" for row in payloads))
+                with (root / "out" / "metadata-holds.csv").open(encoding="utf-8") as handle:
+                    holds = list(csv.DictReader(handle))
+                self.assertEqual(holds[0]["hold_reason"], "held_embedded_metadata_conflict")
+                self.assertEqual(
+                    builder.connection.execute("SELECT count(*) FROM transfer_item").fetchone()[0],
+                    1,
+                )
+            finally:
+                builder.close()
+
+    def test_payload_health_precedes_metadata_richness_and_diagnostics_do_not_add_fitness(self) -> None:
+        with TemporaryDirectory() as raw:
+            root = Path(raw)
+            builder, rows = self._two_occurrence_builder(
+                root, "Photos/healthy.jpg", "Recovery/recovered_9_healthy.jpg"
+            )
+            try:
+                metadata = root / "health.ndjson"
+                write_assertions(
+                    metadata,
+                    [
+                        assertion(rows[0]["occurrence_id"], "payload_health", "healthy", "healthy"),
+                        assertion(rows[1]["occurrence_id"], "payload_health", "corrupt", "corrupt"),
+                        assertion(rows[1]["occurrence_id"], "exif_datetime_original", "2017-01-01T00:00:00Z", "date", assertion_class="embedded", trust_score=95),
+                        assertion(rows[1]["occurrence_id"], "gps_latitude", 42.3, "gps", assertion_class="embedded", trust_score=95),
+                        assertion(rows[1]["occurrence_id"], "camera_model", "Rich Camera", "camera", assertion_class="embedded", trust_score=95),
+                    ],
+                )
+                builder.import_metadata_assertions([metadata])
+                builder.resolve_metadata(resolved_at="2026-09-13T13:00:00Z")
+                resolution = builder.connection.execute(
+                    "SELECT primary_occurrence_id, reasons_json FROM current_content_metadata_resolution"
+                ).fetchone()
+                self.assertEqual(resolution["primary_occurrence_id"], rows[0]["occurrence_id"])
+                reasons = json.loads(resolution["reasons_json"])
+                self.assertTrue(reasons["primary_payload_eligible"])
+                self.assertEqual(reasons["primary_health_assertion_count"], 1)
+            finally:
+                builder.close()
+
+    def test_exact_group_without_healthy_payload_donor_is_held(self) -> None:
+        with TemporaryDirectory() as raw:
+            root = Path(raw)
+            builder, rows = self._two_occurrence_builder(root, "Photos/a.jpg", "Photos/b.jpg")
+            try:
+                metadata = root / "unhealthy.ndjson"
+                write_assertions(
+                    metadata,
+                    [
+                        assertion(rows[0]["occurrence_id"], "payload_health", "corrupt", "a"),
+                        assertion(rows[1]["occurrence_id"], "byte_readable", False, "b"),
+                    ],
+                )
+                builder.import_metadata_assertions([metadata])
+                builder.build_generation(root / "out", generation_id="unhealthy-group")
+                self.assertEqual(
+                    builder.connection.execute("SELECT count(*) FROM transfer_item").fetchone()[0],
+                    0,
+                )
+                with (root / "out" / "payload-mapping.csv").open(encoding="utf-8") as handle:
+                    payloads = list(csv.DictReader(handle))
+                self.assertTrue(payloads)
+                self.assertEqual(
+                    {row["hold_reason"] for row in payloads},
+                    {"held_no_healthy_payload_donor"},
+                )
+            finally:
+                builder.close()
+
+    def test_candidate_only_rows_are_preserved_without_creating_identity(self) -> None:
+        with TemporaryDirectory() as raw:
+            root = Path(raw)
+            inventory = root / "inventory-20260913T120000Z.csv.gz"
+            write_inventory(
+                inventory,
+                [
+                    ("raw", "same/path.jpg", 100, "a" * 32, "2021-01-01T00:00:00Z", "image/jpeg"),
+                    ("raw", "same/path.jpg", 100, "b" * 32, "2021-01-02T00:00:00Z", "image/jpeg"),
+                ],
+            )
+            metadata = root / "onedrive.ndjson"
+            common = {
+                "source_system": "onedrive-r2-export", "source_table": "catalog.od_manifest",
+                "source_account": "account-a", "source_tree": "archive1",
+                "source_path": "same/path.jpg", "byte_size": 100,
+                "match_percent": 100, "field": "provider_modified_at",
+                "value": "2021-01-01T00:00:00Z", "source_version": "v1",
+            }
+            write_assertions(
+                metadata,
+                [
+                    {**common, "source_key": "snapshot-a", "snapshot_id": "scan-a", "quickxor": "qx-a"},
+                    {**common, "source_key": "snapshot-b", "snapshot_id": "scan-b", "quickxor": "qx-b"},
+                ],
+            )
+            with ManifestBuilder(root / "ledger.sqlite") as builder:
+                builder.ingest([inventory])
+                identities_before = builder.connection.execute(
+                    "SELECT content_id, identity_status FROM content_identity ORDER BY content_id"
+                ).fetchall()
+                result = builder.import_metadata_assertions([metadata])[0]
+                identities_after = builder.connection.execute(
+                    "SELECT content_id, identity_status FROM content_identity ORDER BY content_id"
+                ).fetchall()
+                self.assertEqual([tuple(row) for row in identities_before], [tuple(row) for row in identities_after])
+                self.assertEqual(result.assertion_count, 0)
+                self.assertEqual(result.held_record_count, 2)
+                staged = builder.connection.execute(
+                    """SELECT source_account, source_tree, snapshot_id, source_version,
+                              match_percent, quickxor_hint, disposition, raw_record
+                       FROM metadata_import_record ORDER BY line_number"""
+                ).fetchall()
+                self.assertEqual({row["disposition"] for row in staged}, {"held_quickxor_drift"})
+                self.assertEqual({row["snapshot_id"] for row in staged}, {"scan-a", "scan-b"})
+                self.assertEqual({row["quickxor_hint"] for row in staged}, {"qx-a", "qx-b"})
+                self.assertEqual(
+                    builder.connection.execute("SELECT count(*) FROM metadata_import_candidate").fetchone()[0],
+                    4,
+                )
+
+    def test_locator_metadata_binds_only_after_candidates_share_verified_sha256(self) -> None:
+        with TemporaryDirectory() as raw:
+            root = Path(raw)
+            builder, rows = self._two_occurrence_builder(
+                root, "Photos/a.jpg", "Recovery/recovered_1_a.jpg"
+            )
+            try:
+                metadata = root / "provider.ndjson"
+                write_assertions(
+                    metadata,
+                    [{
+                        "source_system": "provider", "source_table": "manifest",
+                        "source_key": "tree:path:v3", "source_account": "account-a",
+                        "source_tree": "tree-a", "snapshot_id": "snapshot-a",
+                        "source_version": "v3", "source_bucket": "raw",
+                        "source_path": "Photos/a.jpg", "byte_size": 100,
+                        "md5": "a" * 32, "match_percent": 100,
+                        "field": "camera_model", "value": "Pixel",
+                    }],
+                )
+                result = builder.import_metadata_assertions([metadata])[0]
+                self.assertEqual(result.bound_record_count, 1)
+                record = builder.connection.execute("SELECT * FROM metadata_import_record").fetchone()
+                self.assertEqual(record["disposition"], "bound_unique_verified_content")
+                self.assertEqual(record["source_account"], "account-a")
+                self.assertEqual(record["source_tree"], "tree-a")
+                self.assertEqual(record["snapshot_id"], "snapshot-a")
+                self.assertEqual(record["source_version"], "v3")
+                self.assertEqual(
+                    builder.connection.execute("SELECT count(*) FROM metadata_assertion").fetchone()[0],
+                    1,
+                )
+            finally:
+                builder.close()
+
+    def test_metadata_review_output_refuses_overwrite(self) -> None:
+        with TemporaryDirectory() as raw:
+            root = Path(raw)
+            builder, _ = self._two_occurrence_builder(root, "Photos/a.jpg", "Photos/b.jpg")
+            try:
+                builder.write_metadata_resolution(root / "review", resolved_at="2026-09-13T13:00:00Z")
+                with self.assertRaisesRegex(FileExistsError, "immutable output directory"):
+                    builder.write_metadata_resolution(root / "review", resolved_at="2026-09-13T14:00:00Z")
             finally:
                 builder.close()
 
@@ -313,11 +491,17 @@ class MetadataResolutionTests(unittest.TestCase):
                         "SELECT version FROM schema_version"
                     )
                 }
-                self.assertEqual(versions, {4, 5})
+                self.assertEqual(versions, {4, 6})
                 self.assertIsNotNone(
                     builder.connection.execute(
                         """SELECT 1 FROM sqlite_master
                            WHERE type = 'table' AND name = 'metadata_assertion'"""
+                    ).fetchone()
+                )
+                self.assertIsNotNone(
+                    builder.connection.execute(
+                        """SELECT 1 FROM sqlite_master
+                           WHERE type = 'table' AND name = 'metadata_import_record'"""
                     ).fetchone()
                 )
 

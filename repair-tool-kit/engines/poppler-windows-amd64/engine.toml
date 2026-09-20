@@ -1,0 +1,12 @@
+# Updated by: Codex (case-bible/mp-handoff-protocol) | Date: 2026-09-12 | Rev: 2 | Platform: Codex / win32 | Changes: Pin the versioned Poppler 26.07.0 runtime path | Context: The complete project-contained package preserves dependent DLLs and reproducible executable identity
+profile_id = "poppler-windows-amd64"
+engine_id = "poppler"
+lang = "cpp"
+os = "windows"
+architecture = "amd64"
+runtime = "engines/poppler-windows-amd64/poppler-26.07.0/Library/bin/pdftotext.exe"
+mode = "oneshot"
+capabilities = ["extract_text"]
+formats = ["pdf"]
+version_cmd = ["-v"]
+extraction_checks = ["symbol_glyph_count", "symbol_glyph_codepoint", "replacement_chars", "char_volume"]

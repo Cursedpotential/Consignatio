@@ -6,7 +6,7 @@ versioned; inventory rows are never discarded because a later snapshot repeats
 the same object.
 """
 
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 6
 
 SCHEMA_SQL = r"""
 PRAGMA foreign_keys = ON;
@@ -224,6 +224,69 @@ CREATE TABLE IF NOT EXISTS metadata_import_partition (
     row_count INTEGER NOT NULL CHECK (row_count >= 0),
     assertion_count INTEGER NOT NULL CHECK (assertion_count >= 0)
 );
+
+-- Every inbound metadata row is retained before binding.  Historical path,
+-- size, recovery labels, provider match percentages, MD5, and QuickXor are
+-- locator/candidate assertions only; none of them creates content identity.
+-- A row reaches ``metadata_assertion`` only after its candidate occurrences
+-- resolve to one already SHA-256-verified content group.
+CREATE TABLE IF NOT EXISTS metadata_import_record (
+    import_record_id TEXT PRIMARY KEY,
+    partition_id TEXT NOT NULL REFERENCES metadata_import_partition(partition_id),
+    line_number INTEGER NOT NULL CHECK (line_number > 0),
+    raw_sha256 TEXT NOT NULL CHECK (length(raw_sha256) = 64),
+    raw_record TEXT NOT NULL,
+    source_system TEXT,
+    source_table TEXT,
+    source_key TEXT,
+    source_account TEXT,
+    source_tree TEXT,
+    snapshot_id TEXT,
+    source_version TEXT,
+    explicit_occurrence_id TEXT,
+    source_bucket TEXT,
+    source_path TEXT,
+    source_filename TEXT,
+    byte_size INTEGER,
+    sha256_hint TEXT,
+    md5_hint TEXT,
+    quickxor_hint TEXT,
+    match_percent REAL,
+    identity_authority TEXT,
+    disposition TEXT NOT NULL CHECK (
+        disposition IN (
+            'staged', 'bound_explicit_occurrence', 'bound_verified_sha256',
+            'bound_unique_verified_content', 'held_blank_record',
+            'held_malformed_json', 'held_non_object', 'held_invalid_record',
+            'held_invalid_identity_hint', 'held_unmatched_occurrence',
+            'held_unverified_candidates', 'held_ambiguous_occurrence',
+            'held_quickxor_drift'
+        )
+    ),
+    selected_occurrence_id TEXT REFERENCES occurrence(occurrence_id),
+    detail_json TEXT NOT NULL,
+    asserted_at TEXT NOT NULL,
+    UNIQUE(partition_id, line_number)
+);
+
+CREATE INDEX IF NOT EXISTS metadata_import_record_disposition_idx
+ON metadata_import_record(partition_id, disposition);
+
+CREATE INDEX IF NOT EXISTS metadata_import_record_locator_idx
+ON metadata_import_record(source_bucket, source_path, byte_size);
+
+CREATE TABLE IF NOT EXISTS metadata_import_candidate (
+    import_record_id TEXT NOT NULL REFERENCES metadata_import_record(import_record_id),
+    occurrence_id TEXT NOT NULL REFERENCES occurrence(occurrence_id),
+    content_id TEXT REFERENCES content_identity(content_id),
+    identity_status TEXT,
+    match_basis TEXT NOT NULL,
+    selected INTEGER NOT NULL DEFAULT 0 CHECK (selected IN (0, 1)),
+    PRIMARY KEY(import_record_id, occurrence_id)
+);
+
+CREATE INDEX IF NOT EXISTS metadata_import_candidate_content_idx
+ON metadata_import_candidate(content_id, import_record_id);
 
 -- Resolution rows are immutable snapshots. A stable hash of the complete
 -- resolution makes regeneration idempotent; the current view selects the most
