@@ -288,10 +288,17 @@ The historical scope paths below do not supersede this location.
 
 ## Phase 10 — Remote sources
 
-- [ ] **CBX-P10-001** — Define common source adapter and checkpoint interface. **Path:** `sources/base.py`.
+- [ ] **CBX-P10-001** — Define common source adapter and checkpoint interface. **Path:** `sources/base.py`. **Amended 2026-09-13:** must include `census`, `capture`, `capture_forensic` and `verify` per the [capture/forensic spec](SOURCE-METADATA-CAPTURE-AND-FORENSIC-PACKAGE-SPEC.md) §5, identical for every provider.
 - [ ] **CBX-P10-002** — Harden local source around stable occurrence IDs, metadata, signature sampling, and safe path handling. **Path:** `sources/local.py`.
 - [ ] **CBX-P10-003** — Implement B2/S3 source using CocoIndex S3 connector, custom endpoint, scoped keys, object metadata, ETag/version/checkpoint, and prefix filters. **Path:** `sources/s3.py`.
-- [ ] **CBX-P10-004** — Implement Google Drive source with MIME filters, native Docs/Sheets/Slides representations, stable file IDs, metadata, and checkpoint. **Path:** `sources/google_drive.py`.
+- [ ] **CBX-P10-004** — Implement Google Drive source with MIME filters, native Docs/Sheets/Slides representations, stable file IDs, metadata, and checkpoint. **Path:** `sources/google_drive.py`. **Scope widened 2026-09-13 (owner):** it is the first implementation of the source metadata capture and forensic package feature. See [spec](SOURCE-METADATA-CAPTURE-AND-FORENSIC-PACKAGE-SPEC.md).
+- [ ] **CBX-P10-011** — Capability census from provider machine-readable schemas (Drive v3/Activity v2/Labels Discovery docs first); doubles as the field catalog. **Path:** `sources/census.py`.
+- [ ] **CBX-P10-012** — Mode A selective capture: field catalog, add/subtract selection, saved versioned profiles, pre-run estimate, append-only observations. **Path:** `sources/capture.py`.
+- [ ] **CBX-P10-013** — Mode B forensic package: full census capture, raw responses, every revision's bytes, all native export formats, local vs provider hash comparison, capture context, hashed manifest, immutable supplements. **Path:** `sources/forensic_package.py`.
+- [ ] **CBX-P10-014** — Completeness receipt: per-census-entry status, COMPLETE/PARTIAL rule, named gaps, `more_available` flag on re-census, Get-more supplement. **Path:** `sources/completeness.py`.
+- [ ] **CBX-P10-015** — Desktop: field catalog panel, profile manager, forensic-package action, completeness/gap view and Get-more action in Intake.
+- [ ] **CBX-P10-016** — Account-level provenance source: Google Data Portability API (myactivity, chrome, maps, youtube, play, nest, pixel, …) with census, per-group selection, sealed archive capture and completeness receipt. **Region-gated: EU/CH/UK only. US accounts are not eligible (verified from the help page 2026-09-14); confirm with `accessType.check`. Takeout is the fallback.** See [spec §7b](SOURCE-METADATA-CAPTURE-AND-FORENSIC-PACKAGE-SPEC.md). **Path:** `sources/google_data_portability.py`.
+- [ ] **CBX-P10-GATE-FORENSIC — GATE** — Acceptance per spec §9 on a real provider item (PARTIAL→COMPLETE via supplement, `verify()` tamper check, no source mutation or token leakage, test data purged).
 - [ ] **CBX-P10-005 — HOLD: auth decision** — Choose Drive service-account/delegated scope and document least privilege.
 - [ ] **CBX-P10-006** — Spike OneDrive/SharePoint Graph adapter using drive item IDs and delta links. **Path:** `sources/onedrive.py`.
 - [ ] **CBX-P10-007** — Validate Microsoft consumer OneDrive and business/SharePoint behavior separately; do not assume one delta behavior covers all account types.
@@ -351,7 +358,7 @@ The historical scope paths below do not supersede this location.
 - [ ] **CBX-DONE-006** — Weaviate and Surreal rebuild from the same lake manifest and reconcile IDs/counts/checkpoints.
 - [ ] **CBX-DONE-007** — Search covers text, whole sessions, code, PDFs, images, audio, and the approved subset of video with source-bearing results.
 - [ ] **CBX-DONE-008** — Provider/parser errors, partial results, retries, dead letters, costs, and run totals are visible and honest.
-- [ ] **CBX-DONE-009** — Copy/move workflow is dry-run first, approval-bound, checksum-verified, receipt-producing, atomic-unit aware, and never deletes sources automatically.
+- [ ] **CBX-DONE-009** — Copy/move workflow is dry-run first, approval-bound, checksum-verified, receipt-producing, atomic-unit aware, and never deletes sources automatically. *(Scope clarified 2026-09-14, Claude Code · Opus 5: this covers bulk relocation and lake-publication jobs. Interactive sorting in the Intake workspace is direct: the owner, or the agent on explicit request, deletes, moves, renames and groups immediately with no approval gate. Intake is pre-evidence.)*
 - [ ] **CBX-DONE-010** — Dated verification, recovery, cost, and operational receipts exist; limitations and held decisions remain explicit.
 
 ## Change log

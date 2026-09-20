@@ -197,7 +197,7 @@ do not report process/window existence as visual acceptance.
 ## Standing safeguards and deferred items
 
 All development storage on E:, mount caches on D: by explicit exception. No host
-reboot/shutdown/sleep/logoff. No permanent deletion. No cloud hydration as a side
+reboot/shutdown/sleep/logoff. No permanent deletion *(by build/dev agents — clarified 2026-09-14, Claude Code · Opus 5: this never limits the owner or the in-workspace agent acting on the owner's explicit request; Intake is a pre-evidence sorting application with full delete/move/rename/group)*. No cloud hydration as a side
 effect of tests, no local inference, no MemSearch/ccc/global-settings changes.
 Local mounts previously V:performance / Y:metadata, all R2 buckets consolidated.
 Performance launcher30GiB but earlier live mount50GiB; metadata10GiB. Do not restart

@@ -16,3 +16,7 @@
   successful jobs, provider results or deployment claims.
 - Finish with changed paths, test evidence and the next concrete test the owner
   can perform. These instructions are guardrails, not a guarantee of model behavior.
+
+## Project Conventions (applied via /reflect 2026-09-15)
+- Receipts, catalog exports, hash ledgers, zero-file lists and missing lists live in `docs/receipts/` (payloads gitignored; `.md/.py/.sql/.txt` tracked). Owner 2026-09-15 00:11 "under docs makes sense"; the old `E:\AI_Workspace\_receipts` is gone and the tools under `casebible/tools/` write here.
+- Where file-truth lives: PG `raw_duck` on ovh-files is the only complete catalog; `docs/receipts/` is its human-readable side; `docs/URGENT-TODO.md` is the only log. Do not create another index or README for this — extend the log's "2026-09-15" map instead.

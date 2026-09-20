@@ -117,3 +117,21 @@ casebible/tmpcheck.txt
 # Machine-generated session/runtime files preserved locally, never published.
 **/COMPACT-SUMMARY-*.md
 /version
+
+# --- docs/receipts: run receipts + catalog exports (moved here from E:/AI_Workspace/_receipts, owner GO 2026-09-15 00:11) ---
+# Findings (.md), tools (.py/.sql) and small summaries (.txt) are tracked; data payloads stay out of git.
+docs/receipts/**/*.json
+docs/receipts/**/*.jsonl
+docs/receipts/**/*.list
+docs/receipts/**/*.gz
+docs/receipts/**/*.v2
+docs/receipts/**/*.stdout
+
+# Private corpus path/name exports retained in receipts; summaries and tools remain tracked.
+/docs/receipts/corruption-hunt/quarantine/b2_move_files_from_raw.txt
+/docs/receipts/corruption-hunt/quarantine/b2_move_sample3.txt
+/docs/receipts/corruption-hunt/quarantine/b2_zero_relkeys.txt
+/docs/receipts/corruption-hunt/quarantine/gdrive_missing_names_filter.txt
+/docs/receipts/corruption-hunt/quarantine/gdrive_move_64_files_from_raw.txt
+/docs/receipts/corruption-hunt/quarantine/gdrive_move_files_from_raw.txt
+/docs/receipts/vault-twins-2026-09-16/vault_dirnames_depth4.txt

@@ -1,0 +1,3 @@
+root=J: files=454 GB=90.7 zero_length_files=0 ALL_ZERO_PAYLOAD_FILES=0 zero_GB=0.00 errors=0 secs=93
+all-zero by attribute: {}
+all-zero by top folder: []
