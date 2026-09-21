@@ -66,6 +66,9 @@ class Postgres:
     def rows(self, select):
         if not select.lstrip().upper().startswith("SELECT ") or ";" in select:
             raise ValueError("Only one SELECT is accepted")
+        # JSONB evidence receipts can exceed csv's 128 KiB default field limit.
+        # Keep an explicit bound rather than silently truncating a source record.
+        csv.field_size_limit(16 * 1024 * 1024)
         command = self.command()
         command[-1] = "bash -o pipefail -c " + shlex.quote(command[-1] + " | gzip -c")
         proc = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
@@ -113,7 +116,10 @@ class B2:
         allowed = self.auth.get("allowed", {})
         if allowed.get("namePrefix") or allowed.get("bucketName") not in (None, bucket):
             raise RuntimeError("Cannot certify full bucket inventory with restricted credentials")
-        self.bucket = next(b for b in self.call("b2_list_buckets", {"accountId": self.auth["accountId"]})["buckets"] if b["bucketName"] == bucket)
+        bucket_query = {"accountId": self.auth["accountId"]}
+        if allowed.get("bucketId"):
+            bucket_query["bucketId"] = allowed["bucketId"]
+        self.bucket = next(b for b in self.call("b2_list_buckets", bucket_query)["buckets"] if b["bucketName"] == bucket)
 
     @staticmethod
     def request(request):

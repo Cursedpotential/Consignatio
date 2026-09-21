@@ -18,7 +18,7 @@ def capture(root):
     directory='/data/consignatio/migrations/r2-to-b2/hash-ledger-partitions'
     proc=subprocess.Popen(['ssh','-o','BatchMode=yes','-o','StrictHostKeyChecking=yes','ovh-files-ts',
                            'sudo -n tar -C '+directory+' -cf - .'],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    actual={};expected={};counter=collections.Counter();algorithms=collections.Counter()
+    actual={};expected={};counter=collections.Counter();algorithms=collections.Counter();blank_lines=[]
     def rows():
         with tarfile.open(fileobj=proc.stdout,mode='r|') as archive:
             for member in archive:
@@ -32,7 +32,10 @@ def capture(root):
                     expected[name.removesuffix('.sha256')]=declared
                 elif name.endswith('.ndjson.gz'):
                     actual[name]=hashlib.sha256(data).hexdigest()
-                    for line in gzip.decompress(data).splitlines():
+                    for line_number,line in enumerate(gzip.decompress(data).splitlines(),1):
+                        if not line.strip():
+                            blank_lines.append({'partition':name,'line':line_number})
+                            continue
                         row=json.loads(line);counter[row.get('sourceBucket')]+=1;algorithms[row.get('algorithm')]+=1
                         yield {'ledger_partition':name,'ledger_partition_sha256':actual[name],'receipt':row}
         error=proc.stderr.read().decode('utf-8',errors='replace')
@@ -42,6 +45,7 @@ def capture(root):
     save_json(root/'capture.json',{'source_directory':directory,'records':count,'verified_partitions':len(actual),
               'source_buckets':dict(counter),'algorithms':dict(algorithms),'partition_sha256':actual,
               'artifact_sha256':sha256_file(root/'hash-ledger.parquet'),'claim_status':'historical_receipt_not_new_source_hash',
+              'blank_lines':blank_lines,
               'content_downloads':0,'source_mutations':0})
     emit('ledger_metadata_recovered',records=count,verified_partitions=len(actual),source_buckets=dict(counter))
 
