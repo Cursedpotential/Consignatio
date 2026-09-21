@@ -436,5 +436,96 @@ def tui(
     run_tui(_settings(source, output, source_id, require_source=False))
 
 
+# --- Image index (own app, state and collection; Byline: Claude Code · Fable 5.1 · 2026-09-21) ---
+
+@app.command("image-provision")
+def image_provision() -> None:
+    """Create the image collection (single + MaxSim named vectors) if it does not exist."""
+    import httpx
+
+    from .image_pipeline import ImageSettings
+    from .image_target import collection_schema
+
+    settings = ImageSettings.from_env()
+    if not settings.weaviate_url:
+        raise typer.BadParameter("INTAKE_IMAGES_WEAVIATE_URL is required")
+    key = get_secret("INTAKE_WEAVIATE_API_KEY")
+    headers = {"Authorization": f"Bearer {key}"} if key else {}
+    with httpx.Client(headers=headers, timeout=60.0) as client:
+        existing = client.get(f"{settings.weaviate_url}/v1/schema/{settings.collection}")
+        if existing.status_code == 200:
+            typer.echo(json.dumps({"collection": settings.collection, "created": False}))
+            return
+        created = client.post(
+            f"{settings.weaviate_url}/v1/schema", json=collection_schema(settings.collection)
+        )
+        created.raise_for_status()
+    typer.echo(json.dumps({"collection": settings.collection, "created": True}))
+
+
+@app.command("image-index")
+def image_index() -> None:
+    """Incrementally index images under INTAKE_IMAGES_SOURCE_DIR. Sources are never modified."""
+    import cocoindex as coco
+
+    from .image_pipeline import _settings as image_settings
+    from .image_pipeline import app as image_app
+
+    with coco.runtime():
+        image_app.update_blocking(report_to_stdout=True)
+    typer.echo((image_settings.state_dir / "last-run.json").read_text(encoding="utf-8"))
+
+
+@app.command("image-search")
+def image_search(
+    query: str,
+    limit: Annotated[int, typer.Option(min=1, max=50)] = 5,
+    maxsim: Annotated[
+        bool, typer.Option(help="Score with the Jina MaxSim vector, not the single vector")
+    ] = True,
+) -> None:
+    """Find images by a text question."""
+    import httpx
+
+    from .image_embedders import ImageEmbedders
+    from .image_pipeline import ImageSettings
+    from .image_target import MULTI_VECTOR, SINGLE_VECTOR
+
+    settings = ImageSettings.from_env()
+    key_name = "NVIDIA_API_KEY" if settings.single_provider == "nim" else "GOOGLE_API_KEY"
+    single_key = get_secret(key_name)
+    weaviate_key = get_secret("INTAKE_WEAVIATE_API_KEY")
+
+    async def run() -> list[dict]:
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            embedders = ImageEmbedders(
+                client, settings.single_provider, single_key or "", get_secret("JINA_API_KEY")
+            )
+            single, multi = await embedders.embed_query(query)
+            use_multi = maxsim and multi is not None
+            vector, target = (multi, MULTI_VECTOR) if use_multi else (single, SINGLE_VECTOR)
+            fields = (
+                "filename source_path original_time original_time_source device "
+                "is_screenshot ocr_text _additional { distance }"
+            )
+            active = "{path: [\"active\"], operator: Equal, valueBoolean: true}"
+            near = f"{{vector: {json.dumps(vector)}, targetVectors: [\"{target}\"]}}"
+            graphql = (
+                f"{{ Get {{ {settings.collection}(limit: {limit}, where: {active}, "
+                f"nearVector: {near}) {{ {fields} }} }} }}"
+            )
+            headers = {"Authorization": f"Bearer {weaviate_key}"} if weaviate_key else {}
+            response = await client.post(
+                f"{settings.weaviate_url}/v1/graphql", json={"query": graphql}, headers=headers
+            )
+            response.raise_for_status()
+            body = response.json()
+            if body.get("errors"):
+                raise RuntimeError(str(body["errors"])[:400])
+            return body["data"]["Get"][settings.collection]
+
+    typer.echo(json.dumps(asyncio.run(run()), indent=2))
+
+
 if __name__ == "__main__":
     app()

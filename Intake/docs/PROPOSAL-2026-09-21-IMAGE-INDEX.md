@@ -117,3 +117,25 @@ Build notes that follow from the probe: Weaviate accepts the multi-vector as a n
 existing `WeaviateObjectWriter` validates one flat vector for one collection, so the image index gets its own
 writer, target-provider id, collection and CocoIndex app name rather than widening the text one.
 
+## Build receipt — first slice (2026-09-21 ~13:10 UTC)
+
+New, separate CocoIndex v1 app in `Intake/backend/src/casebible_index/`: `image_pipeline.py` (app
+`IntakeImages_<hash>`, own state dir, own lock), `image_target.py` (own target-provider id
+`intake/images/weaviate/object`, named vectors `image_single` + multi-vector `image_maxsim`, retirement marks
+`active=false`), `image_embedders.py` (single vector `nim` or `google` by setting; Jina v4 MaxSim bag),
+`image_facts.py` (exiftool metadata, device, GPS, Tesseract **fallback** text — both binaries optional, absence is
+noted not guessed), `original_time.py` (vendored from the legal workdesk). CLI: `image-provision`, `image-index`,
+`image-search`. All settings are `INTAKE_IMAGES_*`; default MaxSim policy is `screenshots`.
+
+Run on four synthetic fixtures against the live Weaviate, collection `IntakeImageFixtureV1` (removed afterwards):
+4 indexed in 12 s, 3 with MaxSim bags (the screenshots), original time resolved from the device filename for all
+three screenshots; text search ranked the right screenshot first with MaxSim (-6.23 vs -4.11) and with the single
+vector; a second run reported `4 unchanged` (no re-embedding, no provider cost). The EXIF photo showed no original
+time only because exiftool is not installed on the desktop where the fixture ran.
+
+**Not built yet:** catalog/B2 source mode (this slice walks a directory), SurrealDB entity/metadata writes, PDF pages
+as images, faces, multi-vector compression, a home on ovh-files (image with exiftool + tesseract, detached run).
+**Not authorized yet:** any run over real files. Jina's terms are read and acceptable; NVIDIA's trial terms are silent
+on retention, so for evidence the single-vector provider should be Google on the paid tier unless the owner says
+otherwise.
+

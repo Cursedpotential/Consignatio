@@ -2281,3 +2281,28 @@ Created 16 missing-payload rows with raw/UTC/New York timestamps and source meta
 - Committed on owner order ("commit all of it, codex is out of usage"): Codex's `casebible/catalog_reconcile/` additions (`archive_analysis.py`, `compare_backup_iterations.py`, `preserve_archive.py`, `publish_backup_platform.py`, `test_backup_containment.py`, edits to `io_utils.py` and `recover_ledger.py`) and the two receipts `PRESERVATION-AND-CONTAINMENT.md`, `R2-RECOVERY.md`. Safety tests: 20 pass.
 - [ ] **Gap:** the script that created `raw_duck.missing_message_payloads_20260920` + view `catalog_reconcile.missing_message_payloads` (16 rows) was run inline by Codex and is in no tracked file. It exists verbatim in the transcript source rollout (2026-09-20T21:27:47Z). Needs a tracked dated script here; `payload_id = sha256(json.dumps([backup_sha256, mms_attributes, part_attributes], sort_keys=True))`.
 - The ingestion-side parser fix and the remaining steps (record Activity, check status, candidates/resolutions, display) are logged once, in Probata: `modules/Probata/probata/docs/planning/2026-09-20-TODO.md` (20:30–21:05 entry).
+
+## 2026-09-21 08:11 EDT — Level-2 scaffold deployed to the B2 vault top level (owner 08:04: "top level deploy this structure")
+
+> _Byline: Claude Code · Fable 5.1 · 2026-09-21_
+
+- Design: `LEVEL-2-ARCHITECTURE.md` at the Consignatio root (owner's file, planning revision 2026-09-21, sha256 `9289ed44…`). Generator: `casebible/tools/vault_level2_scaffold_20260921.py` (parses the design's tables; writes nothing to B2).
+- Deployed to `b2:salem-data/consignatio/vault/v1/`, next to the existing holding folders: **127 new objects, 118 KiB**, `rclone copy --ignore-existing`, no deletes, no overwrites. Verified: `rclone check --one-way` 127 matching / 0 differences; design doc SHA-1 identical local and remote; one file read back from B2.
+  - Per domain (9): `INDEX.md`, `Dashboard.md` (says **not connected**, no counts), `AGENTS.md` (descriptive only), `MANIFEST.json` (planning-only descriptor), `_Incoming/.keep` (same marker form as the 2026-07-11 `Recovered/.keep`).
+  - Per Level-2 section (79) and per `DerivedKnowledge/messaging/` subsection (6): `INDEX.md` with Populated by / Contents / Boundary from the design.
+  - The design doc itself at the vault root so `[[LEVEL-2-ARCHITECTURE]]` links resolve.
+- Two sections keep their existing folder spelling instead of getting a second folder beside them: `KnowledgeBase/AI_Chats/` (design: `ai-chats/`) and `Code/AI-Platform/` (design: `ai-platform/`; a case-only twin breaks case-insensitive mounts). Each `INDEX.md` says so. A rename on B2 is copy + delete of every object under it, not done.
+- [ ] **OPEN, owner's pick:** `Triage/` still has four envelope files from the April "Inbox" model (`INDEX.md` 04-27, `MANIFEST.json` 04-27, `AGENTS.md` 04-29, `Dashboard.md` 04-30; they describe `New Evidence` / `New Context` / `New Legal` / `New Research`). They were left untouched, so Triage is the one domain without the new envelope. **A (default)** move the four to `Triage/.to_be_deleted/2026-09-21-inbox-era-envelope/` and upload the new four · **B** leave as is.
+- Not done: no content was moved or sorted, nothing bound to the catalog, and the 127 objects are not yet in a `raw_duck` vault listing (next listing refresh picks them up).
+
+## 2026-09-21 09:15 EDT — Intake image index: first slice built and proven on synthetic fixtures (Claude Code · Fable 5.1)
+
+Owner 05:52 / 08:04 EDT: borrow the CocoIndex image examples; Weaviate MaxSim for vectors, SurrealDB for entities and
+metadata, cheap hosted embedder, Tesseract fallback; option **C** (single vector for everything + Jina MaxSim for
+screenshots/documents); "could also use google". Design, live provider probes, build receipt and what is not built
+yet: `Intake/docs/PROPOSAL-2026-09-21-IMAGE-INDEX.md`. Code: `Intake/backend/src/casebible_index/image_*.py`,
+`original_time.py`, CLI `image-provision` / `image-index` / `image-search`.
+
+- [ ] Owner go for the first real run (20 files, then the 14,948 named screenshots) and the single-vector provider
+      for evidence (NVIDIA trial terms are silent on retention; Google paid tier is the documented-safe option).
+- [ ] Catalog/B2 source mode, SurrealDB writes, a home on ovh-files with exiftool + tesseract, multi-vector compression.
