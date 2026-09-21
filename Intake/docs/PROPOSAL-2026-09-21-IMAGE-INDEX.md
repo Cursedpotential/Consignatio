@@ -1,7 +1,7 @@
 ---
 title: Image and screenshot index for Intake — proposal with live probe results
 date: 2026-09-21
-status: proposal — owner picks the embedder and the first run size
+status: embedder decided (owner 2026-09-21 08:04 EDT: option C); build in progress
 tags: [intake, cocoindex, weaviate, surrealdb, maxsim, colpali, jina, ocr, tesseract, screenshots, images, faces, proposal]
 ---
 
@@ -84,3 +84,36 @@ One CocoIndex v1 app beside the text indexer, reading the same catalog source:
 2. **Before any evidence image leaves the servers:** confirm the chosen provider's retention/training terms from its
    own page. Not done yet.
 3. **First run.** 20-file proof → the 14,948 named screenshots → wider sets only after storage compression is on.
+
+## Owner decision — 2026-09-21 08:04 EDT: **C**
+
+Single-vector embedding for every image, plus Jina multi-vector (MaxSim) for screenshots and documents. Owner added
+08:04: "could also use google". The single-vector provider is therefore a setting, not a constant.
+
+## Added probe — Google (same synthetic screenshot, 2026-09-21 ~12:10 UTC)
+
+| Model | Result | Vector | Cost signal | Latency |
+|---|---|---|---|---|
+| Google `gemini-embedding-2` (Gemini API, `GOOGLE_API_KEY`) | works with `inline_data` image parts | 3072, single | **258 tokens per image**; has `asyncBatchEmbedContent` | 0.6 s |
+| Google `gemini-embedding-001` | text only ("The text content is empty") | — | — | — |
+
+The four `GEMINI_API_KEY*` values in `~/.secrets/Agno-MCP-Platform.env` are rejected by the API (invalid key /
+wrong credential type); only `GOOGLE_API_KEY` works. Privacy note to settle before evidence is sent: Google states
+that unpaid Gemini API usage may be used to improve its products; the paid tier is the one to use for evidence.
+Jina's own terms (jina.ai/legal, read 2026-09-21): it does not use customer inputs to train models, stores inputs
+only as needed to provide the service, and the Elastic DPA applies. NVIDIA's hosted-API data terms: not yet read.
+
+## End-to-end proof on the live Weaviate (2026-09-21 ~12:20 UTC, synthetic images, probe collection removed after)
+
+Collection with two named vectors, both `vectorizer: none`: `image_single` (hnsw, cosine) and `image_maxsim`
+(hnsw, cosine, `multivector.enabled: true`). Three synthetic chat screenshots inserted with a Jina v4 multi-vector
+(752 × 128 each; 22,230 tokens for the three) and a NIM `llama-nemotron-embed-vl-1b-v2` vector (2048). Three text
+questions ("what time is pickup on Friday", "how much were the soccer fees", "dentist appointment day"), each
+embedded as a query (Jina `retrieval.query` multi-vector; NIM `input_type: query`) and searched with `nearVector` +
+`targetVectors`: **both vectors ranked the right screenshot first for all three questions**, with no OCR involved.
+MaxSim margins were wider (e.g. -6.21 vs -4.09) than the single-vector margins (0.59 vs 0.94).
+
+Build notes that follow from the probe: Weaviate accepts the multi-vector as a nested list under `vectors`; the
+existing `WeaviateObjectWriter` validates one flat vector for one collection, so the image index gets its own
+writer, target-provider id, collection and CocoIndex app name rather than widening the text one.
+
