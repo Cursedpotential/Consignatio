@@ -2251,3 +2251,24 @@ Preserved the 13 modified and 207 untracked paths plus the original index under 
 ### 2026-09-20 — Consignatio linked-worktree source consolidation
 
 Merged `chat-dirs-index-20260918` (also containing `ai-chats-narratives-20260918`) and `codex/r2-b2-best-copy-20260913`. Preserved and integrated 15 staged AI-chat source files and 11 best-copy working files; both versions of the status history remain. Copied 49 repair-tool-kit source/config/documentation/test files from local source commit `cfe951a195611c2317caea2d9582e6a31a4259a6` plus its 18 working changes, without merging unrelated corpus ancestry. The original buildkit README and other planning documents remain. Snapshots and path/hash manifests are under `to_be_deleted/git-consolidation-20260920/worktree-snapshots/` and `worktree-integration.json`. Validation: all 49 best-copy tests and Go CLI/config/engine package tests pass; 20 Python files parse; bounded source and outgoing-history secret scans report no leaks. Chat SQL/live loaders were not executed against data. Worktrees remain preserved for coordinated retirement.
+
+
+### 2026-09-20 — R2 carved-file search and verified messaging recovery (Codex)
+
+Recovered and fully parsed December 6 original XML from R2 quarantine: 2,135 SMS + 9,541 MMS, all 1,969 readable January SMS match every attribute, 166 additional SMS. All 553 embedded payloads validate as Base64; 16 image parts lack payloads and remain targeted recovery gaps. Ten sampled large carved TXT files contain MMS XML. Exact January backup remains unresolved; live filename coverage is tracked per bucket, not inferred from catalog misses. Owner workflow: cross-source filename/variant search, carved-content expansion, metadata-first candidate selection, unchanged acquisition, format/record/payload checks, provenance-aware BAS/complement selection. See [R2 recovery receipt](receipts/source-recovery-2026-09-20/R2-RECOVERY.md). Docstore sync pending connector availability.
+
+Final R2 coverage for this entry: all nine accessible buckets successfully listed; no exact January SMS filename, four call paths; 648 large TXT/XML objects (405 recovery-path hints). Renamed/archived content remains separately unresolved.
+
+
+### 2026-09-20 — Payload worklist, exact backup containment and R2 preservation (Codex)
+
+Created 16 missing-payload rows with raw/UTC/New York timestamps and source metadata. Published four backup manifests, 11,678 exact message fingerprints, 46,207 message occurrences and three containment comparisons. December 3/4 are exact record subsets of December 6; November has two distinct MMS records and remains complementary. All 648 large R2 TXT/XML candidate occurrences now map to B2: 646 existing, two represented by one new verified 3.84MB derived fixture. Six retention tests passed; database readback verified. Preserve all artifacts for future platform use; B2 archive completion is tracked separately. Full R2 bucket retirement remains outside this verified candidate batch. See [preservation and containment](receipts/source-recovery-2026-09-20/PRESERVATION-AND-CONTAINMENT.md).
+
+## 2026-09-20 — old `casebible-catalog` skill retired; `cb-catalog` vs the PG catalog is OPEN
+
+> _Byline: Claude Code · Fable 5.1 · 2026-09-20 20:40 EDT_
+
+- Owner 20:15 "i assume this is no good anymore" · 20:32 "i guess or do we link it to the full pgcatalog ran by intake".
+- Done: the standalone `~/.claude/local-plugins/casebible-catalog` (R2 → private DuckDB file; its DB `E:\AI_Workspace\casebible\casebible.duckdb` no longer exists) moved whole, 2,626 entries, into `~/.claude/local-plugins/to_be_deleted/2026-09-20-casebible-catalog-standalone/`. Its `cbcat` (2026-08-08: `--fast-list`, `CBCAT_NO_HASH`, no `source` of the secrets file) was newer than both copies in the `case-bible` plugin (07-16 and 06-23) and a superset of their subcommands, so it was copied over `skills/cb-catalog/cbcat` and `tools/cbcat`; the old copies sit beside them as `cbcat.bak-20260920-pre-0808-sync`.
+- Finding: the plugin's `cb-catalog` skill is still 100 % R2 listing + a private DuckDB file (default `D:\casebible\casebible.duckdb`, absent) and never touches `raw_duck`. That is the private copy of the truth the 2026-09-16 catalog rule forbids.
+- [ ] OPEN, owner's pick (default B): **A** leave it as an R2-only lister until R2 retires · **B** repoint its read side (`compare`, `stats`, `query`) at PG `casebible.raw_duck` so "is this already in the corpus?" is a hash/size join against the catalog Intake reads, and `ingest` loads listings into PG through a tracked SQL script instead of the DuckDB file · **C** retire the skill and answer that question only through Intake. Not verified: whether Intake exposes a lookup endpoint, or whether B should connect to PG directly with a read-only role.
