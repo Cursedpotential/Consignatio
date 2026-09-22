@@ -5,9 +5,11 @@
 # binds 0.0.0.0:8765 inside the container; the compose file publishes it on the tailnet
 # address only, never on a public interface.
 #
-# Tesseract is NOT installed: the image lane (INTAKE_IMAGES_*) is a separate app with its
-# own collection and is not part of this service's text index. Adding OCR here would put a
-# ~200 MB dependency in an image that does not call it.
+# The image lane (`image-provision` / `image-index` / `image-search`, collection
+# `IntakeImageV1`) is a SEPARATE CocoIndex app in the same package, with its own app name,
+# state directory, lock and Weaviate collection. It is not folded into the text app and must
+# not be. Its two native tools — exiftool and tesseract — are installed here so that app can
+# be run from this image later without a second build (owner relay 2026-09-22 10:40).
 
 FROM ghcr.io/astral-sh/uv:0.9.7-python3.12-bookworm-slim
 
@@ -16,6 +18,10 @@ ENV UV_COMPILE_BYTECODE=1 \
     UV_PYTHON_DOWNLOADS=never \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
+
+RUN apt-get update \
+    && apt-get install --no-install-recommends --yes libimage-exiftool-perl tesseract-ocr \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
