@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import sys
 from collections.abc import AsyncIterator
 from contextlib import AsyncExitStack, asynccontextmanager
 from datetime import UTC, datetime
@@ -560,6 +561,14 @@ async def coco_lifespan(builder: coco.EnvironmentBuilder) -> AsyncIterator[None]
 
         async def observe_failure(exc: BaseException, context: coco.ExceptionContext) -> None:
             status.failure_events += 1
+            # "Index run did not finish cleanly" with no reason cost this build several
+            # blind rounds. The failure type and a bounded message go to stderr; provider
+            # errors carry no corpus text (Claude Code · Opus 5 · 2026-09-22).
+            print(
+                f"[superindex] failure {status.failure_events}: "
+                f"{type(exc).__name__}: {str(exc)[:400]}",
+                file=sys.stderr, flush=True,
+            )
             if status.failure_events == 1 or status.failure_events % 25 == 0:
                 status.save(_settings.output_dir, "running_with_errors")
 
