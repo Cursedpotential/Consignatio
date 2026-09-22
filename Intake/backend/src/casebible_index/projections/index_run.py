@@ -40,7 +40,11 @@ def _documents(output_dir: Path, snapshot: Path) -> list[dict[str, Any]]:
                    d.relative_path, COALESCE(d.vault_key, '') AS vault_key,
                    COALESCE(d.resolution, 'unknown') AS resolution,
                    d.filename, d.byte_size, d.content_sha256, d.index_status,
-                   d.chunk_count, d.indexed_at
+                   d.chunk_count,
+                   -- As text: DuckDB converts a tz-aware timestamp to Python through
+                   -- pytz, which this service's image does not carry, and the whole
+                   -- projection failed on it (Claude Code · Opus 5 · 2026-09-22).
+                   strftime(d.indexed_at, '%Y-%m-%dT%H:%M:%S+00:00') AS indexed_at
             FROM read_parquet('{documents_glob}', union_by_name = true) d
             JOIN read_parquet('{snapshot.as_posix()}') s
               USING (document_id, version_id, artifact_id)
@@ -110,7 +114,7 @@ async def project_index_run(
                 "path_normalized": path,
                 "basename": PurePosixPath(path).name,
                 "size_bytes": int(row["byte_size"] or 0),
-                "observed_at": row["indexed_at"],
+                "observed_at": datetime.fromisoformat(str(row["indexed_at"])),
                 "metadata": {
                     "document_id": row["document_id"],
                     "version_id": row["version_id"],
