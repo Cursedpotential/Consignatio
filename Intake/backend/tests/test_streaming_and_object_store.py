@@ -126,3 +126,17 @@ def test_a_moved_vault_object_keeps_its_identity():
     other = VaultFile(CatalogObject(key="consignatio/vault/v1/inbox/a.txt", byte_size=13,
                                     sha1="0" * 40))
     assert vault_document_id("vault", other.identity) != ids[0]
+
+
+def test_an_unsplittable_record_is_wrapped_not_refused():
+    """A minified JSON record has no separator; the splitter returns it whole and the
+    embedding provider rejects it with a 400. Streaming everything means cutting it."""
+    from casebible_index.pipeline import ChunkAccumulator
+
+    accumulator = ChunkAccumulator(chunk_size=2400, chunk_overlap=300)
+    blob = "x" * 341_373  # the real worst case in the vault's 61 MB conversations.json
+    chunks = accumulator.feed(blob) + accumulator.finish()
+    assert chunks, "an unsplittable record must still produce chunks"
+    assert max(len(chunk.text) for chunk in chunks) <= 2400
+    assert sum(len(chunk.text) for chunk in chunks) >= len(blob)
+    assert [chunk.ordinal for chunk in chunks] == list(range(len(chunks)))

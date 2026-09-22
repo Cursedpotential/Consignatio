@@ -95,6 +95,33 @@ class ChunkAccumulator:
         self._offset = 0
         self._ordinal = 0
 
+    def _emit(self, text: str, offset: int) -> list[TextChunk]:
+        """Emit one split as chunks, hard-wrapping it if it has no separator to split on.
+
+        A minified JSON record or a single very long line comes back from the recursive
+        splitter as ONE part far larger than ``chunk_size`` — a 341,373-character chunk in
+        the vault's 61 MB conversations.json — and the embedding provider rejects it with a
+        400. Streaming everything means never refusing such a record: it is cut on size,
+        with the same overlap. Byline: Claude Code · Opus 5 · 2026-09-22.
+        """
+        chunks: list[TextChunk] = []
+        if len(text) <= self.chunk_size:
+            chunks.append(TextChunk(self._ordinal, offset, offset + len(text), text))
+            self._ordinal += 1
+            return chunks
+        step = max(self.chunk_size - self.chunk_overlap, 1)
+        for start in range(0, len(text), step):
+            part = text[start:start + self.chunk_size]
+            if not part:
+                break
+            chunks.append(
+                TextChunk(self._ordinal, offset + start, offset + start + len(part), part)
+            )
+            self._ordinal += 1
+            if start + self.chunk_size >= len(text):
+                break
+        return chunks
+
     def feed(self, piece: str) -> list[TextChunk]:
         text = self._carry + ("\n" if self._carry else "") + piece
         parts = _splitter.split(
@@ -108,29 +135,21 @@ class ChunkAccumulator:
         emit, self._carry = list(parts[:-1]), parts[-1].text
         chunks: list[TextChunk] = []
         for part in emit:
-            chunk = TextChunk(
-                ordinal=self._ordinal,
-                start=self._offset + part.start.char_offset,
-                end=self._offset + part.end.char_offset,
-                text=part.text,
-            )
-            self._ordinal += 1
-            chunks.append(chunk)
+            chunks.extend(self._emit(part.text, self._offset + part.start.char_offset))
+        # A carry that can never be split further would grow without bound; cut it now.
+        if len(self._carry) > self.chunk_size * 4:
+            carried, self._carry = self._carry, ""
+            chunks.extend(self._emit(carried, self._offset + len(text) - len(carried)))
+            self._offset += len(text)
+            return chunks
         self._offset += max(len(text) - len(self._carry), 0)
         return chunks
 
     def finish(self) -> list[TextChunk]:
         if not self._carry.strip():
             return []
-        chunk = TextChunk(
-            ordinal=self._ordinal,
-            start=self._offset,
-            end=self._offset + len(self._carry),
-            text=self._carry,
-        )
-        self._ordinal += 1
-        self._carry = ""
-        return [chunk]
+        carried, self._carry = self._carry, ""
+        return self._emit(carried, self._offset)
 
     @property
     def count(self) -> int:
