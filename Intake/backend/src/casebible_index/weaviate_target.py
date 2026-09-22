@@ -44,8 +44,8 @@ class WeaviateObjectWriter:
         response.raise_for_status()
         schema = response.json()
         properties = {item["name"]: item["dataType"] for item in schema.get("properties", [])}
-        for name in ("source_id", "source_path", "document_id", "chunk_id", "filename", "text",
-                     "embed_model"):
+        for name in ("source_id", "source_path", "vault_key", "resolution", "document_id",
+                     "chunk_id", "filename", "text", "embed_model"):
             if properties.get(name) != ["text"]:
                 raise ValueError(f"Filesystem collection missing text property: {name}")
         if properties.get("active") != ["boolean"]:

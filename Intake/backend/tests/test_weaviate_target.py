@@ -1,16 +1,12 @@
 import json
-from datetime import datetime
 from pathlib import Path
 from uuid import uuid4
 
 import cocoindex as coco
 import httpx
 import pytest
-from cocoindex.connectors import localfs
-from cocoindex.resources.file import FileMetadata
 
 from casebible_index.filesystem_search import WeaviateSearchConfig
-from casebible_index.pipeline import BoundedLocalFile, read_bounded
 from casebible_index.weaviate_target import (
     WEAVIATE_WRITER,
     ObjectAction,
@@ -79,50 +75,6 @@ async def test_failed_write_propagates_for_coco_retry():
         with pytest.raises(RuntimeError, match="retryable") as exc:
             await WeaviateObjectWriter(config, client).apply(ObjectAction(KEY, SPEC))
         assert "sensitive" not in str(exc.value)
-
-
-class FakeFile:
-    def __init__(self, size, content):
-        self.reported = size
-        self.content = content
-        self.read_sizes = []
-
-    async def size(self):
-        return self.reported
-
-    async def read(self, size):
-        self.read_sizes.append(size)
-        return self.content[:size]
-
-
-@pytest.mark.asyncio
-async def test_size_limit_checks_before_read_and_caps_growth():
-    oversized = FakeFile(1000, b"unexpected")
-    with pytest.raises(ValueError, match="exceeds"):
-        await read_bounded(oversized, 10)
-    assert oversized.read_sizes == []
-    growing = FakeFile(2, b"x" * 1000)
-    with pytest.raises(ValueError, match="grew"):
-        await read_bounded(growing, 10)
-    assert growing.read_sizes == [11]
-    exact = FakeFile(10, b"x" * 10)
-    assert await read_bounded(exact, 10) == b"x" * 10
-
-
-@pytest.mark.asyncio
-async def test_coco_fingerprint_is_bounded_before_processor_runs(monkeypatch):
-    reads = []
-
-    async def unexpected_read(self, size=-1):
-        reads.append(size)
-        return b"x" * size
-
-    monkeypatch.setattr(localfs.File, "_read_impl", unexpected_read)
-    file = BoundedLocalFile(localfs.FilePath(path=Path("E:/synthetic-not-read")), 10)
-    file._metadata = FileMetadata(size=1000, modified_time=datetime(2026, 1, 1))
-    with pytest.raises(ValueError, match="before fingerprint"):
-        await file.content_fingerprint()
-    assert reads == []
 
 
 @coco.fn

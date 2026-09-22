@@ -190,9 +190,26 @@ def index(
     with_inventory: Annotated[
         bool, typer.Option(help="Also create a path-only inventory and atomic candidates")
     ] = False,
+    limit: Annotated[
+        int | None,
+        typer.Option(min=1, help="Catalog mode: index at most N objects (bounded first run)"),
+    ] = None,
+    path_prefix: Annotated[
+        str | None, typer.Option(help="Catalog mode: only keys starting with this prefix")
+    ] = None,
+    project_graph: Annotated[
+        bool, typer.Option(help="Project the run into the Surreal file graph (default on)")
+    ] = True,
 ) -> None:
     """Incrementally index supported text documents and write an active snapshot."""
 
+    # Bounded-run controls must reach the pipeline module's import-time settings.
+    # Byline: Claude Code · Opus 5 · 2026-09-22.
+    if limit is not None:
+        os.environ["INTAKE_CATALOG_LIMIT"] = str(limit)
+    if path_prefix is not None:
+        os.environ["INTAKE_CATALOG_PATH_PREFIX"] = path_prefix
+    # Settings.validate() already waives the source directory in catalog mode.
     settings = _settings(source, output, source_id)
     # Import only after CLI overrides are reflected in the environment.
     import cocoindex as coco
@@ -202,6 +219,11 @@ def index(
 
     # Programmatic callers own runtime teardown, unlike the CocoIndex CLI.
     # Closing it flushes the lifespan's final receipt and releases source locks.
+    try:
+        from .pipeline import READ_COUNTERS
+    except ImportError:  # a caller that supplies its own pipeline module (tests)
+        READ_COUNTERS = None
+
     with coco.runtime():
         index_app.update_blocking(report_to_stdout=True)
     run_status = latest_run_status(settings.output_dir)
@@ -218,8 +240,40 @@ def index(
         "embedding_model": settings.embed_model,
         "summary_model": settings.summary_model,
         "embedding_dimensions": settings.embed_dimensions,
+        "source_mode": getattr(settings, "source_mode", "filesystem"),
+        "catalog_limit": getattr(settings, "catalog_limit", 0),
+        "catalog_path_prefix": getattr(settings, "catalog_path_prefix", ""),
+        "run_status": run_status,
         "source_bytes_modified": False,
+        **(READ_COUNTERS.snapshot() if READ_COUNTERS is not None else {}),
     }
+    catalog_mode = getattr(settings, "source_mode", "filesystem") == "catalog"
+    if project_graph:
+        # Audit item I-6: the file graph is fed by every run, never a separate manual pass.
+        from .projections.index_run import project_index_run
+        from .projections.runtime import connect_graph
+
+        scheme = getattr(settings, "object_store_scheme", "b2")
+        bucket = getattr(settings, "vault_bucket", "")
+        locator = (
+            f"{scheme}://{bucket}/" if catalog_mode else Path(settings.source_dir).as_uri()
+        )
+
+        async def project() -> dict:
+            async with await connect_graph() as graph:
+                return await project_index_run(
+                    graph,
+                    output_dir=settings.output_dir,
+                    snapshot=snapshot,
+                    source_id=settings.source_id,
+                    root_locator=locator,
+                    store_kind="object_store" if catalog_mode else "filesystem",
+                )
+
+        try:
+            receipt["graph"] = asyncio.run(project())
+        except Exception as exc:  # noqa: BLE001 - a graph outage must not lose the index run
+            receipt["graph"] = {"status": "failed", "error": type(exc).__name__}
     if with_inventory:
         inventory_result = write_inventory(settings)
         atomic_result = detect_atomic_units(settings, inventory_result.path)

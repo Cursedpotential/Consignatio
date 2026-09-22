@@ -106,6 +106,9 @@ class SearchHit(BaseModel):
     version_id: str
     chunk_id: str
     relative_path: str
+    # Vault identity (Claude Code · Opus 5 · 2026-09-22; audit item I-8).
+    vault_key: str = ""
+    resolution: str = "unknown"
     filename: str
     document_type: str
     document_date: str | None

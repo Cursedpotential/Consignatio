@@ -21,6 +21,18 @@ def stable_document_id(source_id: str, relative_path: str) -> str:
     return str(uuid5(NAMESPACE_URL, f"casebible:{source_id}:{relative_path.casefold()}"))
 
 
+def vault_version_id(
+    document_id: str, identity: str, *, embed_model: str, summary_model: str
+) -> str:
+    """Version identity for a catalog object.
+
+    The catalog's recorded SHA-1 is the content identity (``identity``), so the version
+    is known before a single byte is fetched. Byline: Claude Code · Opus 5 · 2026-09-22.
+    """
+    value = "|".join([document_id, identity, embed_model, summary_model, SCHEMA_VERSION])
+    return str(uuid5(NAMESPACE_URL, value))
+
+
 def logical_version_id(
     document_id: str,
     source: SourceMetadata,
@@ -67,6 +79,11 @@ def document_schema() -> pa.Schema:
             ("artifact_id", pa.string()),
             ("source_id", pa.string()),
             ("relative_path", pa.string()),
+            # Vault identity (Claude Code · Opus 5 · 2026-09-22): the B2 object key and the
+            # catalog's resolution, so a hit can be opened from the vault, not a desktop.
+            ("vault_key", pa.string()),
+            ("resolution", pa.string()),
+            ("member_path", pa.string()),
             ("filename", pa.string()),
             ("extension", pa.string()),
             ("media_type", pa.string()),
@@ -122,6 +139,9 @@ def chunk_schema(dimensions: int) -> pa.Schema:
             ("chunk_id", pa.string()),
             ("source_id", pa.string()),
             ("relative_path", pa.string()),
+            ("vault_key", pa.string()),
+            ("resolution", pa.string()),
+            ("member_path", pa.string()),
             ("filename", pa.string()),
             ("document_type", pa.string()),
             ("document_date", pa.string()),
@@ -134,6 +154,9 @@ def chunk_schema(dimensions: int) -> pa.Schema:
             ("text_sha256", pa.string()),
             ("token_estimate", pa.int32()),
             ("embedding", pa.list_(pa.float32(), dimensions)),
+            # "ok" or "pending": a run may extract and chunk with embeddings deferred
+            # (Claude Code · Opus 5 · 2026-09-22) when the embedding provider is unavailable.
+            ("embedding_status", pa.string()),
             ("embedding_model", pa.string()),
             ("schema_version", pa.string()),
             ("indexed_at", _timestamp_type()),
@@ -156,6 +179,9 @@ def tables_for_document(
     summary_model: str,
     dimensions: int,
     indexed_at: datetime | None = None,
+    vault_key: str = "",
+    resolution: str = "local",
+    member_path: str = "",
 ) -> tuple[str, str, pa.Table, pa.Table]:
     if len(chunks) != len(embeddings):
         raise ValueError("Every chunk must have exactly one embedding")
@@ -174,6 +200,9 @@ def tables_for_document(
         "artifact_id": artifact,
         "source_id": source_id,
         "relative_path": source.relative_path,
+        "vault_key": vault_key,
+        "resolution": resolution,
+        "member_path": member_path,
         "filename": source.filename,
         "extension": source.extension,
         "media_type": extracted.media_type,
@@ -226,6 +255,9 @@ def tables_for_document(
                 "chunk_id": str(uuid5(NAMESPACE_URL, f"{version_id}:{chunk.ordinal}:{chunk_hash}")),
                 "source_id": source_id,
                 "relative_path": source.relative_path,
+                "vault_key": vault_key,
+                "resolution": resolution,
+                "member_path": member_path,
                 "filename": source.filename,
                 "document_type": enrichment.document_type,
                 "document_date": enrichment.document_date,
@@ -238,6 +270,7 @@ def tables_for_document(
                 "text_sha256": chunk_hash,
                 "token_estimate": max(1, len(chunk.text) // 4),
                 "embedding": list(embedding),
+                "embedding_status": "ok" if any(embedding) else "pending",
                 "embedding_model": embed_model,
                 "schema_version": SCHEMA_VERSION,
                 "indexed_at": now,
@@ -295,6 +328,38 @@ def write_document_bundle(
     write_immutable(document_path, parquet_bytes(document_table))
     write_immutable(chunk_path, parquet_bytes(chunk_table))
     return document_path, chunk_path
+
+
+def chunk_rows_table(rows: list[dict[str, Any]], dimensions: int) -> pa.Table:
+    """Build one chunk shard from already-assembled rows (streaming writer)."""
+    return pa.Table.from_pylist(rows, schema=chunk_schema(dimensions))
+
+
+def document_row_table(row: dict[str, Any]) -> pa.Table:
+    return pa.Table.from_pylist([row], schema=document_schema())
+
+
+def write_chunk_shard(
+    output_dir: Path, *, document_id: str, version_id: str, artifact: str, part: int,
+    table: pa.Table,
+) -> Path:
+    """Write one chunk part. A large object produces many parts, never one huge table.
+
+    Byline: Claude Code · Opus 5 · 2026-09-22.
+    """
+    stem = f"{document_id}--{version_id}--{artifact[:16]}--p{part:05d}"
+    path = output_dir / "datasets" / "chunks" / f"{stem}.parquet"
+    write_immutable(path, parquet_bytes(table))
+    return path
+
+
+def write_document_row(
+    output_dir: Path, *, document_id: str, version_id: str, artifact: str, table: pa.Table,
+) -> Path:
+    stem = f"{document_id}--{version_id}--{artifact[:16]}"
+    path = output_dir / "datasets" / "documents" / f"{stem}.parquet"
+    write_immutable(path, parquet_bytes(table))
+    return path
 
 
 def write_json_immutable(path: Path, value: dict[str, Any]) -> None:

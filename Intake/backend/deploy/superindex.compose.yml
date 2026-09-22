@@ -1,0 +1,59 @@
+# Coco super index service on ovh-files (Coolify).
+# Byline: Claude Code · Opus 5 · 2026-09-22
+#
+# Bind-mounts, never named volumes (owner standing preference). The API is published on
+# the tailnet address 100.91.190.107 only: there is no public port and no Traefik label.
+#
+# Every value below that is a credential comes from the Coolify environment set for this
+# application, not from this file.
+services:
+  superindex:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: superindex
+    restart: unless-stopped
+    ports:
+      # Tailnet only. Changing this to 0.0.0.0 would publish the vault index publicly.
+      - "100.91.190.107:8765:8765"
+    volumes:
+      - /data/consignatio/volumes/superindex/output:/var/lib/superindex/output
+      - /data/consignatio/volumes/superindex/state:/var/lib/superindex/state
+      - /data/consignatio/volumes/superindex/spool:/var/lib/superindex/spool
+      # Read-only credential documents, Probata's convention.
+      - /data/probata/secrets/casebible-b2.json:/run/secrets/casebible-b2.json:ro
+    environment:
+      CASEBIBLE_SOURCE_ID: ${CASEBIBLE_SOURCE_ID:-consignatio-vault-v1}
+      CASEBIBLE_OUTPUT_DIR: /var/lib/superindex/output
+      INTAKE_LOCK_DIR: /var/lib/superindex/state/.source-locks
+      TMPDIR: /var/lib/superindex/spool
+
+      # Source: the catalog, never a re-walk (owner 2026-09-16).
+      INTAKE_SOURCE_MODE: ${INTAKE_SOURCE_MODE:-catalog}
+      INTAKE_CATALOG_DSN: ${INTAKE_CATALOG_DSN}
+      INTAKE_VAULT_BUCKET: ${INTAKE_VAULT_BUCKET:-salem-data}
+      INTAKE_CATALOG_PATH_PREFIX: ${INTAKE_CATALOG_PATH_PREFIX:-}
+      INTAKE_CATALOG_LIMIT: ${INTAKE_CATALOG_LIMIT:-0}
+
+      # Object store, Probata's convention (source_roots.py).
+      OBJECT_STORES_JSON: '{"b2":"/run/secrets/casebible-b2.json"}'
+      INTAKE_OBJECT_STORE_SCHEME: b2
+
+      # Embeddings and summaries on NVIDIA NIM.
+      NVIDIA_API_KEY: ${NVIDIA_API_KEY}
+      NIM_BASE_URL: ${NIM_BASE_URL:-https://integrate.api.nvidia.com/v1}
+      NIM_EMBED_MODEL: ${NIM_EMBED_MODEL:-nvidia/nemotron-3-embed-1b}
+      NIM_EMBED_DIMENSIONS: ${NIM_EMBED_DIMENSIONS:-2048}
+      INTAKE_EMBED_MODE: ${INTAKE_EMBED_MODE:-on}
+      INTAKE_SUMMARY_MODE: ${INTAKE_SUMMARY_MODE:-off}
+
+      # Weaviate is the default vector target when a collection is configured.
+      INTAKE_WEAVIATE_URL: ${INTAKE_WEAVIATE_URL:-http://100.91.190.107:8082}
+      INTAKE_WEAVIATE_COLLECTION: ${INTAKE_WEAVIATE_COLLECTION:-IntakeCorpus}
+      INTAKE_WEAVIATE_TEXT_VECTOR: ${INTAKE_WEAVIATE_TEXT_VECTOR:-text_vector}
+      INTAKE_WEAVIATE_INDEX_ENABLED: ${INTAKE_WEAVIATE_INDEX_ENABLED:-1}
+      INTAKE_WEAVIATE_API_KEY: ${INTAKE_WEAVIATE_API_KEY:-}
+
+      # Surreal file graph.
+      INTAKE_SURREAL_URL: ${INTAKE_SURREAL_URL:-http://100.91.190.107:8473}
+      INTAKE_SURREAL_PASSWORD: ${INTAKE_SURREAL_PASSWORD}

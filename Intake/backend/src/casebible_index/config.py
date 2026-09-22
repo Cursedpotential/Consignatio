@@ -61,9 +61,11 @@ class Settings:
     max_concurrency: int
     timeout_seconds: float
     max_retries: int
-    max_file_bytes: int = 8 * 1024 * 1024
-    max_extracted_chars: int = 1_000_000
-    max_chunks_per_file: int = 512
+    # Caps removed 2026-09-22 (Claude Code · Opus 5; owner 2026-09-19/09-20 "stream
+    # everything"). There is no maximum file size, no maximum extracted characters and no
+    # maximum chunk count: the pipeline reads in windows and flushes chunk shards as it
+    # goes, so memory is bounded by the window and the shard, not by the object.
+    chunk_flush_size: int = 512
     max_inflight_files: int = 2
     source_registry: Path | None = None
     lock_dir: Path = Path(__file__).resolve().parents[2] / "output" / ".source-locks"
@@ -72,6 +74,13 @@ class Settings:
     # Byline: Claude Code · Opus 5 · 2026-09-18
     source_mode: str = "filesystem"
     catalog_query_file: Path = DEFAULT_CATALOG_QUERY_FILE
+    # Bounded first runs (Claude Code · Opus 5 · 2026-09-22): 0 = no limit.
+    catalog_limit: int = 0
+    catalog_path_prefix: str = ""
+    vault_bucket: str = ""
+    object_store_scheme: str = "b2"
+    index_archive_members: bool = False
+    archive_member_limit: int = 0
 
     @classmethod
     def from_env(cls, *, env_file: Path | None = None) -> Settings:
@@ -93,9 +102,7 @@ class Settings:
             max_concurrency=_int_env("NIM_MAX_CONCURRENCY", 4),
             timeout_seconds=_float_env("NIM_TIMEOUT_SECONDS", 90.0),
             max_retries=_int_env("NIM_MAX_RETRIES", 4),
-            max_file_bytes=_int_env("INTAKE_MAX_FILE_BYTES", 8 * 1024 * 1024),
-            max_extracted_chars=_int_env("INTAKE_MAX_EXTRACTED_CHARS", 1_000_000),
-            max_chunks_per_file=_int_env("INTAKE_MAX_CHUNKS_PER_FILE", 512),
+            chunk_flush_size=_int_env("INTAKE_CHUNK_FLUSH_SIZE", 512),
             max_inflight_files=_int_env("INTAKE_MAX_INFLIGHT_FILES", 2),
             source_registry=Path(os.environ["INTAKE_SOURCE_REGISTRY"])
             if os.getenv("INTAKE_SOURCE_REGISTRY") else None,
@@ -106,6 +113,12 @@ class Settings:
             catalog_query_file=Path(
                 os.getenv("INTAKE_CATALOG_QUERY_FILE") or str(DEFAULT_CATALOG_QUERY_FILE)
             ),
+            catalog_limit=_int_env("INTAKE_CATALOG_LIMIT", 0),
+            catalog_path_prefix=os.getenv("INTAKE_CATALOG_PATH_PREFIX", "").strip(),
+            vault_bucket=os.getenv("INTAKE_VAULT_BUCKET", "").strip(),
+            object_store_scheme=os.getenv("INTAKE_OBJECT_STORE_SCHEME", "b2").strip() or "b2",
+            index_archive_members=os.getenv("INTAKE_INDEX_ARCHIVE_MEMBERS", "0") == "1",
+            archive_member_limit=_int_env("INTAKE_ARCHIVE_MEMBER_LIMIT", 0),
         )
 
     def resolved(self, base_dir: Path | None = None) -> Settings:
@@ -130,6 +143,9 @@ class Settings:
         )
 
     def validate(self, *, require_source: bool = True) -> None:
+        # Catalog mode reads objects from the bucket, so no host source directory exists.
+        if self.source_mode == "catalog":
+            require_source = False
         if require_source and not self.source_dir.is_dir():
             raise ValueError(f"CASEBIBLE_SOURCE_DIR is not a directory: {self.source_dir}")
         if self.source_dir == self.output_dir:
@@ -144,14 +160,19 @@ class Settings:
             raise ValueError("Chunk overlap must be smaller than chunk size")
         if self.embed_dimensions <= 0 or self.embed_batch_size <= 0:
             raise ValueError("Embedding dimensions and batch size must be positive")
-        if min(self.max_file_bytes, self.max_extracted_chars, self.max_chunks_per_file) < 1:
-            raise ValueError("File, extracted text and chunk limits must be positive")
+        if self.chunk_flush_size < 1:
+            raise ValueError("INTAKE_CHUNK_FLUSH_SIZE must be positive")
         if not 1 <= self.max_inflight_files <= 8:
             raise ValueError("INTAKE_MAX_INFLIGHT_FILES must be between 1 and 8")
         if self.source_mode not in SOURCE_MODES:
             raise ValueError(f"INTAKE_SOURCE_MODE must be one of {SOURCE_MODES}")
-        if self.source_mode == "catalog" and not self.catalog_query_file.is_file():
-            raise ValueError(f"INTAKE_CATALOG_QUERY_FILE not found: {self.catalog_query_file}")
+        if self.catalog_limit < 0 or self.archive_member_limit < 0:
+            raise ValueError("Catalog and archive member limits must not be negative")
+        if self.source_mode == "catalog":
+            if not self.catalog_query_file.is_file():
+                raise ValueError(f"INTAKE_CATALOG_QUERY_FILE not found: {self.catalog_query_file}")
+            if not self.vault_bucket:
+                raise ValueError("INTAKE_SOURCE_MODE=catalog needs INTAKE_VAULT_BUCKET")
 
     @property
     def state_dir(self) -> Path:

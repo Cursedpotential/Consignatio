@@ -107,6 +107,9 @@ class SemanticSearcher:
                     c.version_id,
                     c.chunk_id,
                     c.relative_path,
+                    -- Vault identity on every hit (Claude Code · Opus 5 · 2026-09-22).
+                    COALESCE(c.vault_key, '') AS vault_key,
+                    COALESCE(c.resolution, 'unknown') AS resolution,
                     c.filename,
                     c.document_type,
                     c.document_date,

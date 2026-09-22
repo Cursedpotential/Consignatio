@@ -339,6 +339,39 @@ Queued owner requests. Append new items; strike through completed ones with a da
 - [ ] Junk-filtered recount of the 871 "missing" files (some are `flet_env` venv DLLs in the R2 quarantine bucket).
 - [ ] Owner asked 00:25 whether an agent changed mouse/window-focus settings: read-only check shows Windows focus-follows-mouse (`UserPreferencesMask` bit 0) is ON with `ActiveWndTrkTimeout` 100 ms; nothing this session ran touches settings; when it was switched is not recorded in the registry. One-liner to turn it off given in chat.
 
+### 2026-09-22 — BUILD: Coco super index as a deployed service (branch `feat/superindex-service`)
+
+_Claude Code · Opus 5 · 2026-09-22._ Audit 1 build order items 3–7. Worktree
+`_worktrees/consignatio-superindex-service`, branch `feat/superindex-service`, based on
+`cfdeec8` (includes the other session's image-lane `fb9a3e0`; nothing reverted).
+
+- **NIM credits are NOT out.** Live probe 13:38 EDT: `POST integrate.api.nvidia.com/v1/embeddings`,
+  model `nvidia/nemotron-3-embed-1b`, HTTP 200, 1 vector, 2048 dims. Audit item I-5's "503"
+  no longer holds for embeddings. `INTAKE_EMBED_MODE=deferred` exists as a fallback and
+  writes `embedding_status=pending` rows without vectors.
+- **Catalog source verified live**: `raw_duck.vault_index_source_20260918` on
+  `fgz1n7useplhk0t91uk7k1aw` (agno-postgres:18-duckdb, `100.91.190.107:5475`), 508,152 rows /
+  2,170,597,644,994 bytes. Keys are `consignatio/vault/v1/…` in B2 bucket `salem-data`.
+- **B2 reads now happen over S3, not a mount** (`object_store.py`, SigV4, ranged + streamed
+  GETs, per-run request/byte counters). Credentials follow Probata's convention
+  (`OBJECT_STORES_JSON` → `/run/secrets/casebible-b2.json`, key id …0007). Verified readable
+  from ovh-files against one object before any code ran.
+- **Caps deleted** (I-3): no `INTAKE_MAX_FILE_BYTES`, no `INTAKE_MAX_EXTRACTED_CHARS`, no
+  `INTAKE_MAX_CHUNKS_PER_FILE`. Replaced by windowed extraction + chunk shards flushed every
+  `INTAKE_CHUNK_FLUSH_SIZE` (512) chunks. `.xml` SMS backups split on `<sms>/<mms>/<call>`,
+  JSON arrays/NDJSON split per record.
+- **Hits carry `vault_key` + `resolution`** (I-8) in Parquet, Weaviate properties, `/search`
+  and `/filesystem/search`. `resolution` = the catalog occurrence `disposition`; the catalog
+  has no column of that name and none was invented.
+- **Weaviate on by default** when a collection is configured, validated at startup (I-6);
+  **Surreal file graph projected by every `index` run** (`projections/index_run.py`).
+- Packaging: `Intake/backend/Dockerfile` (uv, python 3.12, uvicorn on 0.0.0.0:8765, no
+  Tesseract — the image lane is a separate app) and `deploy/superindex.compose.yml`
+  (bind-mounts under `/data/consignatio/volumes/superindex`, published on the tailnet
+  address only).
+- Tests: `uv run pytest` 108 passed, ruff clean. `tests/test_migration_partition.py` was
+  already failing before this branch (`ModuleNotFoundError: scripts`) and is untouched.
+
 ### 2026-09-22 09:42 EDT — RUN (owner "go" 09:37): `vault_index_source_20260918` created on the catalog
 
 _Claude Code · Fable 5.1._ Serial run of `casebible/tools/vault_index_source_20260918.sql` on `casebible-pg18` as the script header prescribes. Result: **508,152 objects / 2,170,597,644,994 bytes — equals the 09-16 verified set**; 1,494,138 occurrences attached; 72,985 objects carry no occurrence (the known one-key-per-occurrence limitation named in the script). The super index's catalog mode now has its source (Audit 1 item I-2). Open checkbox at the 09-18 entry is closed by this. Nothing else written.

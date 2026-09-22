@@ -35,6 +35,10 @@ class FilesystemHit(BaseModel):
     object_id: str
     source_id: str
     source_path: str
+    # The B2 object key and the catalog resolution, so a hit can be opened from the vault
+    # rather than from a desktop path (Claude Code · Opus 5 · 2026-09-22; audit item I-8).
+    vault_key: str = ""
+    resolution: str = "unknown"
     document_id: str
     chunk_id: str
     filename: str
@@ -110,7 +114,8 @@ class WeaviateFilesystemSearcher:
         query = (
             f"{{ Get {{ {self.config.collection}(limit: {request.limit}, {operator}, "
             'where: {path: ["active"], operator: Equal, valueBoolean: true}) { '
-            "source_id source_path document_id chunk_id filename text _additional {id score}"
+            "source_id source_path vault_key resolution document_id chunk_id filename text "
+            "_additional {id score}"
             " } } }"
         )
         headers = {"Authorization": f"Bearer {self.config.api_key}"} if self.config.api_key else {}
@@ -132,6 +137,8 @@ class WeaviateFilesystemSearcher:
             hits = [FilesystemHit(
                 object_id=row["_additional"]["id"],
                 score=float(row["_additional"]["score"]),
+                vault_key=row.get("vault_key") or "",
+                resolution=row.get("resolution") or "unknown",
                 **{key: row[key] for key in (
                     "source_id", "source_path", "document_id", "chunk_id", "filename", "text"
                 )},

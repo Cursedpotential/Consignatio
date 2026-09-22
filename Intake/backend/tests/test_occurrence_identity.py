@@ -14,9 +14,10 @@ from casebible_index.filesystem_search import (
 )
 from casebible_index.models import DocumentEnrichment, ExtractedText, SourceMetadata, TextChunk
 from casebible_index.parquet_store import stable_document_id, tables_for_document
-from casebible_index.pipeline import NIM_CLIENT, RUN_STATUS, BoundedLocalFile, process_file
+from casebible_index.pipeline import NIM_CLIENT, RUN_STATUS, process_file
 from casebible_index.run_status import RunStatus
 from casebible_index.source_runtime import resolve_source_alias
+from casebible_index.vault_source import LocalStreamFile
 from casebible_index.weaviate_target import WEAVIATE_WRITER, WeaviateObjectWriter
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -37,12 +38,12 @@ async def _index_one_fixture(source_dir: Path, source_id: str, output: Path):
     from cocoindex.connectors import localfs
 
     await process_file(
-        BoundedLocalFile(localfs.FilePath(path=source_dir / "note.txt"), 4096),
-        source_dir=source_dir, source_id=source_id, output_dir=output,
-        chunk_size=2400, chunk_overlap=100, summary_max_chars=4096,
+        LocalStreamFile(localfs.FilePath(path=source_dir / "note.txt")),
+        source_id=source_id, output_dir=output,
+        chunk_size=2400, chunk_overlap=100, chunk_flush_size=512, summary_max_chars=4096,
         embed_batch_size=1, embed_model="fake-embed", summary_model="fake-summary",
-        embed_dimensions=3, max_file_bytes=4096, max_extracted_chars=4096,
-        max_chunks_per_file=2, weaviate_target=(ORIGIN, COLLECTION, "text_nim"),
+        embed_dimensions=3, embed_enabled=True, summary_enabled=True,
+        weaviate_target=(ORIGIN, COLLECTION, "text_nim"),
     )
 
 
@@ -101,8 +102,10 @@ async def test_identical_bytes_in_distinct_stores_remain_searchable_occurrences(
     assert len({hit.document_id for hit in hits}) == 2
     assert len({hit.chunk_id for hit in hits}) == 2
     assert {hit.source_path for hit in hits} == {
-        str((fixture / name / "note.txt").resolve()) for name in ("store-a", "store-b")
+        (fixture / name / "note.txt").resolve().as_posix() for name in ("store-a", "store-b")
     }
+    # Local sources carry no vault key; the resolution says so rather than guessing.
+    assert {hit.resolution for hit in hits} == {"local"}
     assert len({hit.text for hit in hits}) == 1
 
 
