@@ -37,6 +37,30 @@ def vault_document_id(source_id: str, identity: str) -> str:
     return str(uuid5(NAMESPACE_URL, f"casebible:content:{source_id}:{identity}"))
 
 
+def streaming_artifact_id(
+    version_id: str, *, chunk_size: int, chunk_overlap: int, embed_model: str,
+    summary_model: str,
+) -> str:
+    """Artifact identity for a streamed derivation, known before the first chunk is written.
+
+    The non-streaming path fingerprints the produced enrichment, chunks and vectors, which
+    means the id is only final once the whole document is in memory. A streaming run writes
+    chunk shards as it goes and must never hold them, so the artifact id instead pins the
+    derivation: the version (which already pins the source content) plus the chunking and
+    model parameters that decide what is produced from it.
+
+    Consequence, stated rather than hidden: with summaries ON the summary text is not part
+    of this id, so a re-derivation of the same object does not replace an existing shard's
+    summary — the first derivation stands until the version or a parameter changes.
+    Byline: Claude Code · Opus 5 · 2026-09-22.
+    """
+    value = "|".join(
+        [version_id, str(chunk_size), str(chunk_overlap), embed_model, summary_model,
+         SCHEMA_VERSION]
+    )
+    return hashlib.sha256(value.encode()).hexdigest()
+
+
 def vault_version_id(
     document_id: str, identity: str, *, embed_model: str, summary_model: str
 ) -> str:

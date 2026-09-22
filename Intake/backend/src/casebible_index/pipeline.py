@@ -42,6 +42,7 @@ from .parquet_store import (
     chunk_rows_table,
     document_row_table,
     stable_document_id,
+    streaming_artifact_id,
     vault_document_id,
     vault_version_id,
     write_chunk_shard,
@@ -185,19 +186,24 @@ async def process_file(
         document_id, identity, embed_model=embed_model, summary_model=summary_model
     )
 
+    # Known before the first chunk, so shards can be WRITTEN as they are produced instead of
+    # collected. Collecting them was a defect: 30,136 chunks × 2048 floats for one 61 MB
+    # object is gigabytes of live Python objects, which is exactly the unbounded behaviour
+    # this rewrite exists to remove.
+    artifact = streaming_artifact_id(
+        version_id, chunk_size=chunk_size, chunk_overlap=chunk_overlap,
+        embed_model=embed_model, summary_model=summary_model,
+    )
     outcome = StreamOutcome()
     accumulator = ChunkAccumulator(chunk_size, chunk_overlap)
-    artifact_digest = hashlib.sha256()
-    artifact_digest.update(f"{document_id}|{identity}|{SCHEMA_VERSION}".encode())
     summary_text: list[str] = []
     summary_chars = 0
     pending: list[TextChunk] = []
-    shards: list[list[dict]] = []
     total_chars = 0
+    shard_count = 0
     now = datetime.now(UTC)
     client = coco.use_context(NIM_CLIENT) if embed_enabled or summary_enabled else None
     embed_client = client if embed_enabled else None
-    part = 0
 
     def chunk_row(chunk: TextChunk, embedding: list[float]) -> dict:
         chunk_hash = hashlib.sha256(chunk.text.encode("utf-8")).hexdigest()
@@ -206,7 +212,7 @@ async def process_file(
         return {
             "document_id": document_id,
             "version_id": version_id,
-            "artifact_id": "",  # filled at flush; the rolling digest is final only at the end
+            "artifact_id": artifact,
             "chunk_id": str(uuid5(NAMESPACE_URL, f"{version_id}:{chunk.ordinal}:{chunk_hash}")),
             "source_id": source_id,
             "relative_path": relative_path,
@@ -232,20 +238,38 @@ async def process_file(
         }
 
     async def flush(final: bool = False) -> None:
-        nonlocal pending, part
+        nonlocal pending, shard_count
         while pending and (final or len(pending) >= chunk_flush_size):
             batch, pending = pending[:chunk_flush_size], pending[chunk_flush_size:]
             vectors = await _embed(
                 embed_client, [chunk.text for chunk in batch],
                 batch_size=embed_batch_size, dimensions=embed_dimensions,
             )
-            rows = []
-            for chunk, vector in zip(batch, vectors, strict=True):
-                artifact_digest.update(f"{chunk.ordinal}:{chunk.start}:{chunk.end}:".encode())
-                artifact_digest.update(chunk.text.encode("utf-8"))
-                rows.append(chunk_row(chunk, list(vector)))
-            shards.append(rows)
-            part += 1
+            rows = [
+                chunk_row(chunk, list(vector))
+                for chunk, vector in zip(batch, vectors, strict=True)
+            ]
+            write_chunk_shard(
+                output_dir, document_id=document_id, version_id=version_id, artifact=artifact,
+                part=shard_count, table=chunk_rows_table(rows, embed_dimensions),
+            )
+            if weaviate_target is not None:
+                origin, collection, vector_name = weaviate_target
+                for row in rows:
+                    if row["embedding_status"] != "ok":
+                        continue
+                    declare_chunk(origin, collection, row["chunk_id"], ObjectSpec(
+                        properties={
+                            "source_id": source_id, "source_path": relative_path,
+                            "vault_key": vault_key, "resolution": resolution,
+                            "document_id": row["document_id"], "chunk_id": row["chunk_id"],
+                            "filename": filename, "text": row["text"],
+                            "embed_model": embed_model,
+                        },
+                        vectors={vector_name: row["embedding"]},
+                    ))
+            shard_count += 1
+            rows.clear()
 
     async for piece in extract_stream(key, file.windows(), outcome):
         total_chars += len(piece)
@@ -259,7 +283,6 @@ async def process_file(
         pending.append(chunk)
     await flush(final=True)
 
-    artifact = artifact_digest.hexdigest()
     enrichment = _fallback_enrichment(filename, outcome.notes)
     coverage, coverage_ratio = ("none", 0.0)
     if outcome.status == "indexed" and summary_enabled and client is not None and summary_text:
@@ -274,32 +297,9 @@ async def process_file(
         except Exception:  # noqa: BLE001 - a failed summary must not lose the extraction
             enrichment = _fallback_enrichment(filename, ("Summary pass failed for this object.",))
 
-    for index, rows in enumerate(shards):
-        for row in rows:
-            row["artifact_id"] = artifact
-            row["document_type"] = enrichment.document_type
-            row["title"] = enrichment.title or filename
-            row["short_summary"] = enrichment.short_summary
-            row["document_date"] = enrichment.document_date
-        write_chunk_shard(
-            output_dir, document_id=document_id, version_id=version_id, artifact=artifact,
-            part=index, table=chunk_rows_table(rows, embed_dimensions),
-        )
-        if weaviate_target is not None:
-            origin, collection, vector_name = weaviate_target
-            for row in rows:
-                if row["embedding_status"] != "ok":
-                    continue
-                declare_chunk(origin, collection, row["chunk_id"], ObjectSpec(
-                    properties={
-                        "source_id": source_id, "source_path": relative_path,
-                        "vault_key": vault_key, "resolution": resolution,
-                        "document_id": row["document_id"], "chunk_id": row["chunk_id"],
-                        "filename": filename, "text": row["text"], "embed_model": embed_model,
-                    },
-                    vectors={vector_name: row["embedding"]},
-                ))
-
+    # Chunk shards were written during the stream, so the document's enrichment is NOT
+    # back-filled into them: the document row is the authority for title, type, date and
+    # summary, and `search.py` reads those from the document join.
     source = SourceMetadata(
         relative_path=relative_path, filename=filename, extension=extension,
         byte_size=byte_size, created_at=None, modified_at=None, modified_ns=0,

@@ -88,6 +88,9 @@ class SemanticSearcher:
         path_prefix: str | None,
     ) -> list[dict[str, object]]:
         chunks_glob = self.settings.output_dir / "datasets" / "chunks" / "*.parquet"
+        documents_glob = _sql_path(
+            self.settings.output_dir / "datasets" / "documents" / "*.parquet"
+        )
         clauses: list[str] = []
         parameters: list[object] = [vector]
         if document_type:
@@ -111,10 +114,13 @@ class SemanticSearcher:
                     COALESCE(c.vault_key, '') AS vault_key,
                     COALESCE(c.resolution, 'unknown') AS resolution,
                     c.filename,
-                    c.document_type,
-                    c.document_date,
-                    c.title,
-                    c.short_summary,
+                    -- The document row is the authority for these: a streaming run writes
+                    -- chunk shards before the summary exists, so the chunk copies are the
+                    -- filename placeholder (Claude Code · Opus 5 · 2026-09-22).
+                    COALESCE(d.document_type, c.document_type) AS document_type,
+                    COALESCE(d.document_date, c.document_date) AS document_date,
+                    COALESCE(d.title, c.title) AS title,
+                    COALESCE(d.short_summary, c.short_summary) AS short_summary,
                     c.chunk_ordinal,
                     c.char_start,
                     c.char_end,
@@ -125,6 +131,8 @@ class SemanticSearcher:
                     ) AS semantic_score
                 FROM read_parquet('{_sql_path(chunks_glob)}', union_by_name = true) c
                 JOIN read_parquet('{_sql_path(snapshot)}') s
+                  USING (document_id, version_id, artifact_id)
+                JOIN read_parquet('{documents_glob}', union_by_name = true) d
                   USING (document_id, version_id, artifact_id)
                 {where}
                 ORDER BY semantic_score DESC
