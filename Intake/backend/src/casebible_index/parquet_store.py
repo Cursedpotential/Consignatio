@@ -355,6 +355,22 @@ def document_row_table(row: dict[str, Any]) -> pa.Table:
     return pa.Table.from_pylist([row], schema=document_schema())
 
 
+def _write_artifact_once(path: Path, table: pa.Table) -> Path:
+    """Write a derived artifact, or accept the one already at that path.
+
+    The file name carries ``document_id``/``version_id``/``artifact_id``: an artifact id is
+    a content fingerprint of the enrichment, chunks and vectors, so a file already at this
+    path holds the same derived content. Only ``indexed_at`` — which records the run, not
+    the artifact — can differ, and re-deriving an object must not fail the run over it
+    (Claude Code · Opus 5 · 2026-09-22; a re-run of the first catalog slice failed 200/200
+    this way). Nothing is ever overwritten or deleted.
+    """
+    if path.exists():
+        return path
+    write_immutable(path, parquet_bytes(table))
+    return path
+
+
 def write_chunk_shard(
     output_dir: Path, *, document_id: str, version_id: str, artifact: str, part: int,
     table: pa.Table,
@@ -364,18 +380,14 @@ def write_chunk_shard(
     Byline: Claude Code · Opus 5 · 2026-09-22.
     """
     stem = f"{document_id}--{version_id}--{artifact[:16]}--p{part:05d}"
-    path = output_dir / "datasets" / "chunks" / f"{stem}.parquet"
-    write_immutable(path, parquet_bytes(table))
-    return path
+    return _write_artifact_once(output_dir / "datasets" / "chunks" / f"{stem}.parquet", table)
 
 
 def write_document_row(
     output_dir: Path, *, document_id: str, version_id: str, artifact: str, table: pa.Table,
 ) -> Path:
     stem = f"{document_id}--{version_id}--{artifact[:16]}"
-    path = output_dir / "datasets" / "documents" / f"{stem}.parquet"
-    write_immutable(path, parquet_bytes(table))
-    return path
+    return _write_artifact_once(output_dir / "datasets" / "documents" / f"{stem}.parquet", table)
 
 
 def write_json_immutable(path: Path, value: dict[str, Any]) -> None:
