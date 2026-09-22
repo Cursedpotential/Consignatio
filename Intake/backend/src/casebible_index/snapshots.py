@@ -40,6 +40,20 @@ def _is_current_source(source_dir: Path, relative_path: str) -> bool:
     return candidate.is_relative_to(source_root) and candidate.is_file()
 
 
+def _is_current_catalog_object(relative_path: str) -> bool:
+    """Catalog mode has no host file to stat; the catalog listing is the liveness signal.
+
+    A row stays active when its key is a safe relative object key. Rows for objects the
+    catalog no longer lists are retired by the next run's reconcile, not by a stat here.
+    Byline: Claude Code · Opus 5 · 2026-09-22 — before this, catalog runs produced an
+    EMPTY snapshot, because every catalog key was tested against a local path that a
+    bucket-reading service never has.
+    """
+    from .catalog_source import safe_relative_key
+
+    return safe_relative_key(relative_path) is not None
+
+
 def build_active_snapshot(settings: Settings) -> Path:
     documents_glob = settings.output_dir / "datasets" / "documents" / "*.parquet"
     if not any(documents_glob.parent.glob(documents_glob.name)):
@@ -60,6 +74,11 @@ def build_active_snapshot(settings: Settings) -> Path:
         connection.close()
 
     captured_at = datetime.now(UTC)
+    is_current = (
+        (lambda path: _is_current_catalog_object(path))
+        if getattr(settings, "source_mode", "filesystem") == "catalog"
+        else (lambda path: _is_current_source(settings.source_dir, path))
+    )
     active = [
         {
             "document_id": document_id,
@@ -69,7 +88,7 @@ def build_active_snapshot(settings: Settings) -> Path:
             "captured_at": captured_at,
         }
         for document_id, version_id, artifact_id, relative_path in rows
-        if _is_current_source(settings.source_dir, relative_path)
+        if is_current(relative_path)
     ]
     table = pa.Table.from_pylist(active, schema=ACTIVE_SCHEMA)
     run_id = captured_at.strftime("%Y%m%dT%H%M%S.%fZ") + "-" + uuid4().hex[:8]
