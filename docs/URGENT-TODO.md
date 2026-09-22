@@ -2326,3 +2326,9 @@ Created 16 missing-payload rows with raw/UTC/New York timestamps and source meta
 > _Byline: Claude Code · Fable 5.1 · 2026-09-22_
 
 - Proposal `Intake/docs/PROPOSAL-2026-09-21-SMART-SUGGESTIONS-AGENT.md` (owner "ok" 09-21 01:50). Agent `smart-suggestions` dispatched for step 1 only: tracked rules file, `analyze_directory` asks the engine's existing Gemini/Portkey agent (listing + catalog facts + rules, no file contents), fixed rules as fallback, `is_project` as an input line. Must STOP before deploying; live check on three real folders after approval. No new containers/images.
+- [x] **2026-09-22 09:50 EDT — image lane wired into Intake search** (owner "ok" 09:34). `POST /filesystem/search`
+      now returns `image_hits` beside text `hits` when `INTAKE_IMAGES_*` is set: MaxSim (screenshots), single vector,
+      and BM25 over the OCR fallback text, merged per object and labelled `matched_by`. Verified locally against the
+      live Weaviate with the synthetic fixture collection (right screenshot first by MaxSim; text lane unaffected);
+      fixture collection removed. Code: `Intake/backend/src/casebible_index/image_search.py`, `api.py`.
+      Probata: not wired — its search path still has to be read. _Claude Code · Fable 5.1_

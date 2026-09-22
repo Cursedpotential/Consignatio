@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 
+import httpx
 from fastapi import FastAPI, HTTPException
 
 from .config import Settings
@@ -12,6 +13,8 @@ from .filesystem_search import (
     WeaviateFilesystemSearcher,
     WeaviateSearchConfig,
 )
+from .image_embedders import ImageEmbedders
+from .image_search import ImageSearchError, WeaviateImageSearcher
 from .models import SearchRequest, SearchResponse
 from .nim import NimClient, NimError
 from .projections.runtime import connect_graph
@@ -136,12 +139,45 @@ def create_api(settings: Settings | None = None) -> FastAPI:
                     max_concurrency=config.max_concurrency,
                 ) as client:
                     vector = await client.embed_query(request.query)
-            return await searcher.search(request, vector=vector)
-        except (FilesystemSearchError, NimError, ValueError) as exc:
+            response = await searcher.search(request, vector=vector)
+            return await _with_image_lane(request, response)
+        except (FilesystemSearchError, ImageSearchError, NimError, ValueError) as exc:
             raise HTTPException(
                 status_code=503,
                 detail="Filesystem search unavailable; verify service and embedding configuration",
             ) from exc
+
+    async def _with_image_lane(
+        request: FilesystemSearchRequest, response: FilesystemSearchResponse
+    ) -> FilesystemSearchResponse:
+        """Add hits from the image index when it is configured (owner 2026-09-22: wired in)."""
+        image_url = os.getenv("INTAKE_IMAGES_WEAVIATE_URL", "")
+        if not image_url:
+            return response
+        collection = os.getenv("INTAKE_IMAGES_COLLECTION", "IntakeImageV1")
+        provider = os.getenv("INTAKE_IMAGES_SINGLE_PROVIDER", "nim")
+        weaviate_key = get_secret("INTAKE_WEAVIATE_API_KEY") or ""
+        image_searcher = WeaviateImageSearcher(image_url, collection, weaviate_key)
+        if request.mode != "hybrid":
+            hits = await image_searcher.search(
+                request.query, limit=request.limit, mode="keyword", embedders=None
+            )
+            return response.model_copy(update={"image_collection": collection, "image_hits": hits})
+        key_name = "NVIDIA_API_KEY" if provider == "nim" else "GOOGLE_API_KEY"
+        single_key = get_secret(key_name)
+        if not single_key:
+            raise ValueError(f"{key_name} is not configured for image search")
+        jina_key = (
+            get_secret("JINA_API_KEY")
+            if os.getenv("INTAKE_IMAGES_MAXSIM", "screenshots") != "none"
+            else None
+        )
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            embedders = ImageEmbedders(client, provider, single_key, jina_key)
+            hits = await image_searcher.search(
+                request.query, limit=request.limit, mode="hybrid", embedders=embedders
+            )
+        return response.model_copy(update={"image_collection": collection, "image_hits": hits})
 
     @api.post("/search", response_model=SearchResponse)
     async def search(request: SearchRequest) -> SearchResponse:
