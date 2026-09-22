@@ -369,8 +369,24 @@ _Claude Code · Opus 5 · 2026-09-22._ Audit 1 build order items 3–7. Worktree
   Tesseract — the image lane is a separate app) and `deploy/superindex.compose.yml`
   (bind-mounts under `/data/consignatio/volumes/superindex`, published on the tailnet
   address only).
-- Tests: `uv run pytest` 108 passed, ruff clean. `tests/test_migration_partition.py` was
+- Tests: `uv run pytest` 111 passed, ruff clean. `tests/test_migration_partition.py` was
   already failing before this branch (`ModuleNotFoundError: scripts`) and is untouched.
+
+**DEPLOYED AND PROVEN, 15:07–16:17 EDT.** Coolify app `superindex`
+uuid `f12skzwshwp85b1k4lbgm0pp` on ovh-files, `http://100.91.190.107:8765` (tailnet only).
+First catalog run: 200 objects under `consignatio/vault/v1/HTML Files/`, 0 failures, 139 s,
+200 bucket requests / 8.66 MB; Weaviate `IntakeCorpus` 2,375 objects; Surreal 200 occurrence
+nodes. `/health`, `/filesystem/status`, `/filesystem/graph/status`, `/documents`, `POST
+/search` and `POST /filesystem/search` all 200, hits carrying `vault_key` + `resolution`.
+Large objects: the 61 MB `conversations.json` (35,483 chunks, embedded, 0 failures) and the
+505 MB `xml/f146876416.xml` (38 s, 0 failures, truncated file handled). A 10.7 GB Takeout
+ZIP listed in 4.3 s with 4 ranged reads. Full receipt, every bug found and every limit:
+`docs/receipts/2026-09-22-superindex-first-catalog-run.md`.
+
+**Owner decision still open:** nothing. NIM credits work; no provider switch is needed.
+**Next slice:** wire archive members into the pipeline, point the image lane at the shared
+B2 reader, and move the Weaviate write out of the coco target so a multi-GB object can be
+embedded (it peaked at 3.16 GiB on the 61 MB JSON).
 
 ### 2026-09-22 09:42 EDT — RUN (owner "go" 09:37): `vault_index_source_20260918` created on the catalog
 
