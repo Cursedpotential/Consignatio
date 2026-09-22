@@ -339,6 +339,22 @@ Queued owner requests. Append new items; strike through completed ones with a da
 - [ ] Junk-filtered recount of the 871 "missing" files (some are `flet_env` venv DLLs in the R2 quarantine bucket).
 - [ ] Owner asked 00:25 whether an agent changed mouse/window-focus settings: read-only check shows Windows focus-follows-mouse (`UserPreferencesMask` bit 0) is ON with `ActiveWndTrkTimeout` 100 ms; nothing this session ran touches settings; when it was switched is not recorded in the registry. One-liner to turn it off given in chat.
 
+### 2026-09-22 12:30 EDT — SUPER INDEX IS A DEPLOYED SERVICE; catalog mode, streaming, B2 keys, Weaviate + Surreal proven live (branch `feat/superindex-service`, 17 commits, NOT merged)
+
+_Claude Code · Fable 5.1 (supervisor); build by agent `superindex-service` (Claude Code · Opus 5). Parent re-verified live 12:25: `/health`, `/filesystem/status`, `/filesystem/graph/status` 200 at `http://100.91.190.107:8765`; `/filesystem/search` hits carry `vault_key` + `resolution`; Weaviate `IntakeCorpus` = 37,857 objects; container `superindex-f12skzwshwp85b1k4lbgm0pp-…` healthy, bound to the tailnet IP only._
+
+- **Deployed:** Coolify app `superindex` uuid `f12skzwshwp85b1k4lbgm0pp` (project consignatio, server ovh-files), `Intake/backend/Dockerfile` + `deploy/superindex.compose.yml`, volumes `/data/consignatio/volumes/superindex` (needs `chown 10001:10001` on a fresh host). exiftool + tesseract in the image. No Tailscale service (no recipe receipt in this repo).
+- **Catalog mode works:** `--limit/--path-prefix`; new shared `object_store.py` (S3 SigV4, ranged, streamed, counted). First run receipt `docs/receipts/2026-09-22-superindex-first-catalog-run.md`: 200 objects under `HTML Files/`, 0 failures, 139 s, 200 requests / 8.66 MB. Catalog DSN uses `metabase_ro` (advocatio_desk lacks USAGE on raw_duck).
+- **Caps gone, streaming in:** 61 MB conversations.json → 35,483 chunks embedded, 0 failures; 505 MB SMS XML → 38 s, one request, extraction peak RSS 288 MiB. **Limit:** with Weaviate on, CocoIndex holds one target state per chunk of the whole object (3.16 GiB on the 61 MB JSON) — a multi-GB XML with embeddings on would exhaust the box; today's workaround `INTAKE_WEAVIATE_INDEX_ENABLED=0`; real fix = move the Weaviate write out of the coco target.
+- **Hits carry the B2 key:** `vault_key` + `resolution` (the catalog has no `resolution` column; occurrence `disposition` is used, noted in the SQL).
+- **Weaviate on by default when a collection is configured**, validated at startup; Surreal projection runs inside every index run.
+- **Archive members: half** — `archive-members` lists a 10.7 GB Takeout part in 4.3 s / 1.9 MB read; members are NOT yet fed through extractors; tar/tgz unhandled.
+- **Embeddings:** NIM credits are NOT out (live probe 200; 37,857 chunks embedded today). `INTAKE_EMBED_MODE=deferred` exists as fallback. Summaries off; Gemini not wired.
+- **Moves (owner 10:48):** `document_id = uuid5(source_id, content hash)`; a move changes only `vault_key`, no re-extract/re-embed. Not built: the cheap in-place vault_key patch without a re-run; objects with no catalog SHA-1 fall back to key+size.
+- **Shared toolkit (owner 10:45):** object_store / vault_source / streaming / stream_extract / catalog_source / projections.index_run are shared; image lane NOT yet pointed at the shared reader.
+- **Gotchas:** a different `--path-prefix` under the same `CASEBIBLE_SOURCE_ID` retires the previous slice ("200 deleted") — one source id + output dir per slice; large-object runs wrote to container-local dirs, Parquet lost on redeploy (Weaviate objects persist). `tests/test_migration_partition.py` fails on main already; 111 pass, ruff clean.
+- **Not done:** full corpus run (199,952 of 508,152 objects untouched). Next: archive members through the pipeline; image lane on the shared reader; Weaviate write out of the coco target; then the corpus run. Merge to main = owner decision (#3 from the 10:40 image-index summary).
+
 ### 2026-09-22 — BUILD: Coco super index as a deployed service (branch `feat/superindex-service`)
 
 _Claude Code · Opus 5 · 2026-09-22._ Audit 1 build order items 3–7. Worktree
