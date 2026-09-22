@@ -339,6 +339,12 @@ Queued owner requests. Append new items; strike through completed ones with a da
 - [ ] Junk-filtered recount of the 871 "missing" files (some are `flet_env` venv DLLs in the R2 quarantine bucket).
 - [ ] Owner asked 00:25 whether an agent changed mouse/window-focus settings: read-only check shows Windows focus-follows-mouse (`UserPreferencesMask` bit 0) is ON with `ActiveWndTrkTimeout` 100 ms; nothing this session ran touches settings; when it was switched is not recorded in the registry. One-liner to turn it off given in chat.
 
+### 2026-09-22 09:42 EDT — RUN (owner "go" 09:37): `vault_index_source_20260918` created on the catalog
+
+_Claude Code · Fable 5.1._ Serial run of `casebible/tools/vault_index_source_20260918.sql` on `casebible-pg18` as the script header prescribes. Result: **508,152 objects / 2,170,597,644,994 bytes — equals the 09-16 verified set**; 1,494,138 occurrences attached; 72,985 objects carry no occurrence (the known one-key-per-occurrence limitation named in the script). The super index's catalog mode now has its source (Audit 1 item I-2). Open checkbox at the 09-18 entry is closed by this. Nothing else written.
+
+Also noted: another session (legal workdesk chat) committed image-lane search in `/filesystem/search` as `fb9a3e0` (local, not pushed) — the index agent dispatched next builds on top of it; nothing here overwrites it.
+
 ### 2026-09-22 09:35 EDT — CORRECTION: two audits, not one — super index (service) vs Intake (app)
 
 _Claude Code · Fable 5.1._ Owner 09:23: "you're conflating intake and the underlying coco superindex"; 09:35 chose reading A. Receipt re-cut into Audit 1 (index: 11 items, 2 met) and Audit 2 (Intake app: 9 items, 0 met, 4 partly) with separate build orders; the app's browse / metadata / unit-mark / catalog-search work does not wait on the index. Probata Sources borrows Intake's tooling.
