@@ -67,6 +67,18 @@ async def _spool(windows: AsyncIterator[bytes], suffix: str) -> Path:
     return path
 
 
+async def _disk_windows(path: Path, window_bytes: int) -> AsyncIterator[bytes]:
+    handle = await asyncio.to_thread(open, path, "rb")
+    try:
+        while True:
+            window = await asyncio.to_thread(handle.read, window_bytes)
+            if not window:
+                break
+            yield window
+    finally:
+        await asyncio.to_thread(handle.close)
+
+
 async def extract_stream(
     key: str,
     windows: AsyncIterator[bytes],
@@ -74,7 +86,15 @@ async def extract_stream(
     *,
     window_bytes: int = WINDOW_BYTES,
 ) -> AsyncIterator[str]:
-    """Yield normalized text pieces for one object. Peak memory is one window."""
+    """Yield normalized text pieces for one object. Peak memory is one window.
+
+    Every object is spooled to disk first and then read back in windows. Reading straight
+    from the bucket response looked leaner, but it holds one HTTP response open for as long
+    as the consumer takes — and the consumer embeds every chunk, which for a 61 MB chat
+    export is minutes. The connection died mid-object and lost the whole file. The spool
+    makes the network read short and contiguous; memory is still one window, and the spool
+    is removed as soon as the object is done. Byline: Claude Code · Opus 5 · 2026-09-22.
+    """
     extension = PurePosixPath(key).suffix.casefold()
     outcome.media_type = media_type_for(extension)
 
@@ -144,46 +164,40 @@ async def extract_stream(
         return
 
     produced = False
-    if extension in {".json", ".jsonl"}:
-        outcome.method = "json_record_stream"
-        buffer: list[str] = []
-
-        async def pieces() -> AsyncIterator[str]:
-            async for piece in text_windows(windows):
-                yield piece
-
-        # The splitter is synchronous; feed it one decoded piece at a time.
-        pending: list[str] = []
-        async for piece in pieces():
-            pending.append(piece)
-            for record in split_json_stream(iter(pending)):
-                produced = True
-                text = normalize(record)
-                if text:
-                    yield text
-            pending = []
-        del buffer
-    elif extension in {".htm", ".html"}:
-        outcome.method = "html_text_stream"
-        async for piece in text_windows(windows):
+    spool = await _spool(windows, extension)
+    try:
+        if extension in {".json", ".jsonl"}:
+            outcome.method = "json_record_stream"
+            pending: list[str] = []
+            async for piece in text_windows(_disk_windows(spool, window_bytes)):
+                pending.append(piece)
+                for record in split_json_stream(iter(pending)):
+                    text = normalize(record)
+                    if text:
+                        produced = True
+                        yield text
+                pending = []
+        elif extension in {".htm", ".html"}:
+            outcome.method = "html_text_stream"
             from bs4 import BeautifulSoup  # local import: only HTML pays for it
 
-            from .streaming import normalize as _normalize
-
-            soup = BeautifulSoup(piece, "html.parser")
-            for element in soup(["script", "style", "noscript"]):
-                element.decompose()
-            text = _normalize(soup.get_text("\n", strip=True))
-            if text:
-                produced = True
-                yield text
-    else:
-        outcome.method = "decoded_text_stream"
-        async for piece in text_windows(windows):
-            text = normalize(piece)
-            if text:
-                produced = True
-                yield text
+            async for piece in text_windows(_disk_windows(spool, window_bytes)):
+                soup = BeautifulSoup(piece, "html.parser")
+                for element in soup(["script", "style", "noscript"]):
+                    element.decompose()
+                text = normalize(soup.get_text("\n", strip=True))
+                if text:
+                    produced = True
+                    yield text
+        else:
+            outcome.method = "decoded_text_stream"
+            async for piece in text_windows(_disk_windows(spool, window_bytes)):
+                text = normalize(piece)
+                if text:
+                    produced = True
+                    yield text
+    finally:
+        await asyncio.to_thread(spool.unlink, True)
 
     if not produced:
         outcome.status = "skipped_no_text"
