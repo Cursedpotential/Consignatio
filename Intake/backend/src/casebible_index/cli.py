@@ -293,6 +293,41 @@ def index(
     typer.echo(json.dumps({**receipt, "receipt": str(receipt_path)}, indent=2))
 
 
+@app.command("archive-members")
+def archive_members(
+    key: Annotated[str, typer.Argument(help="Vault key of a .zip object")],
+    size: Annotated[int, typer.Option(min=1, help="Object size in bytes (from the catalog)")],
+    limit: Annotated[int, typer.Option(min=1, help="List at most N members")] = 25,
+    bucket: Annotated[str | None, typer.Option(help="Override INTAKE_VAULT_BUCKET")] = None,
+) -> None:
+    """List members of a ZIP in the bucket WITHOUT downloading it.
+
+    Byline: Claude Code · Opus 5 · 2026-09-22.
+    """
+    import httpx
+
+    from .archive_members import list_members
+    from .object_store import ObjectStore, ReadCounters, configured_credentials
+
+    settings = Settings.from_env().resolved()
+    counters = ReadCounters()
+    with httpx.Client(timeout=120.0) as client:
+        store = ObjectStore(
+            configured_credentials(settings.object_store_scheme),
+            bucket or settings.vault_bucket, httpx.AsyncClient(), counters=counters,
+        )
+        members = list_members(store, key, size, client, limit=limit)
+    typer.echo(json.dumps({
+        "archive_key": key,
+        "archive_bytes": size,
+        "members_listed": len(members),
+        "members": [
+            {"member_path": m.member_path, "byte_size": m.byte_size} for m in members[:limit]
+        ],
+        **counters.snapshot(),
+    }, indent=2))
+
+
 @app.command()
 def inventory(
     source: Annotated[Path | None, typer.Option()] = None,
