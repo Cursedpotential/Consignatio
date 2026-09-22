@@ -140,3 +140,22 @@ def test_an_unsplittable_record_is_wrapped_not_refused():
     assert max(len(chunk.text) for chunk in chunks) <= 2400
     assert sum(len(chunk.text) for chunk in chunks) >= len(blob)
     assert [chunk.ordinal for chunk in chunks] == list(range(len(chunks)))
+
+
+def test_a_truncated_sms_backup_keeps_the_records_it_did_read():
+    """This corpus holds damaged backups; a parse error must not lose what was read."""
+    import io
+
+    from casebible_index.streaming import split_xml_records
+
+    truncated = (
+        b'<?xml version="1.0"?><smses count="3">'
+        b'<sms address="555" body="kept one" date="1"/>'
+        b'<sms address="556" body="kept two" date="2"/>'
+        b'<sms address="557" body="cut off'
+    )
+    notes: list[str] = []
+    blocks = list(split_xml_records(io.BytesIO(truncated), notes))
+    assert len(blocks) == 2
+    assert "kept one" in blocks[0] and "kept two" in blocks[1]
+    assert notes and "ends early or is malformed" in notes[0]

@@ -174,7 +174,7 @@ def _render_json_record(record: str) -> str:
         return record
 
 
-def split_xml_records(handle: io.BufferedIOBase) -> Iterator[str]:
+def split_xml_records(handle: io.BufferedIOBase, notes: list[str] | None = None) -> Iterator[str]:
     """Yield one text block per record element of a record-per-element XML file.
 
     ``iterparse`` with ``clear()`` on the completed element keeps the tree from growing:
@@ -182,7 +182,20 @@ def split_xml_records(handle: io.BufferedIOBase) -> Iterator[str]:
     SBV uses, so a 1 GB backup streams at constant memory.
     """
     root = None
-    for event, element in ET.iterparse(handle, events=("start", "end")):
+    parser = ET.iterparse(handle, events=("start", "end"))
+    while True:
+        # A truncated or damaged backup — this corpus has several — must not lose the
+        # records already read. The parse stops where the damage is and says so, instead
+        # of failing the object. Byline: Claude Code · Opus 5 · 2026-09-22.
+        try:
+            event, element = next(parser)
+        except StopIteration:
+            return
+        except ET.ParseError as error:
+            if notes is not None:
+                notes.append(f"XML ends early or is malformed ({error.msg}); records up to "
+                             "that point were indexed.")
+            return
         if event == "start" and root is None:
             root = element
             continue

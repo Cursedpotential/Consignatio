@@ -130,9 +130,10 @@ async def extract_stream(
         try:
             outcome.method = "xml_record_stream"
             produced = False
+            xml_notes: list[str] = []
             handle = await asyncio.to_thread(open, spool, "rb")
             try:
-                iterator = split_xml_records(handle)
+                iterator = split_xml_records(handle, xml_notes)
                 while True:
                     block = await asyncio.to_thread(next, iterator, None)
                     if block is None:
@@ -156,9 +157,10 @@ async def extract_stream(
                             yield piece
                 finally:
                     await asyncio.to_thread(handle.close)
+            outcome.notes = outcome.notes + tuple(xml_notes)
             if not produced:
                 outcome.status = "skipped_no_text"
-                outcome.notes = ("No usable text was extracted.",)
+                outcome.notes = outcome.notes + ("No usable text was extracted.",)
         finally:
             await asyncio.to_thread(spool.unlink, True)
         return
