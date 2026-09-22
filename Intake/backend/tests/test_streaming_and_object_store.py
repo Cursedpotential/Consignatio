@@ -100,3 +100,29 @@ async def test_stream_yields_bounded_windows_and_counts_bytes():
     assert max(sizes) <= 1_000_000
     assert sum(sizes) == len(body)
     assert counters.bytes_read == len(body)
+
+
+def test_a_moved_vault_object_keeps_its_identity():
+    """Owner 2026-09-22 10:48: sorting and indexing happen at once, so a move must not
+    drop and re-index the object. Only vault_key changes."""
+    from casebible_index.catalog_source import CatalogObject
+    from casebible_index.parquet_store import vault_document_id, vault_version_id
+    from casebible_index.vault_source import VaultFile
+
+    sha1 = "9d2e042d6a4f0d4909cdf47ac848c8636e298810"
+    before = VaultFile(CatalogObject(key="consignatio/vault/v1/inbox/a.txt", byte_size=12,
+                                     sha1=sha1))
+    after = VaultFile(CatalogObject(key="consignatio/vault/v1/sorted/2019/a.txt",
+                                    byte_size=12, sha1=sha1))
+    assert before.identity == after.identity
+    ids = [vault_document_id("vault", f.identity) for f in (before, after)]
+    assert ids[0] == ids[1]
+    versions = [
+        vault_version_id(i, f.identity, embed_model="m", summary_model="s")
+        for i, f in zip(ids, (before, after), strict=True)
+    ]
+    assert versions[0] == versions[1]
+    # A different object is still a different document.
+    other = VaultFile(CatalogObject(key="consignatio/vault/v1/inbox/a.txt", byte_size=13,
+                                    sha1="0" * 40))
+    assert vault_document_id("vault", other.identity) != ids[0]

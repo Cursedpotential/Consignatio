@@ -42,6 +42,7 @@ from .parquet_store import (
     chunk_rows_table,
     document_row_table,
     stable_document_id,
+    vault_document_id,
     vault_version_id,
     write_chunk_shard,
     write_document_row,
@@ -170,10 +171,16 @@ async def process_file(
     resolution = file.resolution
     byte_size = await file.size()
 
-    document_id = stable_document_id(source_id, relative_path)
-    identity = file.identity if isinstance(file, VaultFile) else (
-        f"local:{byte_size}:{(await file._fetch_metadata()).modified_time.isoformat()}"
-    )
+    # Identity: a vault object is identified by its CONTENT, so moving it to its final
+    # folder changes only vault_key (owner 2026-09-22 10:48). A local file keeps the
+    # path-based identity it has always had.
+    if isinstance(file, VaultFile):
+        identity = file.identity
+        document_id = vault_document_id(source_id, identity)
+    else:
+        metadata = await file._fetch_metadata()
+        identity = f"local:{byte_size}:{metadata.modified_time.isoformat()}"
+        document_id = stable_document_id(source_id, relative_path)
     version_id = vault_version_id(
         document_id, identity, embed_model=embed_model, summary_model=summary_model
     )

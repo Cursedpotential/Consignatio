@@ -95,7 +95,10 @@ async def project_index_run(
     )
     for row in rows:
         path = row["vault_key"] or row["relative_path"]
-        key = f"{snapshot_key}:occurrence:{source_id}:{path}"
+        # Keyed by the content-addressed document id, not the path: when the owner moves an
+        # object to its final folder the graph node follows it and only ``path_raw`` changes
+        # (owner ruling 2026-09-22 10:48).
+        key = f"{snapshot_key}:occurrence:{source_id}:{row['document_id']}"
         occurrence = graph.projection_record("occurrence", key)
         await graph.write_imported_node(
             "occurrence",

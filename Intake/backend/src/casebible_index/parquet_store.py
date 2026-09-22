@@ -21,6 +21,22 @@ def stable_document_id(source_id: str, relative_path: str) -> str:
     return str(uuid5(NAMESPACE_URL, f"casebible:{source_id}:{relative_path.casefold()}"))
 
 
+def vault_document_id(source_id: str, identity: str) -> str:
+    """Content-addressed document identity for a catalog object.
+
+    Owner ruling 2026-09-22 10:48: sorting the vault and indexing it happen at the same
+    time, so an object's index row must survive being moved to its final folder. The
+    identity is therefore ``source_id`` + the catalog content hash, NOT the key. Moving an
+    object changes only its ``vault_key`` property: the document id, version id, chunk ids
+    and vectors are unchanged, so nothing is re-extracted and nothing is re-embedded.
+
+    The one exception is an object the catalog has no SHA-1 for (a B2 large file uploaded
+    in parts). Its identity falls back to key+size, which a move does change; those rows
+    re-index. Byline: Claude Code · Opus 5 · 2026-09-22.
+    """
+    return str(uuid5(NAMESPACE_URL, f"casebible:content:{source_id}:{identity}"))
+
+
 def vault_version_id(
     document_id: str, identity: str, *, embed_model: str, summary_model: str
 ) -> str:
