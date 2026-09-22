@@ -121,7 +121,11 @@ def create_api(settings: Settings | None = None) -> FastAPI:
             searcher = WeaviateFilesystemSearcher(search_config)
             vector = None
             if request.mode == "hybrid":
-                if os.getenv("INTAKE_WEAVIATE_EMBED_MODEL") != config.embed_model:
+                # Defaults to the configured NIM model, as the indexer does; an explicit
+                # mismatch is still refused (Claude Code · Opus 5 · 2026-09-22).
+                if os.getenv("INTAKE_WEAVIATE_EMBED_MODEL", config.embed_model) != (
+                    config.embed_model
+                ):
                     raise ValueError(
                         "Filesystem collection embedding model is not configured to match NIM"
                     )

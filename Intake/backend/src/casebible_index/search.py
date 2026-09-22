@@ -149,7 +149,10 @@ def list_documents(settings: Settings, *, limit: int = 100) -> list[dict[str, ob
     try:
         cursor = connection.execute(
             f"""
-            SELECT d.document_id, d.relative_path, d.filename, d.title,
+            SELECT d.document_id, d.relative_path,
+                   COALESCE(d.vault_key, '') AS vault_key,
+                   COALESCE(d.resolution, 'unknown') AS resolution,
+                   d.filename, d.title,
                    d.document_type, d.document_date, d.short_summary,
                    d.review_state, d.index_status
             FROM read_parquet('{_sql_path(documents_glob)}', union_by_name = true) d
