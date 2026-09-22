@@ -9,7 +9,10 @@
 services:
   superindex:
     build:
-      context: ..
+      # Relative to the Coolify project directory (the app's base_directory,
+      # /Intake/backend), not to this file. Coolify runs compose with
+      # --project-directory <base_directory>.
+      context: .
       dockerfile: Dockerfile
     container_name: superindex
     restart: unless-stopped
