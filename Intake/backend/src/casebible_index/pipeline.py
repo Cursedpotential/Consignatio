@@ -35,7 +35,7 @@ from .catalog_source import iter_catalog_objects, safe_relative_key
 from .config import SUPPORTED_EXTENSIONS, Settings
 from .filesystem_search import WeaviateSearchConfig
 from .models import DocumentEnrichment, SourceMetadata, TextChunk
-from .nim import NimClient
+from .nim import NimClient, NimError
 from .object_store import ObjectStore, ReadCounters, configured_credentials
 from .parquet_store import (
     SCHEMA_VERSION,
@@ -156,13 +156,46 @@ class ChunkAccumulator:
         return self._ordinal
 
 
+EMBED_FLOOR_CHARS = 256
+
+
 async def _embed(
     client: NimClient | None, texts: list[str], *, batch_size: int, dimensions: int
-) -> list[list[float]]:
-    """Embed a batch, or return zero vectors when embeddings are deferred."""
+) -> tuple[list[list[float]], list[str]]:
+    """Embed a batch. Returns the vectors and a per-text status.
+
+    A chunk is bounded in CHARACTERS; the provider bounds it in TOKENS. Text with almost no
+    whitespace — minified CSS or JSON inside a chat export — tokenizes far denser than prose,
+    and a 2,400-character chunk of it is rejected with a 400 that failed the whole object.
+    Streaming everything means the object survives: the batch is bisected, and a single text
+    that still fails is halved until its vector can be produced, down to a floor. The FULL
+    chunk text is still stored and still searchable lexically; only the vector covers a
+    prefix, and that is recorded as ``embedding_status="truncated"`` rather than hidden.
+    Byline: Claude Code · Opus 5 · 2026-09-22.
+    """
     if client is None:
-        return [[0.0] * dimensions for _ in texts]
-    return await client.embed_documents(texts, batch_size=batch_size)
+        return [[0.0] * dimensions for _ in texts], ["pending"] * len(texts)
+    try:
+        return await client.embed_documents(texts, batch_size=batch_size), ["ok"] * len(texts)
+    except NimError:
+        if len(texts) > 1:
+            middle = len(texts) // 2
+            left_vectors, left_status = await _embed(
+                client, texts[:middle], batch_size=batch_size, dimensions=dimensions
+            )
+            right_vectors, right_status = await _embed(
+                client, texts[middle:], batch_size=batch_size, dimensions=dimensions
+            )
+            return left_vectors + right_vectors, left_status + right_status
+    text = texts[0]
+    while len(text) > EMBED_FLOOR_CHARS:
+        text = text[: len(text) // 2]
+        try:
+            vectors = await client.embed_documents([text], batch_size=1)
+            return vectors, ["truncated"]
+        except NimError:
+            continue
+    return [[0.0] * dimensions], ["failed"]
 
 
 @coco.fn(memo=True)
@@ -224,7 +257,7 @@ async def process_file(
     client = coco.use_context(NIM_CLIENT) if embed_enabled or summary_enabled else None
     embed_client = client if embed_enabled else None
 
-    def chunk_row(chunk: TextChunk, embedding: list[float]) -> dict:
+    def chunk_row(chunk: TextChunk, embedding: list[float], status: str) -> dict:
         chunk_hash = hashlib.sha256(chunk.text.encode("utf-8")).hexdigest()
         from uuid import NAMESPACE_URL, uuid5
 
@@ -250,7 +283,7 @@ async def process_file(
             "text_sha256": chunk_hash,
             "token_estimate": max(1, len(chunk.text) // 4),
             "embedding": embedding,
-            "embedding_status": "ok" if embed_enabled else "pending",
+            "embedding_status": status,
             "embedding_model": embed_model if embed_enabled else "",
             "schema_version": SCHEMA_VERSION,
             "indexed_at": now,
@@ -260,13 +293,13 @@ async def process_file(
         nonlocal pending, shard_count
         while pending and (final or len(pending) >= chunk_flush_size):
             batch, pending = pending[:chunk_flush_size], pending[chunk_flush_size:]
-            vectors = await _embed(
+            vectors, statuses = await _embed(
                 embed_client, [chunk.text for chunk in batch],
                 batch_size=embed_batch_size, dimensions=embed_dimensions,
             )
             rows = [
-                chunk_row(chunk, list(vector))
-                for chunk, vector in zip(batch, vectors, strict=True)
+                chunk_row(chunk, list(vector), status)
+                for chunk, vector, status in zip(batch, vectors, statuses, strict=True)
             ]
             write_chunk_shard(
                 output_dir, document_id=document_id, version_id=version_id, artifact=artifact,
@@ -275,7 +308,9 @@ async def process_file(
             if weaviate_target is not None:
                 origin, collection, vector_name = weaviate_target
                 for row in rows:
-                    if row["embedding_status"] != "ok":
+                    # "failed" carries a zero vector; Weaviate rejects it and it
+                    # would be a false negative anyway. "truncated" is a real vector.
+                    if row["embedding_status"] in {"pending", "failed"}:
                         continue
                     declare_chunk(origin, collection, row["chunk_id"], ObjectSpec(
                         properties={
