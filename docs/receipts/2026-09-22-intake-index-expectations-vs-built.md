@@ -1,12 +1,62 @@
 ---
-title: Intake CocoIndex super index — expectations and deliverables vs what is built
+title: Coco super index AND the Intake app — two audits, expectations vs built
 date: 2026-09-22
-status: AUDIT — owner asked 09:12 "does the index meet expectations and deliverables"; answer: no, on 14 of 17 items
+status: AUDIT, re-cut 09:35 on owner correction ("you're conflating intake and the underlying coco superindex" → reading A: index = backend service, Intake = the app, Probata borrows Intake's tooling)
 domains: [consignatio, intake, probata, search]
 tags: [audit, cocoindex, super-index, search, weaviate, surreal, catalog, bulk-intake, receipt]
 ---
 
-# Intake super index — expectations vs built
+# Coco super index and the Intake app — expectations vs built
+
+## Correction 2026-09-22 09:23–09:35
+
+The first cut of this receipt treated "the Intake super index" as one thing. Owner: "you're conflating intake and the underlying coco superindex"; reading **A** confirmed 09:35:
+
+- **Coco super index** = `Consignatio/Intake/backend/src/casebible_index` as a backend SERVICE: reads the catalog, extracts, chunks, embeds, writes Parquet / Weaviate / the Surreal file graph, serves search over HTTP.
+- **Intake** = the APP on top (the Xplorer-based co-workspace): browse files unindexed, metadata and units in view, search through the index when it exists, mark units, select, start bulk intake into the Go engine. It uses the index; it is not the index.
+- **Probata Sources / Read** borrow Intake's search tooling; they own no index and no second catalog read.
+
+The table below is split accordingly. Nothing about the facts changed; the grouping and the build order did.
+
+### Audit 1 — the super index (backend service)
+
+| # | Expectation | Built | State |
+|---|---|---|---|
+| I-1 | Index the entire corpus, case-related or not | two desktop runs on small folders | **Missing** |
+| I-2 | Sourced from the PG `raw_duck` catalog | catalog query targets a table never created (09-18 SQL unrun) | **Broken** |
+| I-3 | Stream everything, no 8 MiB / 1M-char / 512-chunk caps | caps still in code | **Broken** |
+| I-4 | Archive members indexed in place | not indexed at all | Missing |
+| I-5 | NIM embeddings, Gemini summaries, summaries as a separate pass | NIM for both, inline; credits out → 503 | Broken |
+| I-6 | Weaviate = vectors (on), Surreal = file graph, DuckDB = lexical | Weaviate opt-in off; `/search` over local Parquet; Surreal projections exist | Partly |
+| I-7 | Multimodal (images, video, audio, scanned PDF; entities → Surreal) | image app (09-21) only | Partly |
+| I-8 | Hits carry the B2 key + catalog resolution | desktop paths only | Missing |
+| I-9 | Deployed as a service on ovh-files | no Dockerfile / Coolify app | Missing |
+| I-10 | Replaces nothing; Go engine still processes every selected file | respected | Met |
+| I-11 | One app; chat ELT a capability inside it | respected | Met |
+
+**Index build order:** (1) owner go on the 09-18 catalog-link SQL; (2) embedding provider; (3) package + deploy on ovh-files; (4) stream + delete caps + archive members; (5) B2 key + resolution on hits; (6) Weaviate on by default, Surreal graph on every run; (7) first corpus run with a receipt.
+
+### Audit 2 — Intake, the app
+
+| # | Expectation | Built | State |
+|---|---|---|---|
+| A-1 | Open and see all files unindexed (09-16 "see-files bar") | Probata's Direct storage tab lists B2; the Xplorer client's state: not audited here | Partly |
+| A-2 | Metadata and unit marks in view (09-22 09:00) | units exist in `raw_duck.atomic_units`; no surface shows them as marks | Missing |
+| A-3 | Search built in from step one: catalog names/paths, contents, meaning, relationships (09-22 09:06) | catalog names/paths only, via Probata's own SQL; the rest waits on Audit 1 | Partly |
+| A-4 | Buttons for every tool (09-21 09:52) | none | Missing |
+| A-5 | One search workbench, all methods, provenance on results (09-14) | not built | Missing |
+| A-6 | Native panels, no iframes, no sample data (09-14) | not built | Missing |
+| A-7 | Same tools serve search AND ingest: mark units, auto-select patterns, bulk intake, canonical-home move (09-20) | bulk engine exists in Probata; not fed from the app | Partly |
+| A-8 | Rough-draft graphs/timelines before full intake (09-18) | not built | Missing |
+| A-9 | Runs before Go intake; discovery drives selection | shape right, never exercised | Partly |
+
+**Intake app build order (does NOT wait on the index):** A-1/A-2 (browse + metadata + unit marks over the catalog and B2, today), A-3 catalog mode now with the other three modes lighting up as Audit 1 lands, A-7 unit marking + bulk start, then A-4/A-5/A-6. Probata Sources = the same screens, borrowed.
+
+---
+
+## Original single-table cut (kept for the record; superseded by the split above)
+
+
 
 > _Byline: Claude Code · Fable 5.1 · 2026-09-22 09:20 EDT. Two read-only agents: one gathered every owner statement on the index (memories, CNF, Consignatio and Probata docs, Codex sessions 2026-09-12 → 09-22, Claude logs), the other mapped the code and receipts in `Intake/backend`. Nothing in the live database was queried; counts marked "receipt" come from written receipts and still need a live check._
 
