@@ -55,6 +55,20 @@ def test_literal_span_preserves_original_offsets_with_unicode_and_whitespace():
     assert _literal_span("the meeting is tomorrow", "meeting today") is None
 
 
+def test_literal_span_covers_full_canonical_composition_sequence():
+    # Hangul Jamo compose across starter characters, which have combining class zero.
+    retained = "before \u1100\u1161\u11a8 after"
+    span = _literal_span(retained, "\uac01")
+    assert span is not None
+    assert retained[slice(*span)] == "\u1100\u1161\u11a8"
+
+    # Combining marks may reorder before composition; offsets still refer to the OCR.
+    retained = "before A\u0315\u0300 after"
+    span = _literal_span(retained, "\u00c0\u0315")
+    assert span is not None
+    assert retained[slice(*span)] == "A\u0315\u0300"
+
+
 @pytest.mark.asyncio
 async def test_keyword_requires_verified_ocr_and_keeps_each_occurrence():
     text = "Reminder: Café\nappointment at noon"
@@ -77,6 +91,7 @@ async def test_keyword_requires_verified_ocr_and_keeps_each_occurrence():
         assert hit.score_basis == "weaviate_bm25"
         assert text[hit.ocr_span_start:hit.ocr_span_end] == "Café\nappointment"
         assert hit.region_status == "not_recorded"
+        assert hit.locator_status == "provisional"
         assert "region" not in hit.model_dump()
 
 

@@ -54,6 +54,7 @@ class ImageHit(BaseModel):
     ocr_span_start: int | None = None
     ocr_span_end: int | None = None
     region_status: Literal["not_recorded"] = "not_recorded"
+    locator_status: Literal["provisional"] = "provisional"
     score: float
 
 
@@ -78,7 +79,12 @@ def _normalized_chars(value: str) -> tuple[str, list[tuple[int, int]]]:
                 index += 1
             normalized = " "
         else:
-            while index < len(value) and unicodedata.combining(value[index]):
+            # NFC also composes Hangul Jamo across combining-class-zero starters.
+            while index < len(value) and (
+                unicodedata.combining(value[index])
+                or len(unicodedata.normalize("NFC", value[start:index + 1]))
+                < len(unicodedata.normalize("NFC", value[start:index])) + 1
+            ):
                 index += 1
             normalized = unicodedata.normalize("NFC", value[start:index]).casefold()
         chars.extend(normalized)
