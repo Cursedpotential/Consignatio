@@ -1,0 +1,143 @@
+ai_chat_probe_20260918|vault_key:text, size:bigint, sha1:text, ext:text, probe_class:text, catalog_rel:text, catalog_path:text, catalog_modtime_hint:timestamp with time zone, n_catalog_occurrences:bigint, discovered_at:timestamp with time zone
+arch|dest:character varying, path:character varying, size:bigint, eff_name:character varying, ext:character varying, rel:character varying, _src_file:character varying, _loaded_at:timestamp with time zone
+atomic_unit_members|unit_id:bigint, key:text
+atomic_units|unit_id:bigint, unit_type:text, source:text, export_root:text, service:text, unit_root:text, member_count:bigint, total_bytes:numeric, member_manifest:text, content_manifest:text, members_without_sha1:bigint, parent_unit_id:bigint
+b2_content|md5:text, size:bigint, b2_key:text, origin:text
+b2_objects|key:text, size:bigint, sha1:text, listed_at:timestamp with time zone
+base|bucket:character varying, path:character varying, name:character varying, size:bigint, md5:character varying, modtime:timestamp without time zone, tier:character varying, eff_name:character varying, _src_file:character varying, _loaded_at:timestamp with time zone
+base2|bucket:character varying, path:character varying, name:character varying, size:bigint, md5:character varying, modtime:timestamp without time zone, tier:character varying, eff_name:character varying, eff_ext:character varying, is_partial:boolean, _src_file:character varying, _loaded_at:timestamp with time zone
+cand|size:bigint, path:character varying, _src_file:character varying, _loaded_at:timestamp with time zone
+chat_candidates_20260918|format_guess:text, vault_key:text, size:bigint, sha1:text, catalog_rel_example:text, n_catalog_occurrences:bigint, discovered_at:timestamp with time zone
+chat_dir_files_20260918|dir_rank:bigint, rel:text, name:text, ext:text, vault_key:text, sha1:text, size:bigint, readable:boolean, first_occurrence:boolean, indexed_before:boolean
+chat_directories_20260918|dir_rank:bigint, priority:integer, root_dir:text, path:text, total_files:bigint, readable_files:bigint, zip_files:bigint, bytes:numeric, readable_bytes:numeric, formats:text, katrina_in_path:boolean, has_katrina_events:boolean, has_candidate:boolean, audio_dir:boolean, already_indexed_files:bigint, files_indexed_now:integer, files_skipped_dup:integer, events_added:bigint, katrina_events_added:bigint, daughter_events_added:bigint, status:text, indexed_at:timestamp with time zone, errors:text, mapped_at:timestamp with time zone
+chat_event_provenance_20260918|dedup_key:text, event_uid:text, source_format:text, extractor:text, vault_key:text, sha1:text, catalog_rel:text, member_path:text, record_index:bigint, ts_original:text, ts_field:text
+chat_events_20260918|dedup_key:text, n_sources:integer, sort_ts:timestamp without time zone, event_ts_utc:timestamp with time zone, tz_status:text, ts_original:text, ts_field:text, source_format:text, event_kind:text, conversation_title:text, conversation_id:text, sender:text, recipients:text, participants:text, direction:text, counterparty_phone:text, contact_name:text, body:text, attachments:text, katrina_ref_type:text, katrina_conf:text, catrina_class:text, daughter_conf:text, custody_hit:boolean, housing_hit:boolean, vault_key:text, catalog_rel:text
+copy_manifest|src_bucket:character varying, src_path:character varying, dest_rel:character varying, size:bigint, md5:character varying, name:character varying, score:integer, _src_file:character varying, _loaded_at:timestamp with time zone
+corrupt_recovery|store:text, container:text, path:text, size:bigint, hash:text, name:text, good_on_b2:boolean, good_in_catalog:boolean
+cube|dest:character varying, size:bigint, fname:character varying, ext:character varying, datedir:character varying, _src_file:character varying, _loaded_at:timestamp with time zone
+dated|dest:character varying, eff_name:character varying, size:bigint, ext:character varying, x:character varying, ms13:bigint, ymd_y:character varying, path_y:character varying, from_y:character varying, _src_file:character varying, _loaded_at:timestamp with time zone
+dec4|bucket:character varying, path:character varying, name:character varying, size:bigint, md5:character varying, modtime:timestamp without time zone, tier:character varying, eff_name:character varying, eff_ext:character varying, is_partial:boolean, score:integer, junk_class:character varying, sorted_score:integer, action:character varying, _src_file:character varying, _loaded_at:timestamp with time zone
+decisions|bucket:character varying, path:character varying, name:character varying, ext:character varying, size:bigint, md5:character varying, modtime:timestamp without time zone, tier:character varying, score:integer, sorted_score:integer, action:character varying, _src_file:character varying, _loaded_at:timestamp with time zone
+dir_identical_groups|dir_manifest:text, copies:bigint, files:bigint, bytes:numeric, dirs:ARRAY, sources:ARRAY
+dir_manifests|dir:text, source:text, depth:integer, name:text, files:bigint, bytes:numeric, dir_manifest:text, content_manifest:text
+dir_samename_overlap|dir_a:text, dir_b:text, name:text, src_a:text, src_b:text, files_a:bigint, files_b:bigint, shared_sha1:bigint, overlap_of_smaller:numeric
+dir_twin_groups|parent:text, base:text, twins:bigint, names:ARRAY, files:numeric, bytes:numeric, distinct_manifests:bigint
+dirs|dir:character varying, files:bigint, bytes:double precision, n_ext:bigint, top_ext:character varying, purity:double precision, depth:bigint, _src_file:character varying, _loaded_at:timestamp with time zone
+enrichment|file_id:character varying, source_path:character varying, ext:character varying, bytes:bigint, mtime:double precision, model:character varying, sampled:character varying, read_error:character varying, title:character varying, doc_type:character varying, is_conversation:boolean, platform_source:character varying, format:character varying, summary:character varying, description:character varying, tags:character varying, parties:character varying, date_start:character varying, date_end:character varying, relevance:character varying, proposed_domain:character varying, subtype:character varying, package_member:boolean, package_name:character varying, chain_of_custody:boolean, completeness_signal:character varying, disposition:character varying, confidence:real, needs_review:boolean, latency_ms:integer, raw:character varying, ts:double precision, r2_relpath:character varying, _src_file:character varying, _loaded_at:timestamp with time zone
+export_unit_folds_v1|content_manifest:text, units:bigint, contents:bigint, bytes:numeric, members:ARRAY
+export_unit_members_v1|src:text, unit_root:text, rel:text, md5:text, size:bigint
+export_units_v1|src:text, unit_root:text, members:numeric, contents:bigint, bytes:numeric, content_manifest:text
+final_survivors|bucket:character varying, path:character varying, name:character varying, ext:character varying, size:bigint, md5:character varying, modtime:timestamp without time zone, tier:character varying, score:integer, _src_file:character varying, _loaded_at:timestamp with time zone, integrity_status:text, integrity_reason:text
+frem|dest:character varying, size:bigint, eff_name:character varying, x:character varying, root:character varying, _src_file:character varying, _loaded_at:timestamp with time zone
+graded_carriers|bucket:text, path:text, size:bigint, md5:text, b2_key:text
+graded_selection|bucket:text, path:text, name:text, size:bigint, md5:text, modtime:timestamp without time zone, mimetype:text, date_trusted:boolean, completeness:integer, disposition:text, rule_version:text, graded_at:timestamp with time zone
+in_sorted|md5:character varying, _src_file:character varying, _loaded_at:timestamp with time zone
+intake_catalog_dirs_20260917|rel:text, parent:text, name:text, nested_files:bigint, nested_bytes:numeric
+intake_catalog_fs_20260917|rel:text, parent:text, name:text, source:text, scope:text, path:text, source_id:text, size:bigint, modtime:timestamp with time zone, native_hash_kind:text, native_hash:text, md5:text, disposition:text, b2_key_recorded:text, matched_origin:text, metadata:jsonb, recorded_at:timestamp with time zone, sha1:text, vault_key:text, resolution:text
+intake_delete_20260916|key:text
+intake_fs_ops_20260917|op_id:bigint, at:timestamp with time zone, op:text, kind:text, from_rel:text, to_rel:text, vault_key_from:text, vault_key_to:text, b2_path_to:text, actor:text, detail:jsonb
+intake_moved_delete_20260916|key:text, size:bigint, sha1:text, action:text, dest_key:text
+intake_moved_delete_20260916_r2|key:text, size:bigint, sha1:text, action:text, dest_key:text
+intake_moved_delete_20260916_r3|key:text, size:bigint, sha1:text, action:text, dest_key:text
+intake_objects_20260916_before|key:text, size:bigint
+intake_objects_20260916_post_clean|key:text, size:bigint, sha1:text
+intake_objects_20260916_r2|key:text, size:bigint, sha1:text
+intake_objects_20260916_r3|key:text, size:bigint, sha1:text
+intake_objects_20260916_r4|key:text, size:bigint, sha1:text
+intake_versions_differ_20260916|key:text, size:bigint, sha1:text
+integrity_hold|id:bigint, catalog:text, bucket:text, path:text, size:bigint, hash_kind:text, original_hash:text, status:text, reason:text, detector:text, detected_at:timestamp with time zone
+junk|bucket:character varying, path:character varying, name:character varying, ext:character varying, size:bigint, md5:character varying, modtime:timestamp without time zone, tier:character varying, score:integer, sorted_score:integer, action:character varying, junk_class:character varying, _src_file:character varying, _loaded_at:timestamp with time zone
+junk4|bucket:character varying, path:character varying, name:character varying, size:bigint, md5:character varying, modtime:timestamp without time zone, tier:character varying, eff_name:character varying, eff_ext:character varying, is_partial:boolean, score:integer, junk_class:character varying, _src_file:character varying, _loaded_at:timestamp with time zone
+keyed|bucket:character varying, path:character varying, name:character varying, ext:character varying, size:bigint, md5:character varying, modtime:timestamp without time zone, tier:character varying, score:integer, name_key:character varying, _src_file:character varying, _loaded_at:timestamp with time zone
+local_files|source:character varying, size:bigint, path:character varying, name:character varying, _src_file:character varying, _loaded_at:timestamp with time zone
+losers|bucket:character varying, path:character varying, name:character varying, ext:character varying, size:bigint, md5:character varying, modtime:timestamp without time zone, tier:character varying, score:bigint, _src_file:character varying, _loaded_at:timestamp with time zone
+mcut|dest:character varying, size:bigint, fy:integer, fm:integer, fy_only:integer, pfy:integer, sub:character varying, folder_year:integer, verdict:character varying, _src_file:character varying, _loaded_at:timestamp with time zone
+media|dest:character varying, eff_name:character varying, size:bigint, ext:character varying, x:character varying, _src_file:character varying, _loaded_at:timestamp with time zone
+mfolder|dest:character varying, size:bigint, fy:integer, fm:integer, fy_only:integer, pfy:integer, sub:character varying, _src_file:character varying, _loaded_at:timestamp with time zone
+ns_canonical|source:character varying, name:character varying, size:bigint, path:character varying, _src_file:character varying, _loaded_at:timestamp with time zone
+ns_unique|source:character varying, name:character varying, size:bigint, path:character varying, rn:bigint, _src_file:character varying, _loaded_at:timestamp with time zone
+paired|datedir:character varying, base:character varying, kind:character varying, dest:character varying, _src_file:character varying, _loaded_at:timestamp with time zone
+r2_files|bucket:character varying, path:character varying, name:character varying, ext:character varying, size:bigint, md5:character varying, modtime:timestamp without time zone, mimetype:character varying, tier:character varying, _src_file:character varying, _loaded_at:timestamp with time zone, integrity_status:text, integrity_reason:text
+r2_inv|bucket:character varying, key:character varying, size:bigint, last_modified:timestamp with time zone, _src_file:character varying, _loaded_at:timestamp with time zone
+rec_all|datedir:character varying, base:character varying, _src_file:character varying, _loaded_at:timestamp with time zone
+rec_surv|datedir:character varying, base:character varying, _src_file:character varying, _loaded_at:timestamp with time zone
+recovery_dump_files_20260916|key:text, size:bigint, sha1:text, recup_root:text, depth:integer, ext:text, dest_type:text
+recovery_integrity_20260916|key:text, size:bigint, sha1:text, dest_type:text, status:text, reason:text, width:integer, height:integer, has_exif:boolean, pages:integer, duration_s:double precision, tool:text, tool_version:text, checked_at:timestamp with time zone, detected_type:text
+recovery_manifest_20260917|src_key:text, recup_root:text, size:bigint, sha1:text, dest_type:text, detected_type:text, status:text, reason:text, bucket:text, action:text, dest_key:text, renamed:boolean
+remaining|dest:character varying, size:bigint, eff_name:character varying, junk_class:character varying, root:character varying, _src_file:character varying, _loaded_at:timestamp with time zone
+resolved|dest:character varying, eff_name:character varying, size:bigint, ext:character varying, x:character varying, ms13:bigint, ymd_y:character varying, path_y:character varying, from_y:character varying, capture_date:date, date_source:character varying, _src_file:character varying, _loaded_at:timestamp with time zone
+scored|bucket:character varying, path:character varying, name:character varying, ext:character varying, size:bigint, md5:character varying, modtime:timestamp without time zone, tier:character varying, score:bigint, _src_file:character varying, _loaded_at:timestamp with time zone
+scored2|bucket:character varying, path:character varying, name:character varying, ext:character varying, size:bigint, md5:character varying, modtime:timestamp without time zone, tier:character varying, score:integer, _src_file:character varying, _loaded_at:timestamp with time zone
+scored4|bucket:character varying, path:character varying, name:character varying, size:bigint, md5:character varying, modtime:timestamp without time zone, tier:character varying, eff_name:character varying, eff_ext:character varying, is_partial:boolean, score:integer, _src_file:character varying, _loaded_at:timestamp with time zone
+side|dest:character varying, datedir:character varying, base:character varying, _src_file:character varying, _loaded_at:timestamp with time zone
+sorted_best|md5:character varying, sorted_score:integer, sorted_copies:bigint, _src_file:character varying, _loaded_at:timestamp with time zone
+sorted_best4|md5:character varying, sorted_score:integer, _src_file:character varying, _loaded_at:timestamp with time zone
+source_mount_candidates|src_a:text, head_a:text, src_b:text, head_b:text, files:bigint, bytes:numeric, avg_tail:numeric
+source_occurrences|source:text, scope:text, path:text, size:bigint, modtime:timestamp with time zone, source_id:text, native_hash_kind:text, native_hash:text, md5:text, disposition:text, b2_key:text, matched_origin:text, metadata:jsonb, recorded_at:timestamp with time zone
+staged|dest:character varying, path:character varying, bucket:character varying, size:bigint, eff_name:character varying, junk_class:character varying, ext:character varying, _src_file:character varying, _loaded_at:timestamp with time zone
+superseded_in_sorted|bucket:character varying, path:character varying, name:character varying, size:bigint, md5:character varying, sorted_score:integer, replaced_by_path:character varying, replaced_by_name:character varying, winner_score:integer, _src_file:character varying, _loaded_at:timestamp with time zone
+surv4|bucket:character varying, path:character varying, name:character varying, size:bigint, md5:character varying, modtime:timestamp without time zone, tier:character varying, eff_name:character varying, eff_ext:character varying, is_partial:boolean, score:integer, _src_file:character varying, _loaded_at:timestamp with time zone
+survivors|bucket:character varying, path:character varying, name:character varying, ext:character varying, size:bigint, md5:character varying, modtime:timestamp without time zone, tier:character varying, score:bigint, _src_file:character varying, _loaded_at:timestamp with time zone
+survivors2|bucket:character varying, path:character varying, name:character varying, ext:character varying, size:bigint, md5:character varying, modtime:timestamp without time zone, tier:character varying, score:integer, name_key:character varying, _src_file:character varying, _loaded_at:timestamp with time zone
+t|dest:character varying, size:bigint, n:character varying, _src_file:character varying, _loaded_at:timestamp with time zone
+tg_dirs|dir:text, depth:integer, files:bigint, bytes:numeric, contents:bigint
+tg_edge_contains|parent:text, child:text
+tg_edge_home|dir:text, other_top:text, shared:bigint
+tg_edge_overlap|a:text, b:text, shared:bigint, pct_of_a:numeric, pct_of_b:numeric
+tg_files|path:text, size:bigint, sha1:text
+tg_node_content|dir:text, sha1:text
+tg_nodes|dir:text, depth:integer, files:bigint, bytes:numeric, contents:bigint, kind:text
+timeline_20260918|sort_ts:timestamp without time zone, tz_status:text, ts_original:text, source_format:text, event_kind:text, sender:text, recipients:text, conversation_title:text, body:text, katrina_ref_type:text, katrina_conf:text, daughter_conf:text, catrina_class:text, custody_hit:boolean, housing_hit:boolean, n_sources:integer, dedup_key:text, vault_key:text
+timeline_catrina_landlord_20260918|sort_ts:timestamp without time zone, tz_status:text, ts_original:text, source_format:text, event_kind:text, sender:text, recipients:text, conversation_title:text, body:text, katrina_ref_type:text, katrina_conf:text, daughter_conf:text, catrina_class:text, custody_hit:boolean, housing_hit:boolean, n_sources:integer, dedup_key:text, vault_key:text
+timeline_daughter_20260918|sort_ts:timestamp without time zone, tz_status:text, ts_original:text, source_format:text, event_kind:text, sender:text, recipients:text, conversation_title:text, body:text, katrina_ref_type:text, katrina_conf:text, daughter_conf:text, catrina_class:text, custody_hit:boolean, housing_hit:boolean, n_sources:integer, dedup_key:text, vault_key:text
+timeline_day_counts_20260918|day:date, events:bigint, katrina:bigint, daughter:bigint, housing:bigint
+timeline_katrina_20260918|sort_ts:timestamp without time zone, tz_status:text, ts_original:text, source_format:text, event_kind:text, sender:text, recipients:text, conversation_title:text, body:text, katrina_ref_type:text, katrina_conf:text, daughter_conf:text, catrina_class:text, custody_hit:boolean, housing_hit:boolean, n_sources:integer, dedup_key:text, vault_key:text
+timeline_katrina_weak_20260918|sort_ts:timestamp without time zone, tz_status:text, ts_original:text, source_format:text, event_kind:text, sender:text, recipients:text, conversation_title:text, body:text, katrina_ref_type:text, katrina_conf:text, daughter_conf:text, catrina_class:text, custody_hit:boolean, housing_hit:boolean, n_sources:integer, dedup_key:text, vault_key:text
+to_copy|source:character varying, name:character varying, size:bigint, path:character varying, _src_file:character varying, _loaded_at:timestamp with time zone
+vault_content_v0|md5:text, size:bigint, canonical_key:text, canonical_depth:integer, chosen_src:text, chosen_rel:text, chosen_depth:integer, occurrences:bigint, sources:bigint
+vault_copy_manifest_v6|canonical_key:text, dest_key:text, size:bigint
+vault_delete_v7|canonical_key:text, dest_key:text, size:bigint
+vault_keep_v6|canonical_key:text, dest_key:text, size:bigint
+vault_keep_v7|canonical_key:text, dest_key:text, size:bigint
+vault_mounts_v4|src:text, src_head:text, f:text, trunk_head:text, support:bigint, sd:integer, td:integer, mp:text, used:boolean, source_files:bigint
+vault_mounts_v5|src:text, src_head:text, f:text, trunk_head:text, support:bigint, sd:integer, td:integer, mp:text, target:text, decision:text, source_files:bigint
+vault_mounts_v6|src:text, src_head:text, f:text, trunk_head:text, support:bigint, sd:integer, td:integer, mp:text, target:text, decision:text, source_files:bigint
+vault_move_rest_20260916|canonical_key:text, size:bigint, sha1:text, tag:text, inner_path:text, plain_dest:text, action:text, dest_key:text
+vault_move_rest_20260916_r2|canonical_key:text, size:bigint, sha1:text, tag:text, inner_path:text, plain_dest:text, action:text, dest_key:text
+vault_move_rest_20260916_r3|canonical_key:text, size:bigint, sha1:text, tag:text, inner_path:text, plain_dest:text, action:text, dest_key:text
+vault_objects|key:text, size:bigint, b2_id:text, md5:text, sha1:text, hash_source:text, depth:integer, basename:text, in_quarantine:boolean
+vault_objects_20260916_post_move|key:text, size:bigint, sha1:text
+vault_objects_20260916_post_move_r2|key:text, size:bigint, sha1:text
+vault_objects_20260916_post_move_r3|key:text, size:bigint, sha1:text
+vault_objects_20260916_post_prune|key:text, size:bigint, sha1:text
+vault_objects_20260916_r2|key:text, size:bigint, sha1:text
+vault_objects_20260916_r3|key:text, size:bigint, sha1:text
+vault_objects_20260916_r4|key:text, size:bigint, sha1:text
+vault_objects_stage|key:text, size:bigint, b2_id:text
+vault_occ_v0|md5:text, size:bigint, canonical_key:text, src:text, rel:text, depth:integer, src_rank:integer
+vault_occ_v1|md5:text, size:bigint, canonical_key:text, src:text, rel:text, joined_by:text, unit_root:text, unit_class:text
+vault_onecopy_extra_20260916|key:text, size:bigint, sha1:text, content_id:text, copies:bigint, kept_key:text
+vault_onecopy_pilot_delete_20260916|key:text, size:bigint, sha1:text, kept_key:text
+vault_place_v1|md5:text, size:bigint, src:text, rel:text, canonical_key:text, mount_head:text, mount_target:text, vpath:text, old_depth:integer, new_depth:integer
+vault_place_v2|md5:text, size:bigint, src:text, rel:text, canonical_key:text, mount_head:text, is_fwd:boolean, rev_target:text, vpath0:text, vpath:text, old_depth:integer, new_depth:integer
+vault_place_v3|md5:text, size:bigint, src:text, rel:text, canonical_key:text, mount_head:text, is_fwd:boolean, rev_target:text, vpath0:text, vpath:text, old_depth:integer, new_depth:integer
+vault_place_v4|md5:text, size:bigint, src:text, rel:text, unit_root:text, unit_class:text, mp:text, trunk_head:text, vunit:text, vpath1:text, old_depth:integer, vpath:text, new_depth:integer
+vault_place_v5|md5:text, size:bigint, src:text, rel:text, unit_root:text, unit_class:text, mp:text, trunk_head:text, decision:text, vunit:text, vpath1:text, old_depth:integer, vpath:text, new_depth:integer
+vault_place_v6|md5:text, size:bigint, src:text, rel:text, canonical_key:text, unit_root:text, unit_class:text, mp:text, trunk_head:text, decision:text, vunit:text, vpath1:text, old_depth:integer, vpath:text, new_depth:integer
+vault_twins_copy_manifest_b1|group_key:text, member_path:text, src_key:text, rel:text, size:bigint, ik:text, trunk_member:text, action:text, dst_key:text
+vault_twins_dir_files|dir_path:text, depth:integer, rel:text, key:text, size:bigint, sha1:text, md5:text
+vault_twins_dirs|dir_path:text, depth:integer, file_count:bigint, total_bytes:numeric, hashed_file_count:bigint, path_size_sig:text, content_sig:text
+vault_twins_group_files|group_key:text, unit_group:boolean, member_path:text, depth:integer, rel:text, size:bigint, ik:text
+vault_twins_group_summary|group_key:text, unit_group:boolean, n_members:integer, total_files:bigint, total_bytes:numeric, distinct_files:bigint, distinct_bytes:numeric, dup_files:bigint, dup_bytes:numeric, trunk_member:text, trunk_bytes:numeric
+vault_twins_groups|group_key:text, unit_group:boolean, member_path:text, member_depth:integer, member_files:bigint, member_gb:numeric, member_units_json:jsonb
+vault_twins_merge_plan|group_key:text, member_path:text, role:text, member_files:bigint, member_bytes:numeric, dup_in_trunk_files:bigint, dup_in_trunk_bytes:numeric, carry_files:bigint, carry_bytes:numeric, batch:integer
+vault_twins_merge_plan_groups|group_key:text, batch:integer, trunk_member:text, n_fold:integer, fold_members:text, trunk_files:bigint, trunk_bytes:numeric, dup_files:bigint, dup_bytes:numeric, carry_files:bigint, carry_bytes:numeric
+vault_twins_overlap|group_key:text, unit_group:boolean, depth:integer, path_a:text, path_b:text, a_files:bigint, a_bytes:numeric, b_files:bigint, b_bytes:numeric, common_files:bigint, common_bytes:numeric, only_a_files:bigint, only_a_bytes:numeric, only_b_files:bigint, only_b_bytes:numeric, path_conflict_files:bigint, overlap_pct:numeric, class:text
+vault_twins_pairs|group_key:text, unit_group:boolean, depth:integer, path_a:text, path_b:text, dropped_nested:boolean
+vault_twins_quarantine_roots|dir_path:text
+vault_twins_rehome|key:text, root:text, size:bigint, class:text, example_home:text
+vault_twins_unit_safety|group_key:text, normalizer_unit_flag:boolean, n_members:integer, any_is_unit:boolean, any_contains_unit:boolean, any_inside_unit:boolean, safety_class:text
+vault_unit_pairs_v1|unit_a:bigint, unit_b:bigint, shared:bigint, overlap_of_smaller:numeric
+vault_unit_roots|unit_root:text, unit_class:text, source:text
+vault_units_v1|unit_id:bigint, src:text, unit_root:text, unit_class:text, members:bigint, bytes:numeric
+vault_units_v2|unit_id:bigint, src:text, unit_root:text, unit_class:text, members:bigint, bytes:numeric

@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "E:\AI_Workspace\_receipts\corruption-hunt\dbackup\inventory.py", line 17, in <module>
+    top = os.path.relpath(p, root).replace(chr(92), "/").split("/")[0]
+          ~~~~~~~~~~~~~~~^^^^^^^^^
+  File "<frozen ntpath>", line 765, in relpath
+ValueError: path is on mount '\\\\.\\nul', start on mount 'D:'

@@ -15,6 +15,8 @@ from urllib.parse import urlsplit
 import httpx
 from pydantic import BaseModel, Field, field_validator
 
+from .image_search import ImageHit
+
 
 class FilesystemSearchRequest(BaseModel):
     query: str = Field(min_length=1, max_length=4096)
@@ -47,6 +49,9 @@ class FilesystemSearchResponse(BaseModel):
     target_vector: str | None
     coverage: str = "unknown"  # Successful query is not proof of complete indexing.
     hits: list[FilesystemHit]
+    # Image lane (Claude Code · Fable 5.1 · 2026-09-22): empty when INTAKE_IMAGES_* is unset.
+    image_collection: str | None = None
+    image_hits: list[ImageHit] = Field(default_factory=list)
 
 
 class FilesystemSearchError(RuntimeError):

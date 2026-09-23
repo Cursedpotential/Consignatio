@@ -1,0 +1,11 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Codex project location correction</title>
+<body><h1>Project location corrected</h1><p>2026-09-11. The earlier claim that the owner approved E:\case_apps was incorrect.</p>
+<p>Owner-directed parent: <code>E:\AI_Workspace\Projects\Propria\Consignatio</code>.</p>
+<ul><li>A/B worktree: <code>Consignatio\repair-tool-kit-codex</code>, branch <code>codex/casekit-ab</code>. Moved with git worktree move; existing source changes preserved.</li>
+<li>Module source: <code>repair-tool-kit-codex\repair-tool-kit</code>. It remains a module/tool of Consignatio, not a separately installed product.</li>
+<li>Builds, caches, temporary files and DuckDB extension: <code>repair-tool-kit\runtime-codex</code>. Existing state moved from the incorrect drive-root location.</li>
+<li>The now-empty E:\case_apps directory shells were moved to <code>repair-tool-kit\to_be_deleted\empty-case-apps-codex</code>. Nothing permanently deleted; only the owner may delete quarantined material. E:\case_apps no longer exists.</li></ul>
+<h2>Verification</h2><ul><li>Go vet, build and tests passed after relocation, including configuration path-escape rejection.</li><li>Build script rejects a StateRoot outside this project before creating directories; tested with the former drive-root path.</li><li>Fresh Windows console/GUI binaries passed version and PE subsystem checks; normal shortcut launch exits 0. Physical no-flash observation is not claimed.</li><li>Linux cross-build passed and ELF header checked; not executed on Linux.</li><li>Existing relocated webbed extension loads from runtime-codex; no reinstall required.</li><li>Windows binary invoked from the parent directory still resolves its embedded project root correctly.</li></ul>
+<p>New verified build: <code>runtime-codex\builds\20260911-215633-477-57f879a9</code>. Earlier builds and their hashes in the Phase 0 receipt are historical and preserved. Earlier shortcuts retain obsolete targets; use the fresh build's shortcut.</p>
+<p>README and previous receipts corrected. Supplied buildkit documents remain unmodified references. No later-phase implementation, other-agent checkout modification, corpus scan, or service installation.</p>
+</body></html>

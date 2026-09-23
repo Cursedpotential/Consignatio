@@ -8,7 +8,7 @@ that the application MVP or live combined-index proof is complete.
 | Vault plans, Intake UI/backend, original development tools | https://github.com/Cursedpotential/Consignatio | `main`; source-only root `aa3b9bc7` plus publication documentation |
 | Native Intake desktop (Xplorer fork) | https://github.com/Cursedpotential/Intake-desktop | `feat/acp-copilot`, `6990b7ed` |
 | Existing Xplorer build kit | https://github.com/Cursedpotential/xplorer-copilot-buildkit | `main`, `d0954e37` |
-| Repair toolkit Phase 0 source snapshot | https://github.com/Cursedpotential/Consignatio/tree/repair-toolkit-snapshot | `repair-toolkit-snapshot`, `2b241209` |
+| Repair toolkit source | https://github.com/Cursedpotential/Consignatio | `main`, under `repair-tool-kit/`; source-only integration from local `cfe951a` and its preserved working changes |
 
 ## Recreate the application checkout
 
@@ -37,8 +37,11 @@ No working files were removed or restored over user edits.
 The linked worktree `repair-tool-kit-codex/` stays on local `codex/casekit-ab` at
 `cfe951a`, preserving its inherited history. Its 36 new source files were committed
 locally and exported as a separate source-only root on `repair-toolkit-snapshot`.
-The snapshot branch has the module files at its root; it is a backup, not a merge
-into Intake. Do not push `codex/casekit-ab` or the archival branch.
+The snapshot branch remains a historical backup. On 2026-09-20 the module source
+was copied into main under `repair-tool-kit/`, including its tested engine additions,
+without merging the archival ancestry. Existing planning files remain, with the
+original plan README in `repair-tool-kit/BUILD-KIT-README.md`. Do not push or merge
+`codex/casekit-ab` or the archival branch.
 
 **Never use `git push --all` or `git push --mirror` here.** Push named source branches
 only. The old corpus history is not part of the private source backup.

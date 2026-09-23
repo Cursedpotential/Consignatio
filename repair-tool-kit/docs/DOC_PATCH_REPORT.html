@@ -1,0 +1,37 @@
+<!doctype html>
+<!-- Updated by: Codex (case-bible/mp-doc-patching) | Date: 2026-09-12 | Rev: 2 | Platform: Codex / win32 | Changes: Add canonical remote-first decision and completed static checks | Context: The owner selected this lane and moved production processing responsibility to the VPS -->
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>casekit — Documentation patch report</title>
+<style>body{font:16px/1.6 system-ui,sans-serif;max-width:1000px;margin:40px auto;padding:0 24px;background:#111820;color:#e0e7ed}h1,h2{color:#8cdbca}code{font-family:Consolas,monospace;background:#1c2731;overflow-wrap:anywhere}table{border-collapse:collapse;width:100%}td,th{text-align:left;vertical-align:top;padding:10px;border-bottom:1px solid #35414b}a{color:#8cccf4}.pending{color:#ffd18a}footer{margin-top:3rem;padding-top:1rem;border-top:1px solid #35414b;color:#9ba8b3}</style></head>
+<body>
+<h1>Documentation patch report</h1>
+<p>2026-09-12 · Owner-approved cross-platform extraction engine requirement</p>
+
+<h2>Applied</h2>
+<table><tr><th>File</th><th>Change</th></tr>
+<tr><td><a href="engine-platform-profiles.html">engine-platform-profiles.html</a></td><td>Added the normative <code>poppler-windows-amd64</code> and <code>poppler-linux-amd64</code> identity, invocation, extraction-check, certification, and package-provenance contract.</td></tr>
+<tr><td><a href="../README.md">README.md</a></td><td>Linked the contract from the project entry point and stated that both target profiles remain pending.</td></tr>
+<tr><td><a href="phase0.html">phase0.html</a></td><td>Added the dual-platform 33-glyph bake-off to the open v3 boundary and clarified that Phase 1 must carry profile identity into the registry and extraction packages.</td></tr>
+<tr><td><a href="canonical-runtime-boundary.html">canonical-runtime-boundary.html</a></td><td>Recorded this Codex implementation as the canonical product baseline and defined Windows as dev/test/control, Linux VPS as production compute, and remote services as durable storage.</td></tr>
+</table>
+
+<h2>Deliberately not applied</h2>
+<ul><li>No supplied file under <code>reference/buildkit-v3</code> was changed.</li>
+<li>No Poppler binary was installed, replaced, downloaded, or invoked.</li>
+<li>No evidence file was copied, moved, hydrated, or modified.</li>
+<li>No Windows or Linux profile was marked passing; both target executions remain pending.</li>
+<li>No engine registry, extraction worker, queue, Dragonfly cache, database schema, or later-phase code was implemented.</li>
+<li>No commit, push, merge, deployment, VPS mutation, service change, or global environment change was performed.</li></ul>
+
+<h2>Verification for this patch</h2>
+<p>PASS: <code>git diff --check</code> reported no whitespace errors. Each touched HTML document has a doctype, closing HTML element, and Codex/win32 byline. Required profile IDs and pending status language were found by static search. Runtime engine verification is intentionally not part of this documentation-only change.</p>
+
+<h2>Unresolved implementation work</h2>
+<ol><li>Provision a complete, pinned Windows Poppler distribution containing <code>pdftotext</code> inside the approved project/runtime boundary.</li>
+<li>Pin the production Linux Poppler distribution on the VPS and record its actual absolute path and hashes.</li>
+<li>Freeze the fixture check definitions and any acceptable character-volume bounds in executable tests.</li>
+<li>Run each profile independently against the hash-verified reference PDF and preserve complete run records.</li>
+<li>Implement profile-aware registry discovery, doctor output, fail-closed invocation, and extraction-package provenance in the approved phases.</li></ol>
+
+<footer>Patch owner: Matthew Salem · Applied by Codex · Scope: documentation only.</footer>
+</body></html>

@@ -1,0 +1,3 @@
+root=F: files=275778 GB=160.2 zero_length_files=18300 ALL_ZERO_PAYLOAD_FILES=9207 zero_GB=7.46 errors=1 secs=3294
+all-zero by attribute: {'plain': 9207}
+all-zero by top folder: [('isk Drill', 9166), ('ase', 41)]

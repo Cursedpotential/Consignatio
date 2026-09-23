@@ -73,6 +73,23 @@ def _parser() -> argparse.ArgumentParser:
     bridge.add_argument("--expected-partition-count", type=int, required=True)
     bridge.add_argument("--expected-record-count", type=int, required=True)
     bridge.add_argument("--finalized-at")
+
+    metadata = subcommands.add_parser(
+        "import-metadata",
+        help="import provenance-bearing PG18/provider/sidecar metadata assertions",
+    )
+    metadata.add_argument("--ledger", type=Path, required=True)
+    metadata.add_argument(
+        "--assertion-partition", type=Path, action="append", required=True
+    )
+
+    resolve = subcommands.add_parser(
+        "resolve-metadata",
+        help="resolve exact-content metadata donors and export reviewable assertions",
+    )
+    resolve.add_argument("--ledger", type=Path, required=True)
+    resolve.add_argument("--output-dir", type=Path, required=True)
+    resolve.add_argument("--resolved-at")
     return parser
 
 
@@ -108,13 +125,21 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "import-sha256-ledger":
             results = builder.import_sha256_ledger(args.ledger_partition)
             print(json.dumps([asdict(result) for result in results], sort_keys=True))
-        else:
+        elif args.command == "finalize-sha256-bridge":
             result = builder.finalize_sha256_bridge(
                 args.expected_partition_count,
                 args.expected_record_count,
                 finalized_at=args.finalized_at,
             )
             print(json.dumps(asdict(result), sort_keys=True))
+        elif args.command == "import-metadata":
+            results = builder.import_metadata_assertions(args.assertion_partition)
+            print(json.dumps([asdict(result) for result in results], sort_keys=True))
+        else:
+            count = builder.write_metadata_resolution(
+                args.output_dir, resolved_at=args.resolved_at
+            )
+            print(json.dumps({"resolution_count": count}, sort_keys=True))
     return 0
 
 

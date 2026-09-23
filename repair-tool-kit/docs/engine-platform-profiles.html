@@ -1,0 +1,104 @@
+<!doctype html>
+<!-- Updated by: Codex (case-bible/mp-doc-patching) | Date: 2026-09-12 | Rev: 2 | Platform: Codex / win32 | Changes: Make Windows a development profile and Linux the production gate | Context: The owner directed that nearly all storage and processing move off the workstation -->
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>casekit — Cross-platform engine profiles</title>
+<style>body{font:16px/1.6 system-ui,sans-serif;max-width:1100px;margin:40px auto;padding:0 24px;background:#111820;color:#e0e7ed}h1,h2,h3{color:#8cdbca}code,pre{font-family:Consolas,monospace;background:#1c2731;overflow-wrap:anywhere}pre{padding:16px;white-space:pre-wrap}table{border-collapse:collapse;width:100%}td,th{text-align:left;vertical-align:top;padding:10px;border-bottom:1px solid #35414b}a{color:#8cccf4}.pending{color:#ffd18a}.required{color:#9fe6ae}.warn{color:#ffadad}footer{margin-top:3rem;padding-top:1rem;border-top:1px solid #35414b;color:#9ba8b3}</style></head>
+<body>
+<h1>Cross-platform engine identity and validation contract</h1>
+<p><strong>Status:</strong> owner-approved requirement, recorded 2026-09-12. Implementation and platform certification are pending.</p>
+<p>This decision applies to every external extraction engine. The first required pair is Poppler because Windows is the development/test and desktop-control environment while Linux is the production worker environment. The two builds are separate test subjects:</p>
+<ul><li><code>poppler-windows-amd64</code></li><li><code>poppler-linux-amd64</code></li></ul>
+<p class="warn"><strong>A pass on either profile is not evidence that the other profile passes.</strong> Differences in Poppler version, compilation, linked libraries, fonts, executable layout, locale, or command behavior can change extraction output.</p>
+
+<h2>Required profile record</h2>
+<table><tr><th>Field</th><th>Requirement</th></tr>
+<tr><td>Engine profile ID</td><td>Stable platform-qualified ID, beginning with the two IDs above.</td></tr>
+<tr><td>Engine ID and version</td><td>Canonical family ID (<code>poppler</code>) and version obtained from the exact executable under test. Version is data, not inferred from a download filename.</td></tr>
+<tr><td>Operating system and architecture</td><td>Normalized OS (<code>windows</code> or <code>linux</code>) and architecture (<code>amd64</code>), plus the raw values reported by the runtime.</td></tr>
+<tr><td>Executable hash</td><td>SHA-256 of every executable actually invoked. The primary <code>pdftotext</code> hash is mandatory.</td></tr>
+<tr><td>Full resolved path</td><td>Canonical absolute path observed by the worker at execution time. No unresolved environment variable, relative path, PATH-only name, or guessed production path.</td></tr>
+<tr><td>Capabilities</td><td>Declared operations and formats from the engine manifest, including at minimum PDF <code>extract_text</code> for the first Poppler profile.</td></tr>
+<tr><td>Exact command invoked</td><td>Executable plus ordered argument vector exactly as executed. Also retain a rendered display string, working directory, relevant locale/environment overrides, exit code, stdout hash, and stderr hash.</td></tr>
+<tr><td>Extraction checks</td><td>Every check name, expected value/range, observed value, status, explanation, and associated output hash. A single aggregate <code>passed: true</code> is insufficient.</td></tr>
+</table>
+
+<h2>Normative run-record shape</h2>
+<p>The registry describes what may run. A run record proves what did run. The extraction package must preserve the run record (or an immutable content-addressed snapshot of it), so a later registry edit cannot rewrite history.</p>
+<pre>{
+  "schema_version": 1,
+  "engine_profile_id": "poppler-windows-amd64",
+  "engine_id": "poppler",
+  "engine_version": "&lt;reported by executable&gt;",
+  "platform": {
+    "os": "windows",
+    "architecture": "amd64",
+    "runtime_os": "&lt;observed&gt;",
+    "runtime_architecture": "&lt;observed&gt;"
+  },
+  "primary_executable": {
+    "resolved_path": "&lt;absolute path observed at execution&gt;",
+    "sha256": "&lt;64 lowercase hexadecimal characters&gt;"
+  },
+  "capabilities": ["extract_text:application/pdf"],
+  "invocation": {
+    "argv": ["&lt;resolved pdftotext path&gt;", "-enc", "UTF-8", "&lt;input path&gt;", "&lt;output path&gt;"],
+    "display": "&lt;safely rendered command for review&gt;",
+    "working_directory": "&lt;absolute path&gt;",
+    "environment_overrides": {"&lt;relevant name&gt;": "&lt;value or redacted marker&gt;"},
+    "exit_code": 0,
+    "stdout_sha256": "&lt;hash&gt;",
+    "stderr_sha256": "&lt;hash&gt;"
+  },
+  "fixture": {
+    "id": "pdf-33-zapfdingbats",
+    "input_sha256": "f18e250e5aca784f2043dc6f141eca983a2a82e29ba55ebf3bb82b91d39da48b",
+    "input_bytes": 36025
+  },
+  "checks": [
+    {"id": "symbol_glyph_count", "expected": 33, "observed": null, "status": "pending", "explanation": "not run"},
+    {"id": "symbol_glyph_codepoint", "expected": "U+25A0", "observed": null, "status": "pending", "explanation": "not run"},
+    {"id": "replacement_chars", "expected": 0, "observed": null, "status": "pending", "explanation": "not run"},
+    {"id": "char_volume", "expected": "within frozen fixture bounds", "observed": null, "status": "pending", "explanation": "bounds not frozen"}
+  ],
+  "verified_at": null,
+  "status": "pending"
+}</pre>
+<p>The Linux record uses the same shape with <code>engine_profile_id: poppler-linux-amd64</code> and observed Linux values. JSON stores <code>argv</code> as the authoritative command representation; the display string exists for humans and must not be reparsed for execution.</p>
+
+<h2>Reference artifact and check boundaries</h2>
+<table><tr><th>Property</th><th>Recorded value</th></tr>
+<tr><td>Local source path used to identify the fixture</td><td><code>D:\Backup\Court\Call data\+18102689630 (1) (1).pdf</code></td></tr>
+<tr><td>Buildkit normalized name</td><td><code>_18102689630__1___1_.pdf</code>; the name differs, so hash and byte length establish fixture identity.</td></tr>
+<tr><td>Bytes</td><td>36,025</td></tr>
+<tr><td>SHA-256</td><td><code>f18e250e5aca784f2043dc6f141eca983a2a82e29ba55ebf3bb82b91d39da48b</code></td></tr>
+<tr><td>MD5 (legacy cross-store matching only)</td><td><code>71bf264505e645b8a35a11e883fd1fb8</code></td></tr>
+</table>
+<p>The fixture must be identified by SHA-256 before execution; matching a filename alone is not enough. The input evidence remains immutable. Test output and scratch files go to the lane's controlled runtime area on Windows or the designated worker scratch area on Linux.</p>
+<p>The Poppler text-engine check covers its own output. The later complete PDF extraction package also has an independent raw-content-stream channel for text runs invisible to normal extractors, including the documented <code>Love you</code> plus four-glyph run. That package-level requirement must not be misreported as a capability of <code>pdftotext</code> alone.</p>
+<p>For cross-platform comparison, retain hashes of raw bytes and of a separately labelled normalized-text view. Normalization may standardize BOM and newline representation for comparison, but it must not fold Unicode characters, replace glyphs, trim content, or overwrite the raw output.</p>
+
+<h2>Certification matrix</h2>
+<table><tr><th>Profile</th><th>Execution role</th><th>Executable identity</th><th>33-glyph run</th><th>Status</th></tr>
+<tr><td><code>poppler-windows-amd64</code></td><td>Development/test and desktop diagnostics; bounded fallback only when explicitly selected</td><td class="pending">Full eligible distribution and <code>pdftotext</code> path/hash not yet recorded</td><td class="pending">Not run against the pinned Windows binary</td><td class="pending">PENDING</td></tr>
+<tr><td><code>poppler-linux-amd64</code></td><td>VPS production worker</td><td class="pending">Pinned VPS path/version/hash not yet recorded</td><td class="pending">Not run against the pinned production binary</td><td class="pending">PENDING</td></tr>
+</table>
+<p>A previously observed Linux-sandbox result remains background evidence about Poppler as an implementation. It does not certify <code>poppler-linux-amd64</code> until the pinned VPS executable produces a complete run record. Likewise, the locally discovered partial Poppler toolset (reported as 26.07.0 and lacking <code>pdftotext</code>) is not an eligible Windows profile.</p>
+
+<h2>Acceptance and failure rules</h2>
+<ol>
+<li>Resolve the executable, calculate SHA-256, query its version, and validate the input fixture hash before invoking extraction.</li>
+<li>Run the same frozen fixture and check definitions independently on both platforms.</li>
+<li>Fail the profile on a missing executable, hash/version mismatch, timeout, nonzero exit, malformed output, failed check, or incomplete provenance. Never silently select a PATH fallback.</li>
+<li>Preserve each platform result even when results disagree. A mismatch opens a review item; it is not normalized away.</li>
+<li>Write the profile ID and immutable run-record identity into every extraction package and later derived record that depends on its output.</li>
+<li>Do not promote either profile from <code>pending</code> until its own target environment has executed the exact reference artifact and all required fields and checks are populated.</li>
+</ol>
+
+<h2>Phase impact</h2>
+<ul><li><strong>Phase 0 closure:</strong> the v3 Poppler bake-off remains open until the pinned Windows profile is tested. The existing Go/PE/ELF receipt is still valid for the earlier skeleton scope.</li>
+<li><strong>Phase 1 engine registry:</strong> registry and doctor output must expose profile ID, platform, resolved path, version, hash, capabilities, and certification status—not only a language-neutral engine name.</li>
+<li><strong>Production readiness:</strong> the Linux VPS profile is the deployment gate even if the Windows development profile passes first. Production must not silently fall back to corpus-scale local execution.</li>
+<li><strong>Extraction packages:</strong> package provenance records the actual engine profile and run, enabling reproducibility, comparison, deduplication, and later lakehouse audit.</li></ul>
+
+<footer>Decision owner: Matthew Salem · Recorded by Codex · Scope: casekit extraction engines · Supplied v3 reference documents were not modified.</footer>
+</body></html>

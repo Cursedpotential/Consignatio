@@ -1,0 +1,24 @@
+BEGIN
+CREATE TABLE
+COPY 20512
+hold rows loaded | 20512
+BEFORE r2_files md5 not null | 1279477 | survivors md5 not null | 337067
+CREATE TABLE
+ALTER TABLE
+ALTER TABLE
+SELECT 9470
+INSERT 0 33685
+audit rows | raw_duck.final_survivors | all_zero_payload | 9470
+audit rows | raw_duck.final_survivors | zero_bytes_no_content | 1
+audit rows | raw_duck.r2_files | all_zero_payload | 20512
+audit rows | raw_duck.r2_files | zero_bytes_no_content | 3702
+UPDATE 20512
+UPDATE 3702
+UPDATE 9470
+UPDATE 1
+AFTER flagged r2_files | 24214 | flagged still hashed (must be 0) | 0
+AFTER flagged survivors | 9471 | still hashed (must be 0) | 0
+AFTER r2_files md5 not null | 1255263 | survivors md5 not null | 327596
+good rows touched (must be 0) | 0
+zero payload still matchable by md5 (must be 0) | 0
+COMMIT

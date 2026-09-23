@@ -1,0 +1,2 @@
+102-moveid verify: quarantine_total=166 old_takeout_files_now=28838 missing=0 size_or_md5_bad=0 id_mismatch=0 still_in_old_takeout=0 RESULT=PASS
+64-path-move verify: missing=0 size_or_md5_bad=0 still_at_original_path=0 RESULT=PASS

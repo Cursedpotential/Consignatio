@@ -1,0 +1,13 @@
+files=275778 GB=160.2 zero_byte=18300 cloud_or_offline_attr=0 stat_errors=0 secs=196
+  Disk Drill                                         files=  167308 GB=14.1
+  case                                               files=   56174 GB=41.1
+  Users                                              files=   50060 GB=45.3
+  New Folder With Items                              files=    2038 GB=4.6
+  P                                                  files=     191 GB=52.7
+  case.xxh3                                          files=       1 GB=0.0
+  Downloads.html                                     files=       1 GB=0.0
+  Downloads.xxh3                                     files=       1 GB=0.0
+  FreeEed-10.8.0.zip                                 files=       1 GB=0.3
+  FreeEed-10.8.1-SNAPSHOT-Windows.exe                files=       1 GB=1.0
+  freeeed_complete_pack-10.8.0.zip                   files=       1 GB=1.0
+  freeeed_complete_pack-10.8.0.zip.xxh3              files=       1 GB=0.0
