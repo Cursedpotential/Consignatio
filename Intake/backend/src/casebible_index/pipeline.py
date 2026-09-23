@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 from collections.abc import AsyncIterator
 from contextlib import AsyncExitStack, asynccontextmanager
@@ -352,7 +353,31 @@ async def coco_lifespan(builder: coco.EnvironmentBuilder) -> AsyncIterator[None]
         builder.provide(RUN_STATUS, status)
 
         async def observe_failure(exc: BaseException, context: coco.ExceptionContext) -> None:
+            # Byline: Claude Code · Sonnet 5 · 2026-09-14 -- failure_events was a bare
+            # counter with no retained detail, so a dead run left no way to explain
+            # *why* files failed. Append one compact, path-scoped line per failure to
+            # a diagnostics log beside the run status; never touches source bytes.
             status.failure_events += 1
+            try:
+                diagnostics_path = _settings.output_dir / "run-status" / "failure-diagnostics.jsonl"
+                diagnostics_path.parent.mkdir(parents=True, exist_ok=True)
+                original = context.original_exception or exc
+                with diagnostics_path.open("a", encoding="utf-8") as handle:
+                    handle.write(
+                        json.dumps(
+                            {
+                                "reported_at": datetime.now(UTC).isoformat(),
+                                "stable_path": context.stable_path,
+                                "processor_name": context.processor_name,
+                                "source": context.source,
+                                "exception_type": type(original).__name__,
+                                "exception_message": str(original)[:2000],
+                            }
+                        )
+                        + "\n"
+                    )
+            except OSError:
+                pass
             if status.failure_events == 1 or status.failure_events % 25 == 0:
                 status.save(_settings.output_dir, "running_with_errors")
 

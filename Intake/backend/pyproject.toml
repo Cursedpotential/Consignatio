@@ -10,6 +10,8 @@ dependencies = [
     "charset-normalizer>=3.4.0",
     "cocoindex>=1.0.14",
     "duckdb>=1.4.0",
+    "pytz>=2026.3",  # Byline: Claude Code · Sonnet 5 · 2026-09-14 -- duckdb needs this to
+    # convert TIMESTAMPTZ columns (source_created_at etc.) via fetchone/fetchall.
     "fastapi>=0.116.0",
     "httpx>=0.28.0",
     "pyarrow>=20.0.0",

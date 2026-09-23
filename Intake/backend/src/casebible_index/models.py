@@ -122,3 +122,10 @@ class SearchResponse(BaseModel):
     model: str
     snapshot: str | None
     hits: list[SearchHit]
+
+
+class LakeQueryRequest(BaseModel):
+    """Read-only SQL over the two fixed lake views (`documents`, `chunks`)."""
+
+    sql: str = Field(min_length=1, max_length=8000)
+    limit: int = Field(default=200, ge=1, le=1000)
