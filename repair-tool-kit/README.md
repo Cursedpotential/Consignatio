@@ -1,75 +1,65 @@
-# casekit — build kit
+<!-- Updated by: Codex (case-bible/mp-doc-patching) | Date: 2026-09-12 | Rev: 2 | Platform: Codex / win32 | Changes: Declare the canonical remote-first baseline and link platform engine requirements | Context: The owner selected the Codex implementation and designated the VPS as the production processing plane -->
+# casekit — Codex A/B, Phase 0
 
-Planning output for a local evidence extraction and packaging tool.
-Generated 2026-09-11. Greenfield, single workstream.
+Minimal Go CLI skeleton. No extraction, file operations, indexing, workers, or
+integration are implemented in this phase.
 
-## Read in this order
+**Canonical status:** the owner selected this Codex implementation as the
+canonical casekit baseline on 2026-09-12. See the
+[canonical source and remote-first runtime boundary](docs/canonical-runtime-boundary.html).
+Windows is the development/test and desktop control surface; the Linux VPS is
+the production execution plane, and durable corpus/lakehouse storage belongs in
+remote stores rather than on the workstation.
 
-| # | File | What it is |
-|---|---|---|
-| 0 | **`KICKOFF.md`** | **Paste this into Claude Code first.** Session-zero orientation prompt. |
-| 1 | **`RULES.md`** | **Operating agreement. Outranks everything else here.** |
-| 2 | `BUILD_GUIDE.md` | One-page orientation and architecture sketch |
-| 3 | `FINDINGS.md` | What the real evidence files actually contain, with reproduction commands |
-| 4 | `STACK.md` | Chosen stack, versions, rejected alternatives |
-| 5 | `GOTCHAS.md` | Ranked failure modes — most were hit during planning |
-| 6 | `SPLIT.md` | The engine contract (the boundary that matters) |
-| 7 | `PHASES.md` | Build sequence with hard exit criteria |
-| 8 | `PROMPTS.md` | Copy-paste task prompts, one per phase |
-| 9 | `TOOL-CATALOG.md` | Everything needed to build and run |
-| 10 | `INTEGRATION.md` | Deferred: Temporal, n8n, the Go engine boundary, promotion and hash levels. Nothing decided — plus one thing that shouldn't wait. |
-| 11 | `DIAGRAMS.html` | All of the above, visually — open in a browser |
+Source plan: `F:\Users\matts\Downloads\repair_tool_kit_buildkit_v2.zip`.
+The earlier `repair_tool_kit_buildkit.zip` supplies the missing BUILD_GUIDE and
+TOOL-CATALOG documents. Neither archive supplied the referenced scaffold.
+Their contents remain unmodified. The owner approved Phase 0, not a drive-root installation. Casekit is a module
+inside Consignatio. The source now lives in the primary Consignatio `repair-tool-kit/` module;
+controlled state stays inside this module under runtime-codex.
 
-## Scaffold
+## Build and test
 
-`scaffold/` is the stub tree. Every file carries a `TODO(claude)` naming what
-goes there and which phase implements it. Copy it to the repo root to start.
+From PowerShell 7, with Go 1.26 installed:
 
-## Start here
-
-```
-cd <repo>
-# 1. copy scaffold/ to the repo root
-# 2. put both reference files in docs/reference/
-# 3. paste KICKOFF.md into a fresh Claude Code session
-# 4. when it reports back, paste PROMPTS.md → Phase 0
+```powershell
+cd "E:\AI_Workspace\Projects\Propria\modules\Consignatio\repair-tool-kit" && pwsh -NoProfile -File .\scripts\build.ps1 -Target all -Version 0.0.0-phase0
 ```
 
-### Formats covered in the core build
+The script prints a fresh output directory containing `casekit.exe`,
+`casekitw.exe`, and `casekit-linux-amd64`. It runs vet, build, and tests first.
+`-Target windows`, `linux`, or `verify` provide smaller tasks. Taskfile targets
+wrap the same script if Task is installed; Task is not required or installed here.
+PowerShell 7 on Windows is the tested build host; Linux is a cross-compile target.
 
-| Format | Phase | Engine | Status |
-|---|---|---|---|
-| **PDF** transcripts | 4 | poppler + raw-stream channel | verified on a real file |
-| **XML** SMS/MMS exports | 5 | duckxml (slim pass + DuckDB) | verified on a real file |
-| **JSON** Facebook / Instagram / generic | 5b | duckjson (normalize + DuckDB) | gotchas documented, unverified |
-| **ZIP** containers | 5c | container + ziprepair ladder | gotchas documented, unverified |
+All controlled caches, temporary files and outputs use
+`E:\AI_Workspace\Projects\Propria\modules\Consignatio\repair-tool-kit\runtime-codex`. No global environment settings are changed.
+The build uses two compiler slots, GOMAXPROCS=2 and a 512 MiB Go runtime soft
+memory target (not a hard aggregate process-memory ceiling).
 
-ZIP is a **container**, not a leaf format — most evidence arrives zipped, so
-Phase 5c unwraps it and routes each member back through the pipeline. That
-makes the pipeline recursive, with bounded depth and expansion caps.
+Smoke-test a printed output directory:
 
-XML and JSON produce the **same** table shape — `messages` / `mms_parts` /
-`mms_addrs` — so SMS threads and Facebook threads land in one queryable corpus.
+```powershell
+cd "E:\AI_Workspace\Projects\Propria\modules\Consignatio\repair-tool-kit" && pwsh -NoProfile -File .\scripts\smoke-test.ps1 -BuildDirectory "<printed build directory>"
+```
 
-Screenshots (OCR), call logs, DOCX/OOXML and plain text are Phase 10. DOCX is
-itself a zip, so Phase 5c already does half of it.
+The smoke test checks both PE subsystems and exact version output, checks the
+Linux ELF header, and launches a local shortcut with normal window settings.
+The shortcut stays beside the build. It does not register shell verbs, install
+a service, or modify the desktop. Physical no-flash observation remains a human
+check; inspecting the subsystem is not a claim of observing the screen.
 
-**Phase 6b** builds the corpus index — one DuckDB view across every package and
-every format, plus corroboration coverage: which messages have independent
-support from a second source, where the gaps are, and where two sources
-disagree. Derived and disposable; rebuildable from the packages alone.
+`--version` prints only the build version. `--config config.example.toml` checks
+the small Phase 0 TOML configuration; it does not create installation directories.
+The TOML parser is pinned to `github.com/BurntSushi/toml v1.6.0` in go.mod/go.sum.
 
-Phases 0–6b are the usable product. 7–10 are deferred deliberately — do not
-start them until 0–6 are running on real files.
+See [Phase 0 receipt and checklist](docs/phase0.html) for verification and remaining work.
 
-## Known open questions
+The owner-approved [cross-platform engine profile contract](docs/engine-platform-profiles.html)
+requires separate `poppler-windows-amd64` and `poppler-linux-amd64` records,
+including the resolved executable path and hash, exact invocation, capabilities,
+and extraction checks against the same 33-glyph reference PDF. Both target
+profiles remain pending; a pass on one platform does not certify the other.
 
-Six, listed in `DIAGRAMS.html` §12. **None of them block Phases 0–5.**
-
-## One thing worth knowing before you start
-
-The reference PDF in this corpus silently replaced every emoji with a single
-repeated symbol, and four of the seven most widely used PDF readers report that
-symbol as an ordinary letter. That is why this tool exists, why there is no
-default engine, and why every extraction is graded against a prediction derived
-from the file itself.
+The [location correction receipt](docs/location-correction-codex.html) supersedes
+earlier installation-location claims and identifies the fresh verified build.

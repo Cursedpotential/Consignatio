@@ -1,0 +1,13 @@
+checked_at=2026-09-13T13:15:20.252684-04:00
+b2_objects_listed=96633
+bucket | eligible_survivors | present_on_b2 | missing | missing_GB
+casebible-quarantine | 148044 | 0 | 148044 | 745.1
+casebible-raw | 179503 | 96547 | 82956 | 105.9
+casebible-sorted | 49 | 49 | 0 | 0.0
+b2 objects not matching any eligible survivor key+size: 37
+owner R2 quarantine folder | files | distinct_eligible_contents | contents_present_on_b2 | contents_missing | missing_GB
+onedrive/Case Bible/ | 119936 | 74896 | 52754 | 22142 | 59.4
+onedrive/Case Bible BACKUP 2026-03-12/ | 8204 | 3231 | 2074 | 1157 | 1.8
+onedrive/no sync/ | 51384 | 39402 | 4531 | 34871 | 12.8
+onedrive/archive/ | 100218 | 61081 | 13456 | 47625 | 526.1
+missing_list=E:/AI_Workspace/_receipts/corruption-hunt/b2-presence\20260913-131458-survivors-missing-on-b2.tsv

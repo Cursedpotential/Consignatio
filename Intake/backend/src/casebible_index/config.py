@@ -31,6 +31,10 @@ SUPPORTED_EXTENSIONS = (
 )
 
 
+DEFAULT_CATALOG_QUERY_FILE = Path(__file__).resolve().with_name("sql") / "catalog_source.sql"
+SOURCE_MODES = ("filesystem", "catalog")
+
+
 def _int_env(name: str, default: int) -> int:
     raw = os.getenv(name)
     return default if raw is None else int(raw)
@@ -63,6 +67,11 @@ class Settings:
     max_inflight_files: int = 2
     source_registry: Path | None = None
     lock_dir: Path = Path(__file__).resolve().parents[2] / "output" / ".source-locks"
+    # "filesystem" walks source_dir; "catalog" lists objects from the Case Bible catalog and
+    # reads them under source_dir (the mounted bucket root).
+    # Byline: Claude Code · Opus 5 · 2026-09-18
+    source_mode: str = "filesystem"
+    catalog_query_file: Path = DEFAULT_CATALOG_QUERY_FILE
 
     @classmethod
     def from_env(cls, *, env_file: Path | None = None) -> Settings:
@@ -93,6 +102,10 @@ class Settings:
             lock_dir=Path(os.getenv("INTAKE_LOCK_DIR") or str(
                 Path(__file__).resolve().parents[2] / "output" / ".source-locks"
             )),
+            source_mode=os.getenv("INTAKE_SOURCE_MODE", "filesystem").strip().casefold(),
+            catalog_query_file=Path(
+                os.getenv("INTAKE_CATALOG_QUERY_FILE") or str(DEFAULT_CATALOG_QUERY_FILE)
+            ),
         )
 
     def resolved(self, base_dir: Path | None = None) -> Settings:
@@ -112,6 +125,7 @@ class Settings:
                 "source_id": source_id,
                 "output_dir": resolve(self.output_dir),
                 "lock_dir": resolve(self.lock_dir),
+                "catalog_query_file": resolve(self.catalog_query_file),
             }
         )
 
@@ -134,6 +148,10 @@ class Settings:
             raise ValueError("File, extracted text and chunk limits must be positive")
         if not 1 <= self.max_inflight_files <= 8:
             raise ValueError("INTAKE_MAX_INFLIGHT_FILES must be between 1 and 8")
+        if self.source_mode not in SOURCE_MODES:
+            raise ValueError(f"INTAKE_SOURCE_MODE must be one of {SOURCE_MODES}")
+        if self.source_mode == "catalog" and not self.catalog_query_file.is_file():
+            raise ValueError(f"INTAKE_CATALOG_QUERY_FILE not found: {self.catalog_query_file}")
 
     @property
     def state_dir(self) -> Path:

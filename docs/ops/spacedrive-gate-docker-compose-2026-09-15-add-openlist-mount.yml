@@ -1,0 +1,79 @@
+# Byline: Claude Code · Sonnet 5 · 2026-09-15
+#
+# Spacedrive v2 headless server, evaluated as a candidate Intake file-manager
+# engine. This is a standalone gate/eval container, NOT a Coolify-managed app
+# (Coolify only renders docker-compose.yaml + .env into
+# /data/coolify/applications/<uuid>/ with no repo checkout; this stack is run
+# directly with `docker compose` from /data/probata/config/spacedrive-gate/).
+#
+# READ-ONLY SWITCH
+# -----------------
+# SPACEDRIVE_READ_ONLY=1|0 in .env is the single semantic toggle for whether
+# this deployment may write to corpus data:
+#   1 (default, required for this gate run) -> the evidence sample is bind
+#     mounted read-only and no write-capable credential is placed in the
+#     container.
+#   0 -> owner's call, post-verdict. Flip it AND change
+#     SPACEDRIVE_MOUNT_MODE below from `ro` to `rw` in the same edit -- Compose
+#     cannot derive one from the other, so they must be kept in sync by hand.
+#     There is currently NO strictly read-only-capable B2 application key in
+#     this environment (see receipt); if a live B2 mount is added later, mint
+#     a new B2 key scoped to listBuckets+listFiles+readFiles only before
+#     setting SPACEDRIVE_READ_ONLY=0, or Spacedrive's own location-level
+#     read-only setting if the alpha build honors one (untested here).
+#
+# Corpus is read-only in EVERY mode as an additional owner hard-rule; the
+# SPACEDRIVE_MOUNT_MODE variable is the mechanical enforcement of that for the
+# bind-mount path used in this gate run.
+#
+# 2026-09-15 addition: /media/openlist bind mount added, ALWAYS read-only
+# (hardcoded `:ro`, not tied to SPACEDRIVE_MOUNT_MODE), so a Spacedrive
+# Location can be pointed at the host's rclone-openlist WebDAV mount
+# (/srv/openlist -> b2/salem-data/... under OpenList) to browse B2 content
+# without any B2 credential ever entering this container. Never flip this
+# one to rw -- there is still no read-only-scoped B2 key, and this is the
+# only path that keeps B2 writes structurally impossible from this container.
+
+services:
+  spacedrive-gate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: spacedrive-gate:local
+    container_name: spacedrive-gate
+    restart: unless-stopped
+    env_file:
+      - /data/probata/secrets/spacedrive-gate/sd_auth
+    environment:
+      TZ: UTC
+      PUID: "1000"
+      PGID: "1000"
+      DATA_DIR: /data
+      SPACEDRIVE_READ_ONLY: ${SPACEDRIVE_READ_ONLY:-1}
+    ports:
+      - "127.0.0.1:8090:8080"
+      - "127.0.0.1:7373:7373/tcp"
+      - "127.0.0.1:7373:7373/udp"
+    volumes:
+      - spacedrive_gate_state:/data
+      # Mounted OUTSIDE /data on purpose: entrypoint.sh runs a blanket
+      # `chown -R $PUID:$PGID /data` on every start (upstream behavior, under
+      # `set -eu`), which aborts the container if any path under /data is
+      # read-only. Verified live 2026-09-14 -- crash-looped with "Read-only
+      # file system" until the sample mount moved to /sample.
+      - /data/probata/exchange/spacedrive-gate/sample:/sample:${SPACEDRIVE_MOUNT_MODE:-ro}
+      # 2026-09-15: B2 browsing via the host's OpenList WebDAV rclone mount.
+      # Always read-only regardless of SPACEDRIVE_MOUNT_MODE -- see note above.
+      - /srv/openlist:/media/openlist:ro
+    mem_limit: 3g
+    memswap_limit: 3g
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf -u \"$$SD_AUTH\" http://127.0.0.1:8080/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  spacedrive_gate_state:
+    name: spacedrive_gate_state

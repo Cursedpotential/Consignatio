@@ -1,0 +1,6 @@
+rclone rc 0 
+objects=103076 total=262.04 GB zero_byte=0 office_like_under_1KB=6 missing_sha1=117
+size buckets {'1KB-1MB': 90034, '<1KB': 2157, '1MB-1GB': 10844, '>=1GB': 41}
+top-level prefixes [('consignatio/intake', 102995), ('consignatio/vault', 51), ('db_backups/20260801-pre-case-data-dump', 19), ('infra-backups/ovh-data-20260801', 6), ('db_backups/20260801-pgdump', 5)]
+extensions by count [('.jpg', 35029), ('.txt', 16893), ('.png', 14877), ('.html', 5258), ('.mp4', 3478), ('.json', 2553), ('.py', 2493), ('.gif', 2112), ('.md', 1938), ('.zip', 1861), ('.jpeg', 1744), ('.heic', 1310), ('(none)', 1252), ('.m4a', 1060), ('.pdf', 1024), ('.db', 813), ('.csv', 785), ('.properties', 753), ('.mov', 711), ('.mp3', 631)]
+listing file E:/AI_Workspace/_receipts/corruption-hunt/20260913-112339-b2-salem-data-listing.tsv

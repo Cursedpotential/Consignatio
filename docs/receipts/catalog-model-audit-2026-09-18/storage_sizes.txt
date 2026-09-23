@@ -1,0 +1,17 @@
+SET
+SET
+B2 vault/v1 now (r4) | 508201 | 2022 GB | 2026-09-16
+B2 intake area now (r4) | 0 | 0 bytes | 2026-09-16
+B2 intake area before cleanup | 530070 | 2579 GB | 2026-09-16
+b2_objects listing | 530070 | 2579 GB | 2026-09-14
+b2_content by top prefix: consignatio | 504482 | 2017 GB | 2026-09-14
+R2 listing (r2_files) | 1279556 | 2894 GB | 2026-08-30
+ORIGINALS: gdrive/salem85 | 12594 | 2111 MB | 2026-09-14
+ORIGINALS: gdrive/salemnet | 127291 | 1493 GB | 2026-09-14
+ORIGINALS: local/F-Disk-Drill | 158142 | 6403 MB | 2026-09-14
+ORIGINALS: local/D-Backup | 890091 | 708 GB | 2026-09-14
+ORIGINALS: local/F-case | 56133 | 38 GB | 2026-09-14
+ORIGINALS: onedrive | 323183 | 941 GB | 2026-09-14
+ORIGINALS: local/D-root | 22 | 2212 MB | 2026-09-14
+ORIGINALS all occurrences | 1567456 | 3191 GB | 
+ORIGINALS unique content (md5+size, non-zero, non-junk) | 407289 | 1449 GB | 

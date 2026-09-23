@@ -1,0 +1,49 @@
+<!doctype html>
+<!-- Updated by: Codex (case-bible/mp-doc-patching) | Date: 2026-09-12 | Rev: 2 | Platform: Codex / win32 | Changes: Record canonical status and remote-first production boundary | Context: The owner selected this lane and designated the Linux VPS as the production execution plane -->
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>casekit — Phase 0 receipt</title>
+<style>body{font:16px/1.6 system-ui,sans-serif;max-width:1000px;margin:40px auto;padding:0 24px;background:#111820;color:#e0e7ed}h1,h2{color:#8cdbca}code,pre{font-family:Consolas,monospace;background:#1c2731;overflow-wrap:anywhere}pre{padding:16px;white-space:pre-wrap}table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:10px;border-bottom:1px solid #35414b}a{color:#8cccf4}.pending{color:#ffd18a}</style></head>
+<body><h1>casekit · Phase 0</h1>
+<p>2026-09-11 · Codex A/B lane · Build <code>0.0.0-phase0</code></p>
+<p><strong>Implemented; automated checks passed.</strong> One literal exit criterion remains a human observation: whether the shortcut produces a visible console flash. The Windows GUI subsystem and normal shortcut exit were verified programmatically. Phase 1 has not started.</p>
+<p><strong>Authority update, 2026-09-12:</strong> the owner selected this Codex implementation as the canonical baseline. Windows remains the development/test and desktop control surface. Production corpus processing runs on the Linux VPS and durable corpus data remains remote. See <a href="canonical-runtime-boundary.html">the canonical runtime decision</a>.</p>
+<h2>Scope and isolation</h2>
+<p>Source root: <code>E:\AI_Workspace\Projects\Propria\Consignatio\repair-tool-kit-codex\repair-tool-kit</code><br>
+Branch: <code>codex/casekit-ab</code><br>Base: <code>161d3c4d1f622e5daf9264fcbb218fa858d92fb8</code></p>
+<p>Correction: the previous claim that the owner approved E:\case_apps was inaccurate. The owner requires the module and all controlled state inside its project under Consignatio. Controlled state is isolated under <code>E:\AI_Workspace\Projects\Propria\Consignatio\repair-tool-kit-codex\repair-tool-kit\runtime-codex</code>. Original checkout and its untracked repair-tool-kit material were not edited. No files staged or committed. No evidence read, no corpus scan, no extraction workers, no registry shell verbs, no services, no integration changes.</p>
+<p>Plan inputs: repair_tool_kit_buildkit_v2.zip; the original repair_tool_kit_buildkit.zip supplements BUILD_GUIDE.md and TOOL-CATALOG.md. Neither archive contains scaffold or reference evidence. Archives remain unchanged. No new operating rules were added.</p>
+<h2>Small-task checklist</h2>
+<table><tr><th>Subtask</th><th>Result</th></tr>
+<tr><td>Preflight and installation path</td><td>Go 1.26.7 windows/amd64; DuckDB 1.5.5; E: owner approval applied.</td></tr>
+<tr><td>Minimal skeleton</td><td>Two entry points, shared argument handling, TOML loader, pinned module/checksums, example configuration, Taskfile and PowerShell build script.</td></tr>
+<tr><td>Tests and analysis</td><td>go vet ./..., go build ./..., go test -count=1 -v ./... passed. CLI: seven argument cases. Config: defaults, override, malformed/wrong-type/unknown/blank values and wrapped missing-file error.</td></tr>
+<tr><td>Windows artifacts</td><td>casekit.exe PE subsystem 3 (console); casekitw.exe PE subsystem 2 (GUI). Both print exactly 0.0.0-phase0 with redirected stdout; stderr empty, exit 0.</td></tr>
+<tr><td>Linux artifact</td><td>CGO-disabled linux/amd64 cross-build passed; ELF64 x86-64 header checked. Not executed on Linux.</td></tr>
+<tr><td>Shortcut</td><td>Normal-window-style shortcut to casekitw.exe --version exits 0. No hidden-window setting used for this check. <span class="pending">Human no-flash observation remains.</span></td></tr>
+<tr><td>DuckDB webbed</td><td>INSTALL webbed FROM community; LOAD webbed; succeeded. loaded=true, installed=true, extension path below the isolated E: root.</td></tr>
+<tr><td>Independent review</td><td>Config agent implemented only config/tests, then reviewed Phase 0 build and source read-only. No static blockers reported; parent performed execution checks.</td></tr>
+</table>
+<h2>Build and smoke commands</h2>
+<pre>cd "E:\AI_Workspace\Projects\Propria\Consignatio\repair-tool-kit-codex\repair-tool-kit" &amp;&amp; pwsh -NoProfile -File .\scripts\build.ps1 -Target all -Version 0.0.0-phase0</pre>
+<p>Verified build output:</p>
+<pre>E:\AI_Workspace\Projects\Propria\Consignatio\repair-tool-kit-codex\repair-tool-kit\runtime-codex\builds\20260911-214426-133-a62d0e45</pre>
+<pre>cd "E:\AI_Workspace\Projects\Propria\Consignatio\repair-tool-kit-codex\repair-tool-kit" &amp;&amp; pwsh -NoProfile -File .\scripts\smoke-test.ps1 -BuildDirectory "E:\AI_Workspace\Projects\Propria\Consignatio\repair-tool-kit-codex\repair-tool-kit\runtime-codex\builds\20260911-214426-133-a62d0e45"</pre>
+<p>Preserved shortcut: <code>casekitw-smoke-733dfd96a7f143f7804229c975615bed.lnk</code> in that build directory. Builds use unique output directories; earlier failed and superseded outputs remain in place.</p>
+<h2>Failures found and corrected</h2>
+<ol><li>Initial go mod download recorded only a module-file checksum, so vet rejected the missing content checksum. The build now runs go mod download all; the pinned dependency and its complete checksums are present.</li>
+<li>The first GUI executable returned 1 from the shortcut because Explorer supplied no stdout handle. The GUI entry now discards version output only when stdout has no valid handle; supplied pipes/files still receive the version. Rebuilt all artifacts and reran tests and shortcut check successfully.</li></ol>
+<h2>Resource behavior</h2>
+<p>Builds set process-local Go module/build caches and TEMP/TMP/GOTMPDIR on E:, disable automatic toolchain switching and Go telemetry, use two compiler slots and GOMAXPROCS=2. GOMEMLIMIT=512MiB is a per-process Go runtime soft target, not an aggregate hard ceiling. Environment settings are restored afterward. Go is reused from its existing C: installation; no Go installation or global cache relocation was performed.</p>
+<p>DuckDB test used an in-memory database, two threads, a 256MB memory limit, explicit E: extension and spill directories, and <code>-init NUL</code> to avoid the user's startup script. Installed extension: <code>E:\AI_Workspace\Projects\Propria\Consignatio\repair-tool-kit-codex\repair-tool-kit\runtime-codex\duckdb\extensions\v1.5.5\windows_amd64\webbed.duckdb_extension</code>.</p>
+<h2>Artifact hashes · SHA-256</h2>
+<pre>casekit.exe
+9D3B0B7F8BB2AF098AAB9E8C567E25C69F55F61EE1E16175E809629884E402C2
+casekitw.exe
+C6B20496FB290BA103820A1D1EFE46C53E1E5E7C1EEB39D9C72F41BB0086EB39
+casekit-linux-amd64
+1E33557A201B3C9E548B2E2F49CBB75FD5BB4E14A6F59A64CDEDE8B2CEE0A90A</pre>
+<h2>Next, only with owner direction</h2>
+<ul><li>Observe the shortcut launch for the remaining visible no-flash criterion.</li><li>Complete the owner-approved <a href="engine-platform-profiles.html">cross-platform engine profile contract</a>: run the exact 33-glyph reference PDF independently with <code>poppler-windows-amd64</code> and the pinned VPS <code>poppler-linux-amd64</code>, recording version, OS/architecture, executable SHA-256, full resolved path, capabilities, exact command and check results. Both certifications are currently pending; one cannot certify the other.</li><li>Read and execute Phase 1 only after approval. Resolve offset coordinate spaces when defining its engine contract, and make platform profile identity part of the registry and extraction-package provenance.</li><li>Carry forward the kickoff findings to their appropriate later phases: unsafe blanket Meta JSON escape replacement; partial recovery versus reconstruction; canonical index rebuild versus physical database bytes; persistence of human decisions.</li><li>Use the already hash-identified reference fixture when authorized; do not copy or commit its evidence bytes merely to satisfy a test path.</li></ul>
+<h2>Implementation references</h2>
+<ul><li><a href="https://pkg.go.dev/github.com/BurntSushi/toml@v1.6.0">Pinned TOML parser: DecodeFile and Undecoded</a></li><li><a href="https://pkg.go.dev/cmd/link">Go linker: Windows GUI subsystem and version injection</a></li><li><a href="https://duckdb.org/community_extensions/extensions/webbed">DuckDB webbed installation</a></li><li><a href="https://duckdb.org/docs/lts/extensions/installing_extensions">DuckDB extension-directory configuration</a></li></ul>
+</body></html>

@@ -117,6 +117,64 @@ destination, deterministic representative, and initial hold/planned status.
 Status transitions are validated and appended; completed history is never
 rewritten.
 
+## Best-copy metadata normalization and review
+
+`tools/build_best_copy_duckdb.py` is retained as the compatibility entrypoint
+for the source-by-source reconciliation pass. Its DuckDB database is a
+normalization workspace only. It contains source views and the normalization
+contract; it does not contain an `exact_content_candidate`,
+`best_copy_resolution`, or any other competing winner table. `ManifestBuilder`
+and its append-only SQLite ledger are the only authority that can bind metadata
+or resolve a primary payload donor.
+
+The normalizer consumes immutable PG18/R2 catalog exports. It converts the R2
+occurrence export into the existing inventory contract, reconstructs
+source-bound SHA-256 ledger partitions, and emits metadata assertion partitions
+for the SHA catalog, PG media metadata, derived dates, OneDrive catalog data,
+and the current D: consolidated-local catalog. An optional `E:\e.efu` input is
+tagged as historical pre-merge provenance. An optional OneDrive desktop report
+is read as an already-exported metadata report. The tool never lists, opens, or
+hydrates local OneDrive content; its OneDrive content lookup boundary is the
+existing R2/PG metadata.
+
+Every inbound metadata row is retained in `metadata_import_record`, including
+malformed, unmatched, ambiguous, and unverified rows. Candidate occurrences are
+retained in `metadata_import_candidate`. Account, tree, snapshot, source
+version, provider match percentage, MD5, and QuickXor remain provenance-bearing
+candidate assertions. They never create SHA/MD5 content identity. Locator-only
+metadata binds only when all candidates already belong to one SHA-256-verified
+content group. A source SHA-256 constrains binding only when its record declares
+`identity_authority=sha256_verified`. Same-size versions with different
+QuickXor values remain held as drift.
+
+Within one exact SHA-256 group, payload eligibility and health are evaluated
+before metadata richness. Corruption, unreadability, placeholders, failed
+validation, and negative eligibility assertions reduce fitness. Diagnostic
+fields never increase the richness score. Canonical filename and oldest
+trustworthy timestamp remain independent field decisions, and all alternatives
+retain their provenance. Conflicting embedded values hold only their own exact
+content group; unrelated groups continue into generation. The review export
+includes `metadata-resolution.*`, `metadata-holds.*`, and
+`metadata-import-review.*`.
+
+All normalizer and generation output directories are immutable: a run refuses
+to overwrite a non-empty directory. Start a new pass in a new directory.
+
+```powershell
+$env:PYTHONPATH=(Join-Path $PWD 'src')
+python tools/build_best_copy_duckdb.py `
+  --pg-export-dir 'runtime\best-copy-20260913\pg18-full' `
+  --sha-metadata 'runtime\best-copy-20260913\sha256_metadata.csv.gz' `
+  --output-dir 'runtime\best-copy-20260913\normalized-pass-001' `
+  --efu 'E:\e.efu' `
+  --onedrive-export 'C:\Users\matts\OneDrive\Desktop\export.csv'
+```
+
+The SHA bridge is not finalized implicitly. A caller must explicitly provide
+`--finalize-sha-bridge --expected-sha-record-count <verified-count>`. Transfer
+artifacts are also opt-in with `--build-generation`; neither option copies,
+moves, syncs, deletes, or reads corpus bytes.
+
 `transfer_item.dedupe_authority` makes the physical-copy decision explicit:
 `sha256_verified` may collapse verified duplicate paths;
 `md5_candidate_no_suppression` emits every distinct path; pending/conflict rows

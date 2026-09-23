@@ -1,0 +1,8 @@
+hold rows [(20512,)]
+BEFORE md5 not null r2/surv [(1279477, 337067)]
+audit rows [('final_survivors', 'all_zero_payload', 9470), ('final_survivors', 'zero_bytes_no_content', 1), ('r2_files', 'all_zero_payload', 20512), ('r2_files', 'zero_bytes_no_content', 3702)]
+AFTER flagged r2 / still hashed [(24214, 0)]
+AFTER flagged surv / still hashed [(9471, 0)]
+AFTER md5 not null r2/surv [(1255263, 327596)]
+zero payload still matchable (must be 0) [(0,)]
+COMMITTED

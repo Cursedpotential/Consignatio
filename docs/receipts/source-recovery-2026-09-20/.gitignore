@@ -1,0 +1,5 @@
+# Byline: Codex | 2026-09-20. Recovered content and private metadata never enter Git.
+batch-*/
+native-*/
+ledger-*/
+backups/

@@ -1,0 +1,5 @@
+files=454 GB=90.7 zero_byte=0 cloud_or_offline_attr=0 stat_errors=0 secs=1
+  New Folder                                         files=     385 GB=90.7
+  00_Documentation                                   files=      67 GB=0.0
+  00_Documentation.xxh3                              files=       1 GB=0.0
+  $RECYCLE.BIN                                       files=       1 GB=0.0

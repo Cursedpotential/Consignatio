@@ -1,0 +1,4 @@
+verified_at=2026-09-13T12:11:06.611572-04:00
+planned=6362 quarantine_objects_total=6362 source_objects_total=96633
+missing_in_quarantine=0 size_mismatch=0 sha1_not_all_zero=0 still_at_source=0
+RESULT=PASS

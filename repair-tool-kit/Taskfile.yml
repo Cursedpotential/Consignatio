@@ -1,0 +1,15 @@
+version: '3'
+
+tasks:
+  build:
+    cmds:
+      - pwsh -NoProfile -File ./scripts/build.ps1 -Target all
+  windows:
+    cmds:
+      - pwsh -NoProfile -File ./scripts/build.ps1 -Target windows
+  linux:
+    cmds:
+      - pwsh -NoProfile -File ./scripts/build.ps1 -Target linux
+  verify:
+    cmds:
+      - pwsh -NoProfile -File ./scripts/build.ps1 -Target verify

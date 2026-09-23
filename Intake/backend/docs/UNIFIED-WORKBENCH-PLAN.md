@@ -120,6 +120,12 @@ Own a cross-store hash ledger: reuse imported hashes with algorithm/scope/versio
 
 Classify document types, topics, organizational units and proposed routes. Compare deterministic rules, lightweight supervised models and hosted model predictions on a labeled corpus. Record taxonomy/model/feature versions, calibrate scores and permit abstention. Group train/test splits by source lineage and duplicate family. Human review labels are append-only training inputs.
 
+### Source metadata capture and forensic packages
+
+> _Added 2026-09-13 · Claude Code · Opus 5 — owner direction. Full spec: [SOURCE-METADATA-CAPTURE-AND-FORENSIC-PACKAGE-SPEC.md](SOURCE-METADATA-CAPTURE-AND-FORENSIC-PACKAGE-SPEC.md)._
+
+A sibling of source browsing and album snapshots in connected sources. **Selective capture:** a searchable field catalog (select, filter, add, subtract, saved profiles) pulls chosen provider metadata for any selection into grid columns, facets and preview tabs. **Forensic package:** captures everything in the provider's capability census, including raw responses, revisions and their bytes, permissions, comments, activity, labels, exports and hash comparison. A completeness receipt proves the package COMPLETE or names its gaps. Later census growth flags `more_available` and adds an immutable supplement. The provider contract is identical for Drive, OneDrive, Photos, local and S3. Platform keeps promotion authority.
+
 ## Shared backend contracts
 
 | Contract | Required fields/behavior |
@@ -172,7 +178,7 @@ Phase numbers in MASTER-TODO identify backend work packages; they are not a mand
 | P1 / M1 Durable review | import profiles, autosave, undo/redo, lossless export/reload, stable selections/groups | M0 | full import-to-reload test with hidden selections and nested JSON |
 | P1 / M2 Text search and lake | bounded CocoIndex text, Portkey embeddings, Lance/Parquet, Weaviate, desktop search | M0 | source-anchored retrieval, unchanged-input reuse, replayable projection |
 | P1 / M3 Cross-store reconciliation | existing hash imports, conflicts, atomic/sidecar links, Surreal graph, dedup review | M0 and M2 schemas | corroborating copies retained; digest scope/version tests |
-| P1 / M4 Connected sources | B2/S3 and Drive, Filestash access, Context Forge tools, isolated VPS/Serve setup | M0; credentials/targets verified | per-service integration receipts and authorized scope tests |
+| P1 / M4 Connected sources | B2/S3 and Drive, Filestash access, source metadata capture + forensic packages (census, selective capture, completeness receipt), Context Forge tools, isolated VPS/Serve setup | M0; credentials/targets verified | per-service integration receipts and authorized scope tests |
 | P2 / M5 Structured documents and ML | Office/mail/Docling routes, classifier labels/evaluation, document comparison | M2/M3 | coverage/quality/cost benchmark and source-lineage holdout |
 | P2 / M6 Media and sessions | Immich/PhotoPrism snapshots, Whisper A/V, visual PDF/image retrieval, graph/session expansion | M2/M4 | real provider/media tests, timestamp/page anchors, membership deltas |
 | P2 / M7 Transfer and governed handoff | copy proposals, source/destination verification, Platform integration | M3/M4 and authoritative Platform schema | copy/retry/disaster receipt; custody boundary verified |

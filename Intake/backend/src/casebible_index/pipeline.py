@@ -14,6 +14,7 @@ from cocoindex.connectors import localfs
 from cocoindex.ops.text import RecursiveSplitter
 from cocoindex.resources.file import FileLike, PatternFilePathMatcher
 
+from .catalog_source import CatalogObject, iter_catalog_objects, safe_relative_key
 from .config import SUPPORTED_EXTENSIONS, Settings
 from .extractors import extract_text
 from .filesystem_search import WeaviateSearchConfig
@@ -27,7 +28,9 @@ from .weaviate_target import WEAVIATE_WRITER, ObjectSpec, WeaviateObjectWriter, 
 
 NIM_CLIENT = coco.ContextKey[NimClient]("casebible_nim_client")
 RUN_STATUS = coco.ContextKey[RunStatus]("intake_filesystem_run_status")
+CATALOG_DSN = coco.ContextKey[str]("intake_catalog_dsn")
 _splitter = RecursiveSplitter()
+_EXCLUDED_SEGMENTS = frozenset({".git", ".review_hold", "to_be_deleted", "__pycache__"})
 
 
 class BoundedLocalFile(localfs.File):
@@ -48,6 +51,31 @@ class BoundedLocalFile(localfs.File):
 
     def __coco_memo_key__(self):
         return (super().__coco_memo_key__(), self.max_bytes)
+
+
+class CatalogFile(BoundedLocalFile):
+    """A catalog object on the mounted bucket (Byline: Claude Code · Opus 5 · 2026-09-18).
+
+    Change detection uses the catalog's size + SHA-1 and never reads or stats the object:
+    the hashing is already in the catalog (owner 2026-09-18 21:57; catalog decision
+    2026-09-16). Bytes are read only when the object is actually processed.
+    """
+
+    def __init__(self, file_path, max_bytes: int, catalog_object: CatalogObject):
+        super().__init__(file_path, max_bytes)
+        self.catalog_object = catalog_object
+
+    async def __coco_memo_state__(self, prev_state):
+        # B2 large files have no SHA-1; for those only a size change is detectable here.
+        state = ("catalog-v1", self.catalog_object.byte_size, self.catalog_object.sha1)
+        return coco.MemoStateOutcome(state=state, memo_valid=prev_state == state)
+
+
+def _catalog_key_is_indexable(key: str) -> bool:
+    path = safe_relative_key(key)
+    if path is None or _EXCLUDED_SEGMENTS.intersection(path.parts):
+        return False
+    return path.suffix.casefold() in SUPPORTED_EXTENSIONS
 
 
 async def read_bounded(file: FileLike, max_bytes: int) -> bytes:
@@ -207,31 +235,40 @@ async def app_main(
     max_extracted_chars: int,
     max_chunks_per_file: int,
     weaviate_target: tuple[str, str, str] | None,
+    source_mode: str,
+    catalog_query_file: Path,
 ) -> None:
-    patterns = [f"**/*{extension}" for extension in SUPPORTED_EXTENSIONS]
-    files = localfs.walk_dir(
-        sourcedir,
-        recursive=True,
-        path_matcher=PatternFilePathMatcher(
-            included_patterns=patterns,
-            excluded_patterns=[
-                "**/.git/**",
-                "**/.review_hold/**",
-                "**/to_be_deleted/**",
-                "**/__pycache__/**",
-            ],
-        ),
-        live=False,
-    )
-    async def bounded_items():
+    async def filesystem_items():
+        patterns = [f"**/*{extension}" for extension in SUPPORTED_EXTENSIONS]
+        files = localfs.walk_dir(
+            sourcedir,
+            recursive=True,
+            path_matcher=PatternFilePathMatcher(
+                included_patterns=patterns,
+                excluded_patterns=[f"**/{segment}/**" for segment in sorted(_EXCLUDED_SEGMENTS)],
+            ),
+            live=False,
+        )
         status = coco.use_context(RUN_STATUS)
         async for key, file in files.items():
             status.files_observed += 1
             yield key, BoundedLocalFile(file.file_path, max_file_bytes)
 
+    async def catalog_items():
+        # The object list comes from the catalog, not a walk; objects are read in place
+        # under sourcedir (the mounted bucket root) only when processed.
+        status = coco.use_context(RUN_STATUS)
+        dsn = coco.use_context(CATALOG_DSN)
+        query = catalog_query_file.read_text(encoding="utf-8")
+        async for obj in iter_catalog_objects(dsn, query):
+            if not _catalog_key_is_indexable(obj.key):
+                continue
+            status.files_observed += 1
+            yield obj.key, CatalogFile(localfs.FilePath(sourcedir / obj.key), max_file_bytes, obj)
+
     handle = await coco.mount_each(
         process_file,
-        bounded_items(),
+        catalog_items() if source_mode == "catalog" else filesystem_items(),
         source_dir=sourcedir,
         source_id=source_id,
         output_dir=output_dir,
@@ -264,6 +301,11 @@ async def resources_lifespan(builder: coco.EnvironmentBuilder) -> AsyncIterator[
     _settings.output_dir.mkdir(parents=True, exist_ok=True)
     _settings.state_dir.mkdir(parents=True, exist_ok=True)
     builder.settings.db_path = _settings.state_dir / "cocoindex.db"
+    if _settings.source_mode == "catalog":
+        catalog_dsn = get_secret("INTAKE_CATALOG_DSN")
+        if not catalog_dsn:
+            raise ValueError("INTAKE_SOURCE_MODE=catalog needs INTAKE_CATALOG_DSN")
+        builder.provide(CATALOG_DSN, catalog_dsn)
     api_key = get_secret("NVIDIA_API_KEY")
     if not api_key:
         raise ValueError(
@@ -374,4 +416,6 @@ app = coco.App(
     max_extracted_chars=_settings.max_extracted_chars,
     max_chunks_per_file=_settings.max_chunks_per_file,
     weaviate_target=_weaviate_target,
+    source_mode=_settings.source_mode,
+    catalog_query_file=_settings.catalog_query_file,
 )
